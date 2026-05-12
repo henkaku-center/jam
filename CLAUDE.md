@@ -71,9 +71,10 @@ npm run dev    # http://localhost:5173
 1. **Hydra needs a `global` polyfill in Vite.** `hydra-synth` (via `right-now` / `raf-loop`) references `global`. In `vite.config.ts`: `define: { global: 'globalThis' }` *and* `optimizeDeps.esbuildOptions.define.global = 'globalThis'` (the second covers the pre-bundled `.vite/deps` cache). Clear `node_modules/.vite` after changing this.
 2. **Strudel `getTime` callback.** Use `getAudioContext().currentTime` imported from `@strudel/webaudio`. Do NOT try to call `scheduler.getAudioContext()` — that method doesn't exist on the scheduler.
 3. **PaneKind vs WidgetKind collision.** Don't reuse the key `'kind'` for both `PaneKind` ('code'|'prompt'|'widget') and the widget sub-shape. The widget pane stores its shape under `'shape'` (slider|button|xy).
-4. **Eval globals leak to `window`.** Hydra is initialized with `makeGlobal: true`, so `osc`, `src`, `o0`, etc. are on `window`. The bus helper `b(name)` is also `window`-scoped. Be careful adding more globals — name collisions will surprise users.
-5. **y-webrtc has no persistence.** A reload with no peers gives you a fresh empty doc. Add `y-indexeddb` for local persistence if needed.
-6. **Don't `git commit -m "@strudel/foo"`.** Backticks in commit messages have bitten people; use HEREDOC.
+4. **Hydra/Strudel global collision.** Hydra is initialized with `makeGlobal: true`, so `osc`, `noise`, `shape`, `src`, `o0..o3`, `speed`, `bpm`, `fps`, etc. live on `window`. Strudel's `evalScope` overwrites many of those names. If you call `evalScope` after Hydra init without protection, Hydra's render loop dies silently (next `tick()` reads a Strudel `speed` instead of the Hydra one). The current fix in `stage.ts` snapshots Hydra's globals before `evalScope` and re-applies them after. Any new audio module that calls `evalScope`/`evalContext` must do the same dance.
+5. **Eval globals leak to `window`.** Beyond the Hydra/Strudel set, the bus helper `b(name)` is also `window`-scoped. Be careful adding more globals — name collisions will surprise users.
+6. **y-webrtc has no persistence.** A reload with no peers gives you a fresh empty doc. Add `y-indexeddb` for local persistence if needed.
+7. **Audio gesture gate.** Strudel's `initAudioOnFirstClick` waits for *any* real user click and is finicky with programmatic clicks; prefer `initAudio()` followed by `getAudioContext().resume()` triggered from the START AUDIO button. Audio starts on the first click that way (not the second).
 
 ## v0 status
 
