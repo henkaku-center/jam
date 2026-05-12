@@ -70,7 +70,7 @@ export class Stage {
 
       Object.assign(globalThis, hydraGlobals);
       await registerSynthSounds();
-      samples('github:tidalcycles/dirt-samples');
+      await samples('github:tidalcycles/dirt-samples');
       this.strudelRepl = repl({
         defaultOutput: webaudioOutput,
         getTime: () => getAudioContext().currentTime,
@@ -110,7 +110,12 @@ export class Stage {
   }
 
   toggleAudio(): void {
-    this.strudelRepl?.scheduler?.toggle();
+    if (!this.strudelRepl) return;
+    if (this.strudelRepl.scheduler.started) {
+      this.strudelRepl.pause();
+    } else {
+      this.strudelRepl.start();
+    }
   }
 
   stopAudio(): void {
