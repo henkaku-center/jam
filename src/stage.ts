@@ -1,5 +1,6 @@
 import Hydra from 'hydra-synth';
 import {
+  getAudioContext,
   initAudioOnFirstClick,
   registerSynthSounds,
   samples,
@@ -56,7 +57,7 @@ export class Stage {
       samples('github:tidalcycles/dirt-samples');
       this.strudelRepl = repl({
         defaultOutput: webaudioOutput,
-        getTime: () => (this.strudelRepl?.scheduler.getAudioContext().currentTime) ?? 0,
+        getTime: () => getAudioContext().currentTime,
         transpiler,
       });
       this.audioReady = true;
