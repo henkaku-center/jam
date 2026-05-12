@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 
-export type PaneKind = 'code' | 'prompt' | 'widget';
+export type PaneKind = 'code' | 'prompt' | 'widget' | 'sampler';
 
 export type PaneState = {
   id: string;

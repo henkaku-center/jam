@@ -7,6 +7,7 @@ import { PaneKind, PaneState } from './panes/base';
 import { mountCodePane } from './panes/code';
 import { mountWidgetPane } from './panes/widget';
 import { mountPromptPane } from './panes/prompt';
+import { mountSamplerPane } from './panes/sampler';
 
 const room = roomFromHash();
 document.getElementById('room-name')!.textContent = room;
@@ -52,8 +53,8 @@ function createPane(kind: PaneKind, opts: Partial<PaneState> = {}): void {
   data.set('kind', kind);
   data.set('x', opts.x ?? 80 + Math.random() * 200);
   data.set('y', opts.y ?? 100 + Math.random() * 200);
-  data.set('w', opts.w ?? (kind === 'widget' ? 320 : 420));
-  data.set('h', opts.h ?? (kind === 'widget' ? 240 : 360));
+  data.set('w', opts.w ?? (kind === 'widget' ? 320 : kind === 'sampler' ? 440 : 420));
+  data.set('h', opts.h ?? (kind === 'widget' ? 240 : kind === 'sampler' ? 320 : 360));
   panesY.set(id, data);
 }
 
@@ -80,6 +81,8 @@ function mountPane(id: string, data: Y.Map<any>): void {
     cleanup = mountWidgetPane(state, panesParent, bus);
   } else if (state.kind === 'prompt') {
     cleanup = mountPromptPane(state, panesParent, stage, bus);
+  } else if (state.kind === 'sampler') {
+    cleanup = mountSamplerPane(state, panesParent, bus);
   }
   mounted.set(id, cleanup);
 
