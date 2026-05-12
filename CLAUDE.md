@@ -59,8 +59,20 @@ index.html, vite.config.ts, tsconfig.json, package.json
 
 ```
 npm install
-npm run dev    # http://localhost:5173
+npm run dev    # terminal 1: http://localhost:5173
+npm run sync   # terminal 2: auto-commit + push on file changes
 ```
+
+## Git auto-sync
+
+Two developers work on `main` simultaneously. Changes sync automatically:
+- `npm run sync` watches `src/` and root config files, debounces 2s, then auto-commits and pushes.
+- Claude Code's `PreToolUse` hook auto-pulls before each Edit/Write/Bash via `scripts/pull.sh`.
+- Vite HMR picks up incoming file changes on disk automatically.
+
+If you see git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) in any file,
+resolve them immediately by keeping the best version of both changes, then save.
+The sync watcher will auto-commit your resolution. Never force-push on main.
 
 - Audio is gated behind the START AUDIO button (browser autoplay rule — *real* user click required; programmatic clicks don't unblock the AudioContext).
 - Open the same `#room-name` in another tab to test multi-user.
