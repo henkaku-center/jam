@@ -1,7 +1,7 @@
 import Hydra from 'hydra-synth';
 import {
   getAudioContext,
-  initAudioOnFirstClick,
+  initAudio,
   registerSynthSounds,
   samples,
   webaudioOutput,
@@ -45,7 +45,21 @@ export class Stage {
   async initAudio(): Promise<void> {
     if (this.audioReady) return;
     try {
-      await initAudioOnFirstClick();
+      await initAudio();
+      const ctx = getAudioContext();
+      await ctx.resume();
+      // Hydra sets globals (osc, noise, shape, src, …) via makeGlobal.
+      // Its tick() also reads speed/bpm/fps/update from window each frame.
+      // Strudel's evalScope overwrites many of these. Save and restore.
+      const hydraGlobals = ['osc', 'noise', 'shape', 'src', 'solid', 'gradient', 'voronoi',
+        'render', 'o0', 'o1', 'o2', 'o3', 's0', 's1', 's2', 's3',
+        'speed', 'bpm', 'fps', 'update', 'afterUpdate',
+        'time', 'mouse', 'width', 'height', 'hush', 'setResolution', 'tick',
+      ].reduce((acc, k) => {
+        if (k in globalThis) acc[k] = (globalThis as any)[k];
+        return acc;
+      }, {} as Record<string, any>);
+
       await evalScope(
         controls,
         miniAllStrings,
@@ -53,6 +67,8 @@ export class Stage {
         import('@strudel/mini'),
         import('@strudel/webaudio'),
       );
+
+      Object.assign(globalThis, hydraGlobals);
       await registerSynthSounds();
       samples('github:tidalcycles/dirt-samples');
       this.strudelRepl = repl({
@@ -91,6 +107,10 @@ export class Stage {
     } catch (e: any) {
       return { ok: false, error: e?.message ?? String(e) };
     }
+  }
+
+  toggleAudio(): void {
+    this.strudelRepl?.scheduler?.toggle();
   }
 
   stopAudio(): void {

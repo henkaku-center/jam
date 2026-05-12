@@ -22,7 +22,7 @@ export type Sync = {
 export function connect(room: string): Sync {
   const doc = new Y.Doc();
   const provider = new WebrtcProvider(`jam-${room}`, doc, {
-    signaling: ['wss://signaling.yjs.dev'],
+    signaling: [],
   });
   const awareness = provider.awareness;
   const stored = localStorage.getItem('jam.user');

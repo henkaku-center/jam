@@ -140,6 +140,15 @@ startBtn.addEventListener('click', async () => {
   setTimeout(() => stage.evalAudio(`s("bd ~ sd ~").gain(0.5)`), 500);
 });
 
+// --- spacebar pause/play ---
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space') return;
+  const tag = (e.target as HTMLElement).tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).closest('.cm-editor')) return;
+  e.preventDefault();
+  stage.toggleAudio();
+});
+
 // --- presence chips ---
 const presenceEl = document.getElementById('presence')!;
 function renderPresence() {
