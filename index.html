@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>jam</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <div id="hud">
+      <div id="brand">JAM</div>
+      <div id="room-label">room: <span id="room-name">—</span></div>
+      <div id="presence"></div>
+      <div id="start-audio" class="nes-btn is-warning">CLICK TO START AUDIO</div>
+    </div>
+    <div id="panes"></div>
+    <div id="toolbar">
+      <button class="nes-btn add-pane" data-kind="code">+ CODE</button>
+      <button class="nes-btn add-pane" data-kind="prompt">+ PROMPT</button>
+      <button class="nes-btn add-pane" data-kind="widget">+ WIDGET</button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
