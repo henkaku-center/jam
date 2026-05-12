@@ -8,7 +8,7 @@ Repo: github.com/gszep/jam.
 
 1. **Never pause the music.** Bad code in any pane must not stop the room. Last-good output keeps running; errors render inline in the pane that broke.
 2. **Walking in is free.** Open the URL → see + hear what's there → start contributing. No signup, no password, no setup.
-3. **Three peer modalities.** Code panes (Hydra/Strudel), prompt panes (natural language → bus events / patches), widget panes (sliders/buttons/XY pads). All addable by anyone. All publish/subscribe to the **signal bus**.
+3. **Four peer modalities.** Code panes (Hydra/Strudel), prompt panes (natural language → bus events / patches), widget panes (sliders/buttons/XY pads), sampler panes (mic recording, slicing, vocoder). All addable by anyone. All publish/subscribe to the **signal bus**.
 4. **Agent is invisible plumbing, not a performer.** Agents reshape the *environment* (helpers, effects, new widget kinds, new editor features) and verify before going live. They do NOT have their own pane and do NOT take solos.
 5. **Aesthetic: early computer games (NES).** Chunky pixels, beveled buttons, palette colors, customizable. Not minimalist IDE chic.
 
@@ -27,12 +27,12 @@ Repo: github.com/gszep/jam.
                   └──────────┬───────────┘
         ┌────────────────────┼──────────────────────┐
         ▼                    ▼                      ▼
-   Code pane            Widget pane            Prompt pane
-   (CodeMirror,         (slider/button/        (NL → intent →
-   per-pane eval)        XY, NES-skinned)       bus / eval / spawn)
+   Code pane            Widget pane            Prompt pane          Sampler pane
+   (CodeMirror,         (slider/button/        (NL → intent →       (mic record,
+   per-pane eval)        XY, NES-skinned)       bus / eval / spawn)  slice, vocoder)
 ```
 
-- **Sync**: Yjs over WebRTC via `y-webrtc` (public signaling: `signaling.yjs.dev`). URL hash = room name.
+- **Sync**: Yjs over WebRTC via `y-webrtc`. Signaling server `signaling.yjs.dev` is unreliable; currently set to empty `[]` so only BroadcastChannel (same-browser tabs) works. Add a self-hosted signaling server for cross-machine sync. URL hash = room name.
 - **Awareness**: `y-protocols/awareness` carries user name + color; rendered as presence chips.
 - **Panes**: `Y.Map` of `Y.Map` keyed by id. Each pane's data lives in a sub-map. Deletion uses a `_deleted: true` tombstone (don't hard-delete from the outer map or remote peers re-mount).
 - **Bus**: just a `Y.Map<string, number>`. Anything can `set(name, value)` or `pulse(name)`. Hydra reads via `b('name')` exposed on `window`.
@@ -52,6 +52,10 @@ src/
     code.ts        — CodeMirror pane bound to Y.Text via y-codemirror.next; audio/visual toggle
     widget.ts      — slider/button/xy widget; signal name + value live in Y.Map
     prompt.ts      — stub agent: regex → intent (set/pulse/visual/audio); writes to bus or evals
+    sampler.ts     — mic recording + waveform + slicing + 16-band vocoder; registers sounds with Strudel
+scripts/
+  sync.mjs         — file watcher: auto-commit + push on save (2s debounce)
+  pull.sh           — auto-pull for Claude Code PreToolUse hook
 index.html, vite.config.ts, tsconfig.json, package.json
 ```
 
@@ -86,14 +90,23 @@ The sync watcher will auto-commit your resolution. Never force-push on main.
 4. **Hydra/Strudel global collision.** Hydra is initialized with `makeGlobal: true`, so `osc`, `noise`, `shape`, `src`, `o0..o3`, `speed`, `bpm`, `fps`, etc. live on `window`. Strudel's `evalScope` overwrites many of those names. If you call `evalScope` after Hydra init without protection, Hydra's render loop dies silently (next `tick()` reads a Strudel `speed` instead of the Hydra one). The current fix in `stage.ts` snapshots Hydra's globals before `evalScope` and re-applies them after. Any new audio module that calls `evalScope`/`evalContext` must do the same dance.
 5. **Eval globals leak to `window`.** Beyond the Hydra/Strudel set, the bus helper `b(name)` is also `window`-scoped. Be careful adding more globals — name collisions will surprise users.
 6. **y-webrtc has no persistence.** A reload with no peers gives you a fresh empty doc. Add `y-indexeddb` for local persistence if needed.
-7. **Audio gesture gate.** Strudel's `initAudioOnFirstClick` waits for *any* real user click and is finicky with programmatic clicks; prefer `initAudio()` followed by `getAudioContext().resume()` triggered from the START AUDIO button. Audio starts on the first click that way (not the second).
+7. **Audio gesture gate.** Strudel's `initAudioOnFirstClick` registers a `mousedown` listener for the *next* click — calling it inside a click handler means it waits for click #2. Use `initAudio()` + `getAudioContext().resume()` directly in the click handler instead.
+8. **Hydra's tick() reads globals every frame.** Beyond the source/output globals, Hydra's sandbox reads `window.speed`, `window.bpm`, `window.fps`, `window.update`, `window.afterUpdate` back into its internal state on every animation frame. When `evalScope` replaces `speed` (number) with a Strudel pattern function, Hydra's time becomes `NaN` and rendering dies silently — canvas goes black with no error. The save/restore list in `stage.ts` must include these runtime props.
+9. **`samples()` must be awaited.** It fetches a manifest JSON from GitHub listing sound names + URLs. Without `await`, patterns that play before the manifest arrives get "sound not found" errors. Individual audio buffers are then lazy-loaded on first trigger — that part is fine.
+10. **Strudel repl `toggle()` is broken.** It calls `scheduler.toggle()` which doesn't exist on the Cyclist class. Use `scheduler.started` to check state, then call `repl.pause()` or `repl.start()`.
+11. **Custom samples via `registerSound`.** Import from `@strudel/webaudio` (re-exported from superdough). Trigger function signature: `(t, value, onEnded) => { node, stop? }`. The `value.n` parameter selects sample variants (slices). Always call `onEnded()` when the sound finishes.
+12. **Spacebar is mapped to audio pause/play.** Ignored when focus is in an input, textarea, or CodeMirror editor.
 
 ## v0 status
 
 What works:
-- Three pane types, drag, per-pane eval, last-good error semantics.
+- Four pane types (code, widget, prompt, sampler), drag, per-pane eval, last-good error semantics.
 - Bus: slider → bus → Hydra (`b('knob')`); prompt → bus; prompt → visual/audio recipes.
+- Sampler: mic recording → waveform → click-to-slice → auto-registers with Strudel as `s("name:N")`.
+- Vocoder: 16-band channel vocoder, mic modulator + sawtooth carrier, carrier freq via bus.
+- Spacebar pause/play for audio.
 - Multi-user sync via y-webrtc; presence chips; URL-as-room.
+- Git auto-sync (`npm run sync`) for real-time collaboration on main branch.
 - NES skin throughout.
 
 What's stubbed / missing:
@@ -107,12 +120,13 @@ What's stubbed / missing:
 
 1. **Modern editor feel**: autocomplete, hover docs, inline error suggestions for Hydra and Strudel APIs (CodeMirror 6 hooks).
 2. **Agent verify-before-merge**: `/agent/propose` endpoint or local hook; offscreen-iframe smoke test; promote on clean.
-3. **More widget kinds**: piano-roll, drum pad, color picker.
+3. **More widget kinds**: piano-roll, drum pad, color picker. Sampler pane needs: sample sharing across peers (currently local-only), waveform zoom, drag-to-select slice regions.
 4. **Persistence**: `y-indexeddb` so refresh doesn't wipe the room.
 5. **Customizable theming** of widgets (per the original vision — "early computer games" is current; users should be able to swap palettes).
 
 ## Working on this repo
 
-- **No worktrees, no hidden folders in the repo.** Work directly in `/Users/vanbalen/__robot` on `main`. The `.claude/` directory is gitignored.
+- **Work directly on `main`.** No branches, no PRs — this is a jam. The `.claude/` directory is gitignored.
 - **Boring stack**: TypeScript, Vite, CodeMirror 6, Yjs, nes.css. Don't introduce a framework (React/Vue/etc.) for the prototype.
 - **Don't add features the task didn't ask for.** Especially: don't add error handling that swallows real bugs (the v0 audio bug hid behind a try/catch that just logged).
+- **Just do it.** Don't ask for confirmation before committing, pushing, or making decisions. This is a creative jam, not a code review.
