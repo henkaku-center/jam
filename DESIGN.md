@@ -1,6 +1,6 @@
 # jam — design
 
-The current `src/` is the v0 prototype. This document is the v1 design: a deliberate pivot from "multi-pane livecoding workspace" to "shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable." Music + visuals are still the point. Everything else here is in service of making the jam feel like a place rather than an IDE.
+A shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable. Music + visuals are the point. Everything else here is in service of making the jam feel like a place rather than an IDE.
 
 ## Vision
 
@@ -14,17 +14,17 @@ Factions and sub-cultures emerge spatially. The electronic-leaning users cluster
 
 These are deliberate guardrails. Each one collapses a category of complexity.
 
-- **2-16 participants per jam.** Small group. Not r/place. Yjs full-doc replication is fine at this size; one tiny server-per-room is enough.
-- **Bounded world, sized to player count.** Age-of-Empires logic — small map for 2 players, big map for 16. ~4096×4096 units feels right as a default; tunable. Not infinite.
+- **2-16 participants per jam.** Small group. Yjs full-doc replication is fine at this size; one tiny server-per-room is enough.
+- **Bounded world, sized to player count.** Small map for 2 players, big map for 16. ~4096×4096 units feels right as a default; tunable. Not infinite.
 - **No rewind, no replay, no time travel.** All live. The system does not help you record, scrub, export, or commodify. When the last person leaves, the room is gone. Ephemeral is a value, not a limitation.
-- **No product framing.** Niche audience, passionate users, livecoding/art ethos. We are not building Bolt-for-music. We are not chasing a market.
-- **No identity / accounts / auth.** URL is the room. Walk in, jam, leave. Same as today.
+- **No product framing.** Niche audience, passionate users, livecoding/art ethos.
+- **No identity / accounts / auth.** URL is the room. Walk in, jam, leave.
 
-## Core concepts (the new vocabulary)
+## Core concepts
 
 **World.** A bounded 2D map. Coordinates are integers in `[0, mapSize)`. The world holds elements and a single shared global clock.
 
-**Element.** A positioned, sized, self-contained bundle of HTML+CSS+JS that can produce sound, visuals, or interactivity. An element is the new "pane" — but generalized. A drum loop, a synth keyboard UI, a Hydra canvas, a Pong game, a particle system, a markdown note, a video player, a chat bubble, a custom shader — all are elements, all the same primitive. Anyone (human or LLM) can create one.
+**Element.** A positioned, sized, self-contained bundle of HTML+CSS+JS that can produce sound, visuals, or interactivity. A drum loop, a synth keyboard UI, a Hydra canvas, a Pong game, a particle system, a markdown note, a video player, a chat bubble, a custom shader — all are elements, all the same primitive. Anyone (human or LLM) can create one.
 
 **Viewport.** Each user's independent camera onto the world: `(camX, camY, zoom)`. Pan with drag, zoom with wheel. Not shared across peers — each user navigates freely.
 
@@ -52,7 +52,6 @@ Yjs doc per room
 Transport:
   - y-websocket (small Node server, single-process, one Yjs doc per room)
   - In-memory state; no persistence across server restart (matches ephemerality)
-  - WebRTC fallback considered but not v1 — keep it simple
 
 Client (parent page):
   - Owns the AudioContext + global clock
@@ -118,7 +117,7 @@ When Yjs reports `elements[id].js` has changed:
 
 Visual mirror: keep the old iframe rendering, mount the new one on top, ramp opacity 0→1 over the same duration, remove the old. Visuals and audio fade synchronously.
 
-This is **Punctual's `<>` crossfade semantics applied at the element level instead of the language level** — one of the most useful patterns surfaced in the prior-art research, finally landing somewhere concrete. The cost is temporarily doubling that element's audio cost for 1-2 bars; well inside Web Audio's budget for 16 simultaneous reloads.
+The cost is temporarily doubling that element's audio cost for 1-2 bars; well inside Web Audio's budget for 16 simultaneous reloads.
 
 ### LLM integration
 
@@ -131,7 +130,7 @@ The LLM is a first-class creation tool, not a separate "prompt pane" type.
 - Crossfade fires automatically on the Yjs change observer.
 - Both A and B's browsers experience the same seamless transition.
 
-The LLM is *not* a special peer. Its edits flow through the same Yjs update channel any human edit would. ("Agent is invisible plumbing" — falls out of the architecture, not enforced by convention.)
+The LLM is *not* a special peer. Its edits flow through the same Yjs update channel any human edit would.
 
 ## MVP scope
 
@@ -156,10 +155,10 @@ The MVP exists to validate one thing: **can two browsers experience a seamless a
 - Persistence across server restart (in-memory only, matches ephemerality)
 - Inter-element signal bus (each element is self-contained for now; revive bus later for synth-button-drives-synth scenarios)
 - Sampler / MIDI / mic / Hydra-specific element types (those become element templates later)
-- NES UI chrome / styling (functional only for MVP)
+- UI chrome / styling (functional only for MVP)
 - Multi-room logic, room discovery, auth
-- OSC bridge to Sonic Pi / Tidal / SuperCollider (later — small, high-leverage)
-- Verify-before-merge for LLM-authored elements (later — sandbox the new element offscreen, smoke-test, only then crossfade)
+- OSC bridge to Sonic Pi / Tidal / SuperCollider
+- Verify-before-merge for LLM-authored elements (sandbox the new element offscreen, smoke-test, only then crossfade)
 
 ### Build order
 
@@ -174,37 +173,14 @@ The MVP exists to validate one thing: **can two browsers experience a seamless a
 
 1. **Same-origin sandboxed iframes** let elements share the parent's `AudioContext` directly (zero latency). But same-origin means a buggy or malicious element's JS can in principle reach into the parent. Acceptable for an MVP run by trusted testers. Future hardening = `MediaStreamAudioDestinationNode` bridge with ~50ms latency, or Web Worker / AudioWorklet isolation.
 2. **LLM round-trip latency** is 2-10s. The crossfade itself is seamless, but the *wait* between prompt and music change is felt. Stream the response, show progress.
-3. **Tempo sync for new elements.** They must start on a bar boundary. Each element gets `clock.nextBar()` on init and uses `osc.start(nextBar)`. Strudel patterns can be evaluated immediately but scheduled to start at the next cycle.
+3. **Tempo sync for new elements.** They must start on a bar boundary. Each element gets `clock.nextBar()` on init and uses `osc.start(nextBar)`.
 4. **Element targeting from prompts.** "Replace this with funkier bass" needs the LLM to know which element you meant. MVP answer: click selects, prompt operates on selection.
 5. **Performance ceiling for many iframes.** Each iframe is a JS realm + render context. ~50 elements is fine; ~500 is not. Element count cap implicit in map size + 16-player constraint.
 
-## Open questions (decide before or during build)
+## Open questions
 
 - Map dimensions: 4096×4096 is a placeholder. Scale with `mapSize = 1024 + 256 * playerCount`?
 - Falloff curve shape: linear ramp from full-volume-inside-viewport to silent-one-viewport-out, or something with a steeper edge?
 - Bar length for crossfade: 1 bar feels punchy, 2 bars feels musical, 4 bars feels ambient. Default 2, expose later.
 - Does the LLM see *all* element source in the doc as context, or only the selected one? Full context is more powerful but expensive on tokens.
 - Visual styling: is the world a flat color, a grid, an image, generative? Probably a subtle grid for spatial reference.
-
-## What's deliberately out of scope (and why)
-
-- **R/place-scale architecture, MMO area-of-interest sharding, lazy hydration by viewport.** The 2-16-player constraint makes these unnecessary. Full-doc Yjs replication just works.
-- **Op-log + snapshots for time travel.** No rewind is a design value. Current state is the only state.
-- **OT (operational transformation).** Yjs CRDTs are the right pick; OT is legacy.
-- **Croquet-style reflector for deterministic replay.** Replay isn't a goal. Time-deterministic audio scheduling across peers is interesting but a v2 question; for MVP, "everyone applies Yjs changes as they arrive" + crossfade absorbs the small latency.
-- **Pure P2P (current y-webrtc setup).** Breaks cross-machine sync, breaks persistence, makes server-side LLM participation impossible. Replaced by y-websocket.
-- **A central, opinionated taxonomy of pane types.** Elements are general; templates provide opinionation. A starter room seeds 4 musical elements so the affordances feel musical, but the substrate is general.
-
-## Lineage (where ideas came from)
-
-The MVP draws explicitly from research into prior livecoding tools and adjacent collaboration architectures:
-
-- **Flok** (codeberg.org/munshkr/flok) — Yjs over y-websocket as the sync layer, central server holds the doc, per-runtime iframe sandboxing to avoid global collisions. Direct architectural ancestor.
-- **Ravioli** (codeberg.org/hardpasta/ravioli) — "there is only one document" + spatial layout as metadata. Inspired the "world, not workspace" framing, though we use positioned elements rather than ASCII flood-fill.
-- **Punctual** (David Ogborn) — the `<>` crossfade-on-cycle-boundary as a language feature. Lifted to the element level as the hot-reload mechanism.
-- **Sonic Pi** — `live_loop` name-indirection (redefine a running loop without stopping it) and `cue`/`sync` as a blocking event bus. Patterns to revisit when we restore inter-element messaging.
-- **Figma** — per-property LWW CRDT, server is dumb relay, no merge logic on server. Validates the "elements as objects with typed cells" model.
-- **Linear** — "not everything needs a CRDT." Strongly-typed objects + LWW is enough for most state; reserve true CRDT for the editor text buffer.
-- **Croquet** — reflector model for deterministic-replay multiplayer. Considered, deferred — not needed at 16-player scale with no replay requirement.
-- **Game audio** (Wwise / FMOD / Minecraft positional Note Blocks / Halo zone music) — spatial audio mixing patterns translated to viewport-relative attenuation + stereo pan.
-- **r/place, MMO area-of-interest management** — surveyed, mostly rejected as overkill at our scale. The "factions emerge from spatial proximity" social dynamic is the part we keep.
