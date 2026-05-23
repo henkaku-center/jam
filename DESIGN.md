@@ -30,6 +30,7 @@ Elements are self-contained visual/audio modules written in pure ES Modules (ESM
     ```javascript
     export default function setup(ctx, prevState) {
       // ctx: { audioCtx, audioOut, bus, domRoot, clock }
+      // clock: { bpm, startTime, onTick(callback) }
       // prevState: Serialized state from previous hot-reloaded instance
       
       let state = {
@@ -42,9 +43,20 @@ Elements are self-contained visual/audio modules written in pure ES Modules (ESM
       osc.connect(ctx.audioOut);
       osc.start();
 
+      // Bulletproof, leak-proof look-ahead scheduling hook managed by parent:
+      // Fires 100ms in advance of every logical 16th note, supplying exact Web Audio timeline target times.
+      // This shields the element (and LLMs) from low-level scheduling boilerplate.
+      const unsubscribe = ctx.clock.onTick(({ step, time, duration, bpm }) => {
+        // Trigger sample-accurate events at 'time'
+        if (step % 4 === 0) {
+          osc.frequency.setValueAtTime(state.frequency * 1.5, time);
+          osc.frequency.exponentialRampToValueAtTime(state.frequency, time + 0.1);
+        }
+      });
+
       return {
         update(tick) {
-          // Optional: Per-frame animation / parameter updates
+          // Optional: Per-frame visual animation updates
           // Automatically skipped when element is virtualized off-screen
         },
         getState() {
@@ -52,8 +64,10 @@ Elements are self-contained visual/audio modules written in pure ES Modules (ESM
           return state;
         },
         destroy() {
-          // Bulletproof cleanup: must disconnect Web Audio nodes
-          // and release any event listeners to prevent memory leaks
+          // Bulletproof cleanup: must disconnect Web Audio nodes,
+          // release listeners, and unsubscribe from clock to prevent memory leaks.
+          // (Note: Parent also performs safety cleanup of registrations on unload)
+          unsubscribe();
           osc.stop();
           osc.disconnect();
         }
@@ -78,32 +92,41 @@ To support dozens of elements on a single canvas, we split **Audio Processing** 
 *   **Visual Virtualization:** If an element is positioned outside the viewport (plus a 1.5x padding margin), its Shadow DOM container is set to `visibility: hidden` (maintaining its layout and running state but saving GPU render cycles) or translated off-screen, and its `update` loop execution is skipped. This keeps the active render context minimal and prevents browser background timer throttling.
 
 ### 6. The Global Nervous System (SignalBus)
-To support modular synthesizers and cross-element coordination, elements connect via a shared **SignalBus** split into two tiers:
-1.  **Local Bus (High Frequency):** High-frequency, in-memory client-side pub/sub for real-time modulation (e.g., LFO values, pitch bend, slider modulations).
-2.  **Global Bus (Low Frequency):** Synced globally across clients using Yjs and WebRTC data channels for state-level triggers (e.g., sequencer step events, play/stop, pattern changes).
+To support modular synthesizers and cross-element coordination, elements connect via a shared **SignalBus** split into two tiers under `ctx.bus`:
 
-*   **Usage:**
-    *   An element publishes: `ctx.bus.pub("kick_trig", 1.0)`.
-    *   An element subscribes: `ctx.bus.sub("kick_trig", (val) => flash(val))`.
+1.  **Local Bus (High Frequency / In-Memory):**
+    High-frequency, in-memory client-side pub/sub for real-time modulation (e.g., LFO values, pitch bend, slider modulations). This is local-only, bypassing the network to prevent congestion.
+    *   **Publish:** `ctx.bus.pub("filter_cutoff", 0.8)`
+    *   **Subscribe:** `const unsub = ctx.bus.sub("filter_cutoff", (val) => { ... })`
+2.  **Global Bus (Low Frequency / State Synced):**
+    Synced globally across clients using Yjs and WebRTC data channels for low-frequency state-level triggers and configurations (e.g., sequencer step events, play/stop, pattern changes, global instrument selections).
+    *   **Publish:** `ctx.bus.pubGlobal("sequencer_pattern", [1, 0, 0, 1])`
+    *   **Subscribe:** `const unsub = ctx.bus.subGlobal("sequencer_pattern", (pattern) => { ... })`
+
+*   **Rule of Thumb for LLMs & Developers:**
+    *   If a value updates multiple times per second (e.g., > 5Hz), use local `pub/sub`.
+    *   If a value updates only on user interaction, state toggles, or structural changes, use `pubGlobal/subGlobal`.
 
 *   **Hot-Reload De-duplication:** During hot-reload crossfades, the old element is marked as "dying." The parent's SignalBus proxy immediately intercepts and discards all publications and subscriptions from the dying element, preventing double-triggering or parameter-clashing while the audio crossfades.
 
 ### 7. Logical Bar-Aligned Hot-Reload & Precise Sync
-We align dynamic module loading to logical sequence ticks using a **Look-Ahead Scheduler ("A Tale of Two Clocks")** to ensure jitter-free, musical transitions:
+We align dynamic module loading and musical sequencing to logical ticks using a **Parent-Managed Look-Ahead Scheduler ("A Tale of Two Clocks")** to ensure jitter-free, musical transitions and zero timing-boilerplate for elements:
 
 *   **The Timeline:** The Yjs doc holds `{ bpm, startTime }`. Each client calculates elapsed logical beats:
     $$\text{elapsedBeats} = (\text{Date.now()} - \text{startTime}) \times \frac{\text{bpm}}{60000}$$
     $$\text{currentBar} = \lfloor \text{elapsedBeats} / 4 \rfloor$$
-*   **Look-Ahead Scheduler:** A low-frequency JS interval (every 25ms) looks ahead 100ms into the Web Audio timeline. When a musical beat falls in this window, it translates the synchronized logical beat to the local hardware-locked `audioCtx.currentTime` and schedules Web Audio parameter changes sample-accurately.
-*   **Hot-Reload Sequence:** When an element's source code is updated:
+*   **Parent-Managed Scheduler:** The parent client runs a high-precision look-ahead loop (every 25ms checking 100ms ahead) converting synchronized logical beats to local hardware-locked `audioCtx.currentTime`.
+    - Instead of elements managing their own timers, the parent broadcasts these target times in advance via `ctx.clock.onTick(({ step, time, duration, bpm }) => { ... })`.
+    - This allows elements to schedule Web Audio events sample-accurately and support micro-timings (like swing or shuffle) effortlessly, while the parent automatically cleans up all subscriptions on reload.
+*   **Downbeat Hot-Reload Sequence:** When an element's source code is updated:
     1.  The parent retrieves the old element's state via `oldElement.getState()`.
     2.  The parent creates a Blob URL of the new code and dynamically imports it: `import(URL.createObjectURL(blob))`.
     3.  The parent instantiates the new element inside a new Shadow Root, passing the retrieved `prevState`.
-    4.  The parent wires up the parallel audio sub-graph with `gain = 0`.
-    5.  The parent schedules a synchronized crossfade at the exact timestamp of the **next local bar boundary** on the sample-accurate Web Audio timeline:
+    4.  The parent wires up the parallel audio sub-graph with `gain = 0` and attaches the new `onTick` scheduler events.
+    5.  The parent schedules a synchronized crossfade exactly on the **downbeat of the next bar** on the sample-accurate Web Audio timeline:
         $$\text{targetTime} = \text{localAudioCtxStartTime} + ((\text{currentBar} + 1) \times 4 \times \frac{60}{\text{bpm}})$$
-    6.  At `targetTime`, the old gain ramps $1 \to 0$ and the new gain ramps $0 \to 1$ over 1 or 2 bars.
-    7.  Once the crossfade finishes, the old element's `destroy()` is called (fully disconnecting its audio nodes and clearing listeners), its Shadow DOM wrapper is removed, and its Blob URL is revoked with `URL.revokeObjectURL(url)`.
+    6.  At `targetTime`, the old element's gain is ramped to 0 and the new element's gain is ramped to 1. This downbeat transition is perceived as a natural musical "drop," completely hiding phase jumps without complex state transfer.
+    7.  Once the crossfade finishes, the old element's `destroy()` is called (fully disconnecting its audio nodes, clearing listeners, and unsubscribing from ticks), its Shadow DOM wrapper is removed, and its Blob URL is revoked with `URL.revokeObjectURL(url)`.
 
 ## System Architecture
 
@@ -139,6 +162,7 @@ We align dynamic module loading to logical sequence ticks using a **Look-Ahead S
 Because we embrace the YOLO space, we use simple, high-performance isolation:
 *   The parent wraps element setup, tick updates, and event callbacks in `try/catch` blocks.
 *   If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, and overlay-displays the console error on that specific element on the canvas while leaving other elements untouched.
+*   **Latest Stable Fallback Recovery:** The parent retains a cache of the last successfully initialized and error-free ESM code blob for each element. If a newly hot-reloaded code version fails during `setup()` or throws errors in its first few execution frames, the parent automatically and gracefully rolls back to the previous stable version. This ensures that a single buggy change or syntax slip never permanently breaks the live performance for other users.
 *   More robust thread-isolated sandboxing (such as offscreen canvas in Web Workers) is deferred for post-PoC development.
 
 ---
