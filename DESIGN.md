@@ -1,186 +1,155 @@
 # jam — design
 
-A shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable. Music + visuals are the point. Everything else here is in service of making the jam feel like a place rather than an IDE.
+A shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable. The map is a collaborative canvas of interactive tools, instruments, and visualizers built on-the-fly.
 
 ## Vision
 
-A jam is **a world, not a room**. You open the URL and drop into an ongoing performance that's been continuously happening. You hear what's there. You see a bounded 2D landscape of activity — a corner full of dancing visuals, a region with piled-up UI controllers, a Pong game someone claimed, a cluster of beatboxer waveforms, a section where someone's MIDI keyboard is drawing live melody. You can zoom in to contribute, zoom out to take in the whole composition. You can also just spectate; the transition between watching and contributing is invisible.
+A jam is **a world, not a room**. You drop into a bounded, ongoing 2D landscape. You see and hear localized pockets of activity — a drum sequencer in the top-left, a generative shader responding to beats, a MIDI-reactive synthesizer, or a custom audio visualizer. You can zoom in to focus and play, zoom out to hear the entire composition, or pan around to find different sections.
 
-Crucially: **what you hear depends on where you're looking.** Your viewport is the instrument. Pan across the world and the mix changes, sources entering and leaving your stereo field. Zoom in tight on the beatbox corner and you hear it mono and loud. Zoom out and the whole map plays at once, panned left-to-right across the stereo image. *Two users in the same room hear different mixes* because they're framing different parts of the world.
+*   **Spatial Audio Viewport:** What you hear depends on where you look. Your viewport is your stereo frame. Distance attenuates volume, horizontal offset sets stereo panning, and distant sources are dynamically lowpassed. Two users in the same room hear completely different mixes because they are framing different parts of the map.
+*   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller or computer keyboard, record sequences, or modulate it with an LFO element running in an adjacent grid quadrant.
+*   **The YOLO Ethos:** This is a high-trust, playful space. Breaking things is part of the fun. We optimize for low latency, rapid iteration, and direct access to Web Audio over strict security boundaries.
 
-Factions and sub-cultures emerge spatially. The electronic-leaning users cluster in one quadrant; the acoustic faction takes another; cross-pollinators work the border. There is no moderator, no curator, no genre tag — only proximity and visible activity.
+## Constraints & Guardrails
 
-## Constraints (what we're not doing)
+- **2-16 participants per room.** Standard Yjs full-doc replication and simple signaling are sufficient.
+- **Bounded world.** Sized to `4096×4096` pixels as a baseline.
+- **No storage, no rewind.** All performances are live and ephemeral. When the last participant leaves, the room's transient state is deleted.
+- **Keyboard & Controller-Centric Navigation:** Panning/zooming can be done via mouse (drag and wheel), but also via keyboard (WASD/arrows) and MIDI binds to keep hands free for coding and instrument playing.
+- **No Auth / Accounts.** URL hash contains the room ID. Land, jam, leave.
 
-These are deliberate guardrails. Each one collapses a category of complexity.
+## Core Concepts
 
-- **2-16 participants per jam.** Small group. Yjs full-doc replication is fine at this size; one tiny server-per-room is enough.
-- **Bounded world, sized to player count.** Small map for 2 players, big map for 16. ~4096×4096 units feels right as a default; tunable. Not infinite.
-- **No rewind, no replay, no time travel.** All live. The system does not help you record, scrub, export, or commodify. When the last person leaves, the room is gone. Ephemeral is a value, not a limitation.
-- **No product framing.** Niche audience, passionate users, livecoding/art ethos.
-- **No identity / accounts / auth.** URL is the room. Walk in, jam, leave.
+### 1. The World
+A bounded 2D coordinate space. It holds an array of active **Elements**, a **Signal Bus** for inter-element coordination, and a single shared logical **Global Clock**.
 
-## Core concepts
+### 2. Elements (Micro-App Contract)
+An Element is a self-contained visual/audio module. It is written in pure HTML/CSS/JS and runs in a same-origin iframe to allow zero-latency connection to the parent's `AudioContext`.
 
-**World.** A bounded 2D map. Coordinates are integers in `[0, mapSize)`. The world holds elements and a single shared global clock.
+*   **Contract:** Every element exports a single default setup function:
+    ```javascript
+    export default function setup(ctx) {
+      // ctx: { audioCtx, audioOut, bus, domRoot, clock }
+      
+      const osc = ctx.audioCtx.createOscillator();
+      osc.connect(ctx.audioOut);
+      osc.start();
 
-**Element.** A positioned, sized, self-contained bundle of HTML+CSS+JS that can produce sound, visuals, or interactivity. A drum loop, a synth keyboard UI, a Hydra canvas, a Pong game, a particle system, a markdown note, a video player, a chat bubble, a custom shader — all are elements, all the same primitive. Anyone (human or LLM) can create one.
+      return {
+        update(tick) {
+          // Optional: Per-frame animation / parameter updates
+        },
+        destroy() {
+          // Bulletproof cleanup
+          osc.stop();
+          osc.disconnect();
+        }
+      };
+    }
+    ```
 
-**Viewport.** Each user's independent camera onto the world: `(camX, camY, zoom)`. Pan with drag, zoom with wheel. Not shared across peers — each user navigates freely.
+### 3. Spatial Mix & Viewport
+Each client maintains a local `AudioContext` and an independent `Viewport` `(x, y, zoom)`. Every animation frame, the parent computes each element's relative spatial mix on its local timeline:
+*   **Attenuation:** Full volume inside the visible viewport; rolls off to silent as it moves outside.
+*   **Panning:** Mapped to horizontal offset in the current viewport (`-1` far-left, `+1` far-right).
+*   **Lowpass:** Optional BiQuad filter frequency decreases as distance increases to simulate muffled air absorption.
 
-**Spatial mix.** Each user's local audio output is a per-frame computed mix of all audio-producing elements in the world, weighted by their position relative to the viewport. Distance attenuates volume; horizontal offset sets stereo pan; far things may be lowpassed for "muffled" depth.
+### 4. Focus Mode (Local Viewport Soloing)
+Holding a hotkey (e.g., `Tab`) activates **Focus Mode** on the client. 
+*   All audio-producing elements *outside* the client's current visual viewport are instantly and smoothly muted (`gainNode.gain.setTargetAtTime(0, now, 0.1)`).
+*   This is entirely client-side and silent to all other peers. It allows a creator to isolate a specific cluster of instruments to debug, program, or code in isolation without disrupting the shared global jam.
 
-**Sub-graph.** The per-element chain of Web Audio nodes (`Gain → StereoPanner → BiquadFilter(lowpass) → master`) that sits between the element's sound output and the user's speakers. The parent updates these nodes' values every animation frame based on element position vs. viewport. The element itself doesn't know about distance or pan — it just emits.
+### 5. Level of Detail (Visual Virtualization)
+To support hundreds of elements on a single canvas, we split **Audio Processing** from **DOM Rendering**:
+*   **Continuous Audio:** Web Audio nodes are incredibly lightweight. The audio sub-graph for every element continues to process in the background, ensuring a continuous global soundscape.
+*   **Visual Virtualization:** If an element is positioned outside the viewport (plus a 1.5x padding margin), its iframe is set to `display: none` or unmounted, and its `requestAnimationFrame` loop is suspended. This keeps the active DOM footprint and render context count minimal, capping CPU/GPU usage regardless of total element count.
 
-**Global clock.** A single shared `{ bpm, startTime }` lives in the Yjs doc. All elements receive it on init and align their playback to it. Tempo is shared across the world (per-region tempo is not v1).
+### 6. The Global Nervous System (SignalBus)
+To restore rich collaboration and build interconnected modular synthesizers across the canvas, elements are connected via a shared, lightweight **SignalBus**:
+*   An element can publish a value to a named signal: `ctx.bus.pub("kick_trig", 1.0)`.
+*   Other elements can subscribe to that signal: `ctx.bus.sub("kick_trig", (val) => flash(val))`.
+*   The parent proxies this pub/sub stream. Signals can be scoped locally or synced globally across peers using Yjs or transient WebRTC data channels.
+*   This lets users build modular setups: an LFO element modulating a synth in another corner, or a sequencer sending gates to multiple sound generators.
 
-**Crossfade hot-reload.** When an element's source changes, the old instance keeps playing while the new instance starts in parallel. On the next bar boundary, gain ramps from old→new over 1-2 bars, then the old instance is destroyed. Sample-accurate via `gain.linearRampToValueAtTime`. The music never pauses; the visual fades synchronously. This is **the load-bearing technical idea** — if it works, the rest is straightforward.
+### 7. Logical Bar-Aligned Hot-Reload
+We align dynamic module loading to logical sequence ticks rather than absolute clock synchronization.
+*   **Timeline Mapping:** The Yjs doc holds `{ bpm, startTime }`. Each client calculates elapsed logical beats:
+    $$\text{elapsedBeats} = (\text{Date.now()} - \text{startTime}) \times \frac{\text{bpm}}{60000}$$
+    $$\text{currentBar} = \lfloor \text{elapsedBeats} / 4 \rfloor$$
+*   **Hot-Reload Sequence:** When an element's source code is updated:
+    1.  The parent creates a Blob URL of the new code and dynamically imports it: `import(URL.createObjectURL(blob))`.
+    2.  The parent instantiates a parallel audio sub-graph with `gain = 0` and mounts the new element.
+    3.  The parent schedules a synchronized crossfade at the exact timestamp of the **next local bar boundary**:
+        $$\text{targetTime} = \text{localAudioCtxStartTime} + ((\text{currentBar} + 1) \times 4 \times \frac{60}{\text{bpm}})$$
+    4.  At `targetTime`, the old gain ramps $1 \to 0$ and the new gain ramps $0 \to 1$ over 1 or 2 bars.
+    5.  Once the crossfade finishes, the old element's `destroy()` is called and its iframe is dismantled.
+*   This ensures musical continuity with zero clicks or interruptions. Transitions feel like planned arrangements.
 
-## Architecture
+## System Architecture
 
 ```
-Yjs doc per room
-  ├── elements: Y.Map<id, ElementState>
-  │     └── { x, y, w, h, js, version }
-  ├── clock: Y.Map<string, any>
-  │     └── { bpm, startTime }
-  └── awareness (Y.Awareness)
-        └── { userId, name, color,
-              cursor: { elementId, x, y },
-              selection: { elementId, from, to } }
-
-Transport:
-  - y-websocket (small Node server, single-process, one Yjs doc per room)
-  - In-memory state; no persistence across server restart (matches ephemerality)
-
-Client (parent page):
-  - Owns the AudioContext + global clock
-  - Owns the camera
-  - Hosts one sandboxed iframe per element (same-origin sandbox, see Risks)
-  - Maintains a per-element audio sub-graph in the parent's AudioContext
-  - Every animation frame: updates each sub-graph based on viewport
-  - On Yjs change to element.js: triggers crossfade
-
-Element (inside iframe):
-  - Receives a ctx = { audio, audioOut, clock, root } from parent on mount
-  - Connects its sound to ctx.audioOut (the Gain node in parent's sub-graph)
-  - Renders visuals into ctx.root
-  - Returns { destroy() } so parent can cleanly tear it down after crossfade
+                       [ Yjs Shared Doc ]
+                               │
+            ┌──────────────────┼──────────────────┐
+            ▼                  ▼                  ▼
+      [ elements ]         [ clock ]        [ SignalBus ]
+   Y.Map<id, Element>   { bpm, startTime }   Y.Map<name, val>
+            │                                     │
+            └──────────┬──────────────────────────┘
+                       │ (Syncs over y-webrtc / y-websocket)
+                       ▼
+               [ Client Parent ]
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+  [ AudioContext ]            [ Canvas / Viewport ]
+  ├── Master Out              ├── Camera: (x, y, zoom)
+  └── Sub-graphs (per-elem)   ├── Keyboard/Mouse Controller
+       Gain ───────┐          ├── Focus Mode Muter (Tab)
+       Panner ─────┼──────────┤
+       Lowpass ────┘          └── Visually Virtualized Viewports
+                                    │
+                         ┌──────────┴──────────┐ (Same-Origin)
+                         ▼                     ▼
+                   [ Element 1 ]         [ Element 2 ]
+                     (Iframe)              (Iframe)
 ```
 
-### Spatial audio model
+### Sandbox & Execution Safety
 
-For each element, on each animation frame:
+Because we embrace the YOLO space, we use simple, high-performance try/catch isolation:
+*   The parent wraps element setup, tick updates, and event callbacks in `try/catch` blocks.
+*   If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, overlay-displays the console error on that specific element on the canvas, and leaves other elements untouched.
 
-```
-gain.value     = viewportRelativeAttenuation(elementPos, camera, viewport)
-pan.value      = horizontalOffsetInViewport(elementPos.x, camera.x, zoom)
-filter.freq    = lowpassFromDistance(distance)
-```
+---
 
-Where:
-- **viewportRelativeAttenuation:** inside the viewport → full volume; one viewport-width outside → ~30%; many viewport-widths away → silent. As the user zooms out, the viewport grows, so more elements end up "inside" and play at full. At maximum zoom-out the whole map plays at full mix — by design.
-- **horizontalOffsetInViewport:** element's x-position within the visible frame maps to stereo pan (-1 left, +1 right, 0 center). Works at all zoom levels — even fully zoomed out you hear a wide stereo image of the whole map laid out left-to-right.
-- **lowpassFromDistance:** optional, makes distant things sound muffled instead of just quieter. One `BiquadFilterNode` per source. Cheap.
+## MVP Scope
 
-### Element lifecycle
+The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular iframe elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
 
-```js
-// element module shape
-export default function (ctx) {
-  // ctx = { audio: AudioContext, audioOut: GainNode,
-  //         clock: { bpm, startTime, nextBar() },
-  //         root: HTMLElement }
+### IN (MVP Scope)
+1.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys.
+2.  **Modular Iframe Elements:** Direct same-origin iframe mounting utilizing ESM Blob URL dynamic imports.
+3.  **Basic Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter.
+4.  **Local Focus Mode:** Hold `Tab` to mute everything outside the current viewport.
+5.  **Signal Bus:** Direct pub/sub engine available to elements via `ctx.bus`.
+6.  **Bar-Aligned Hot-Reload:** Logical timeline mapping using Yjs clock to trigger gain-ramped crossfades.
+7.  **LLM Integration:** Prompt bar that transmits instructions to the model, which outputs ES Modules.
+8.  **Conversational Prompt Pushback:** If a prompt is ambiguous (e.g. "make it louder"), the model pushes back asking exactly which element/track is being modified.
 
-  const osc = ctx.audio.createOscillator()
-  osc.frequency.value = 220
-  osc.connect(ctx.audioOut)
-  osc.start(ctx.clock.nextBar())   // align to next downbeat
+### OUT (Deferred)
+- Multi-room routing and room discovery.
+- Persistent database storage (ephemerality matches design).
+- Advanced audio isolation structures (Web Workers/AudioWorklets).
+- Sophisticated collaborative mouse pointers / presence avatars (added post-MVP).
 
-  return {
-    destroy() { osc.stop(); osc.disconnect() }
-  }
-}
-```
+---
 
-The element doesn't know about distance, pan, viewport, or other elements. It receives a clock, an audio output bus, and a DOM root. It produces audio and visuals. It cleans up on `destroy()`. That's the entire contract.
+## Build Order
 
-### Crossfade procedure (the validation milestone)
-
-When Yjs reports `elements[id].js` has changed:
-
-1. Keep the old instance running. Do not destroy it yet.
-2. Construct a second sub-graph for the same `id`. Mount the new element into it with `gain = 0`.
-3. Wait for the next bar boundary from the global clock so both instances are downbeat-aligned.
-4. Ramp old gain `1 → 0` and new gain `0 → 1` over 1-2 bars using `gain.linearRampToValueAtTime`. Sample-accurate; no clicks.
-5. At ramp end, call old instance's `destroy()` and free its sub-graph.
-
-Visual mirror: keep the old iframe rendering, mount the new one on top, ramp opacity 0→1 over the same duration, remove the old. Visuals and audio fade synchronously.
-
-The cost is temporarily doubling that element's audio cost for 1-2 bars; well inside Web Audio's budget for 16 simultaneous reloads.
-
-### LLM integration
-
-The LLM is a first-class creation tool, not a separate "prompt pane" type.
-
-- A simple prompt input (fixed UI bar at the bottom of the screen, not yet itself an element).
-- User can click an element to select it before prompting → LLM operates on that element's source. Empty selection → LLM creates a new element at the click position (or default position).
-- LLM returns a full element source bundle (a JS module exporting `default function (ctx) { ... }`).
-- Client inserts/replaces in the Yjs doc.
-- Crossfade fires automatically on the Yjs change observer.
-- Both A and B's browsers experience the same seamless transition.
-
-The LLM is *not* a special peer. Its edits flow through the same Yjs update channel any human edit would.
-
-## MVP scope
-
-The MVP exists to validate one thing: **can two browsers experience a seamless audio+visual element swap, driven by an LLM prompt, without interrupting the music?** Everything else is deferred until that works.
-
-### In
-
-- Bounded 4096×4096 world, mouse wheel zoom, drag-to-pan, independent viewport per user
-- 4 hardcoded seed elements at fixed positions, each looping one simple pattern
-- Per-element spatial audio sub-graph with viewport-relative falloff (volume, pan, optional lowpass)
-- Single global clock (`{ bpm, startTime }`) in the Yjs doc
-- y-websocket server (small Node process) + Yjs doc per room
-- One LLM prompt input bar (fixed UI, single textarea + send)
-- LLM returns element source → insert/replace in Yjs doc
-- Crossfade triggered on every element-source change, bar-aligned
-- Two browsers experience identical seamless transitions
-
-### Out (deferred)
-
-- Cursors / selections / peer presence (cosmetic, add after MVP works)
-- Manual code editing of elements (LLM is the only authoring path for MVP)
-- Persistence across server restart (in-memory only, matches ephemerality)
-- Inter-element signal bus (each element is self-contained for now; revive bus later for synth-button-drives-synth scenarios)
-- Sampler / MIDI / mic / Hydra-specific element types (those become element templates later)
-- UI chrome / styling (functional only for MVP)
-- Multi-room logic, room discovery, auth
-- OSC bridge to Sonic Pi / Tidal / SuperCollider
-- Verify-before-merge for LLM-authored elements (sandbox the new element offscreen, smoke-test, only then crossfade)
-
-### Build order
-
-1. **Spatial canvas + 4 static elements, no audio.** Verify zoom/pan feels right.
-2. **Wire each element's hardcoded audio into a per-element sub-graph.** All four play together at fixed volume.
-3. **Implement viewport-relative falloff in the animation-frame loop.** Pan around; verify the mix changes naturally.
-4. **Single Node y-websocket server, two browsers, same doc.** Verify positions sync.
-5. **Crossfade triggered manually via devtools.** Change an element's source from the console; confirm no audible interruption. **This is the validation milestone.**
-6. **LLM prompt integration.** Once the crossfade is solid, plug in prompt → element source → Yjs insert.
-
-## Risks
-
-1. **Same-origin sandboxed iframes** let elements share the parent's `AudioContext` directly (zero latency). But same-origin means a buggy or malicious element's JS can in principle reach into the parent. Acceptable for an MVP run by trusted testers. Future hardening = `MediaStreamAudioDestinationNode` bridge with ~50ms latency, or Web Worker / AudioWorklet isolation.
-2. **LLM round-trip latency** is 2-10s. The crossfade itself is seamless, but the *wait* between prompt and music change is felt. Stream the response, show progress.
-3. **Tempo sync for new elements.** They must start on a bar boundary. Each element gets `clock.nextBar()` on init and uses `osc.start(nextBar)`.
-4. **Element targeting from prompts.** "Replace this with funkier bass" needs the LLM to know which element you meant. MVP answer: click selects, prompt operates on selection.
-5. **Performance ceiling for many iframes.** Each iframe is a JS realm + render context. ~50 elements is fine; ~500 is not. Element count cap implicit in map size + 16-player constraint.
-
-## Open questions
-
-- Map dimensions: 4096×4096 is a placeholder. Scale with `mapSize = 1024 + 256 * playerCount`?
-- Falloff curve shape: linear ramp from full-volume-inside-viewport to silent-one-viewport-out, or something with a steeper edge?
-- Bar length for crossfade: 1 bar feels punchy, 2 bars feels musical, 4 bars feels ambient. Default 2, expose later.
-- Does the LLM see *all* element source in the doc as context, or only the selected one? Full context is more powerful but expensive on tokens.
-- Visual styling: is the world a flat color, a grid, an image, generative? Probably a subtle grid for spatial reference.
+1.  **Visual Canvas & Viewport Navigation:** Render a subtle reference coordinate grid. Implement smooth WASD/arrow keyboard panning and mouse drag/wheel zoom.
+2.  **Static Element Rendering & Virtualization:** Place 4 dummy visual elements on the canvas. Implement the Visual Level-of-Detail (LOD) system—hiding or pausing elements outside the padded viewport.
+3.  **Spatial Audio Sub-graphs:** Wire a continuous synthesizer loop to each element. Implement the spatial coordinate formulas updating gain, pan, and filter frequency on every animation frame. Verify that panning and zooming change the stereo image and distance attenuation perfectly.
+4.  **Signal Bus Integration:** Enable a simple LFO element to publish a value, and a visual element to subscribe and animate. Verify that modular signal connections work seamlessly on the same canvas.
+5.  **Yjs Synchronization:** Integrate `y-webrtc` (or stable signaling). Synchronize element coordinates, Signal Bus events, and the logical clock across multiple browser tabs.
+6.  **Blob URL dynamic imports & Hot-Reload Crossfades:** Set up console-triggered code injections. Implement the logical timeline-matching code to execute a smooth $1 \to 0 \to 1$ crossfade on the exact next bar boundary.
+7.  **LLM Toolmaker Prompt Integration:** Build the prompt panel. Connect it to the LLM agent, configuring it to return clean ESM modules and push back on ambiguous targeting requests.
