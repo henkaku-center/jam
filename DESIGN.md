@@ -9,7 +9,7 @@ A jam is **a collaborative 2D space designed for local, in-person jam sessions a
 To eliminate multi-machine speaker phasing, audio latency, and browser autoplay blockades, the system runs on a **Host-Renderer / Thin-Controller** model:
 *   **The Host-Renderer (Master Feed):** A single central machine connected to the venue's main sound system (speakers) and projector. It is the sole client that initializes the Web Audio `AudioContext` and renders the master spatial mix.
 *   **The Spatial Projector Viewport:** What the room hears and sees depends on where the **Host** machine looks. The Host viewport acts as the master stereo frame and camera. Distance on the canvas relative to the Host camera attenuates volume, horizontal offset sets stereo panning, and distant sources are dynamically lowpassed. The Host acts like a spatial "Cameraman" or "DJ," focusing the room's attention on different pockets of the canvas.
-*   **Thin-Controller Clients:** Other participants connect to the local server on their own laptops. Their local clients are completely silent (the local Web Audio engine is omitted or suspended to conserve CPU/battery). However, they retain full interactive control of the 2D canvas — dragging elements, writing code, editing sequencers, and playing MIDI keyboards.
+*   **Thin-Controller Clients:** Other participants connect to the local server on their own laptops. Their local clients are completely silent (the local Web Audio engine is omitted or suspended to conserve CPU/battery). However, they retain full interactive control of the 2D canvas — dragging elements, writing code, editing sequencers, and playing MIDI keyboards. To ensure code runs identically across clients without conditional checks, the Thin-Controller context mocks `audioCtx` and `audioOut` as functional but silent dummy objects.
 *   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The server-side LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller, record sequences, or modulate it with an LFO element running in an adjacent quadrant, all rendered instantly in real-time on the master room projector.
 *   **The YOLO Ethos:** This is a high-trust, playful space. Breaking things is part of the fun. We optimize for low latency, rapid iteration, and direct access to Web Audio over strict security boundaries.
 
@@ -17,7 +17,7 @@ To eliminate multi-machine speaker phasing, audio latency, and browser autoplay 
 
 - **Local Jam Setting:** Specifically designed for 2-16 participants gathered in a physical room sharing a local network (Wi-Fi or Ethernet), feeding a single projector and main sound system.
 - **Canvas Boundaries:** Bounded for testing to a standard 1080p workspace (`1920×1080` pixels).
-- **No storage, no rewind:** All performances are live and ephemeral. When the last participant leaves, the room's transient state is deleted.
+- **Ephemeral State with Server-Backed Recovery:** While transient runtime states (like current LFO phase or unsaved volume faders) are ephemeral, the server automatically commits compiled element source `.js` files and a canvas workspace manifest (`workspace_layout.json`) to disk on every successful build or merge. If the Host-Renderer crashes or is refreshed, it automatically queries the manifest and restores the entire canvas structure, preventing catastrophic silence in physical venues.
 - **Keyboard & Controller-Centric Navigation:** Panning/zooming can be done via mouse (drag and wheel), but also via keyboard (WASD/arrows) and MIDI binds to keep hands free for coding and instrument playing.
 - **No Auth / Accounts:** URL hash contains the room ID. Land, jam, leave.
 
@@ -85,7 +85,7 @@ Only the **Host-Renderer** maintains an active Web Audio `AudioContext`.
     *   **Attenuation:** Full volume inside the Host's visual viewport; rolls off smoothly to silent as an element moves outside.
     *   **Panning:** Mapped to horizontal offset in the Host's viewport (`-1` far-left, `+1` far-right).
     *   **Lowpass:** A BiQuad filter frequency decreases as the element's distance from the center of the Host's viewport increases.
-*   **Thin Controllers:** Participant laptops render the identical canvas positions but skip all audio sub-graph and panning calculations since they do not initialize a local `AudioContext`.
+*   **Thin Controllers:** Participant laptops render the identical canvas positions but execute silent, mocked audio sub-graphs (via a silent, mocked `audioCtx` and `audioOut` node) to bypass physical sound rendering while preserving identical code execution.
 
 ### 4. Focus Mode (Host Viewport Soloing)
 Holding a hotkey (e.g., `Tab`) on the **Host-Renderer** activates **Focus Mode**:
@@ -130,10 +130,29 @@ To support modular synthesizers and cross-element coordination, elements connect
 ### 7. Logical Bar-Aligned Hot-Reload & Precise Sync
 We align dynamic module loading and musical sequencing to logical ticks using a **Parent-Managed Look-Ahead Scheduler ("A Tale of Two Clocks")** to ensure jitter-free, musical transitions and zero timing-boilerplate for elements:
 
-*   **The Timeline & Simplified Sync:** The Yjs doc holds `{ bpm, startTime }`. Each client calculates elapsed logical beats:
-    $$\text{elapsedBeats} = (\text{Date.now()} - \text{startTime}) \times \frac{\text{bpm}}{60000}$$
+*   **The Timeline & Synchronized Sync (Visual NTP):** The Yjs doc holds `{ bpm, startTime }`. To handle device-to-device clock drift over local Wi-Fi without full hardware synchronization protocols, clients perform a visual NTP-style handshake with the server upon connection:
+    1.  The client transmits local timestamp $T_1$.
+    2.  The server/host replies with its clock timestamp $T_2$.
+    3.  The client registers receipt at $T_3$.
+    4.  The round-trip latency is estimated as $RTT = T_3 - T_1$, and the client's clock offset is computed as $\text{offset} = T_2 - T_1 - (RTT / 2)$.
+    
+    Using this, each client calculates the synchronized time $\text{syncTime} = \text{Date.now()} + \text{offset}$ and derives continuous logical beats:
+    $$\text{elapsedBeats} = (\text{syncTime} - \text{startTime}) \times \frac{\text{bpm}}{60000}$$
     $$\text{currentBar} = \lfloor \text{elapsedBeats} / 4 \rfloor$$
-    For the PoC, we assume standard system clocks (`Date.now()`) are sufficiently synchronized (such as in same-machine multi-tab testing environments). We defer complex sub-millisecond NTP clock alignment algorithms to post-PoC.
+    
+    This visual NTP handshake brings client-to-host drift down to under $5\text{ms}$ on typical local networks, aligning visual playheads perfectly with the master audio mix.
+
+*   **Continuous Tempo Pivot (BPM Transitions):** 
+    If a user adjusts the BPM dynamically, recalculating the beat count directly would cause a catastrophic playhead jump on the timeline. To perform a continuous tempo change, the changing client calculates a new pivot `startTime` atomically and commits it to Yjs alongside the new `bpm`.
+    
+    Let $T$ be the current synchronized time ($\text{syncTime}$). First, the exact beat count $B$ at the pivot point is computed using the old clock configuration:
+    $$B = (T - \text{startTime}_{\text{old}}) \times \frac{\text{bpm}_{\text{old}}}{60000}$$
+    
+    Then, the new `startTime` is derived using the target BPM such that the beat count $B$ is perfectly continuous at time $T$:
+    $$\text{startTime}_{\text{new}} = T - \left(\frac{B \times 60000}{\text{bpm}_{\text{new}}}\right)$$
+    
+    Both `bpm` and `startTime` are updated simultaneously in the shared Yjs document, transitioning the room's tempo with zero phase jumps or sequencer glitches.
+
 *   **Parent-Managed Scheduler:** The parent client runs a high-precision look-ahead loop (every 25ms checking 100ms ahead) converting synchronized logical beats to local hardware-locked `audioCtx.currentTime`.
     - Instead of elements managing their own timers, the parent broadcasts these target times in advance via `ctx.clock.onTick(({ step, time, duration, bpm }) => { ... })`.
     - This allows elements to schedule Web Audio events sample-accurately and support micro-timings (like swing or shuffle) effortlessly, while the parent automatically cleans up all subscriptions on reload.
@@ -165,7 +184,7 @@ We align dynamic module loading and musical sequencing to logical ticks using a 
          ▼                                               ▼
   [ Host-Renderer Client ]                       [ Thin-Controller Client ]
   (Main Projector / Sound System)                (Participant Laptops)
-  ├── AudioContext (Active)                      ├── AudioContext (Omitted / Silent)
+  ├── AudioContext (Active)                      ├── AudioContext (Mocked / Silent)
   │    ├── Master Out                            └── Canvas & Viewport (Independent)
   │    └── Sub-graphs (per-elem)                      ├── Edit / Code panel
   │         ├── Gain                                  ├── Coordinate navigation
@@ -187,6 +206,7 @@ Because we embrace the YOLO space, we use high-performance main-thread execution
 *   **LLM-Driven State Schema Migration:** During hot-reloads, the parent retrieves the old instance's state via `getState()`. Since the LLM operates in the server environment with full context, the code generator automatically inspects the previous version's state schema and includes custom inline translation helpers within the new code to map older schemas (e.g., `prevState.tempo` to the new `state.bpm`) seamlessly.
 *   **Runtime Error Catching:** The parent wraps element setup, tick updates, and event callbacks in `try/catch` blocks. If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, and overlay-displays the console error on that specific element on the canvas while leaving other elements untouched.
 *   **Latest Stable Fallback Recovery:** The parent retains a cache of the last successfully initialized and error-free ESM file URL/version for each element. If a newly hot-reloaded code version fails during `setup()` or throws errors in its first few execution frames, the parent automatically and gracefully rolls back to the previous stable version. This ensures that a single buggy change or syntax slip never permanently breaks the live performance for other users.
+*   **ESM Memory Leak Limitation:** Because V8 and other modern browser JS engines do not support garbage collection or unloading of dynamically imported ES Modules (`import('...?v=...')`), every hot-reload leaves a minute trace of JS engine heap memory. For the PoC, we accept this platform constraint as the cost of zero-boilerplate main-thread execution, but mitigate it by ensuring that all associated DOM, closure reference, and Web Audio resources are aggressively garbage collected. Users are advised to perform a simple browser refresh during extended multi-hour coding runs.
 *   More robust thread-isolated sandboxing (such as offscreen canvas in Web Workers) is deferred for post-PoC development.
 
 ---
@@ -196,8 +216,8 @@ Because we embrace the YOLO space, we use high-performance main-thread execution
 The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular Shadow DOM elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
 
 ### IN (MVP Scope)
-1.  **Dual-Mode Client Architecture:** Supports `Host-Renderer` mode (active Web Audio relative to host viewport) and `Thin-Controller` mode (silent participant laptops for coding, tweaking, and navigation).
-2.  **Low-Latency Controller Channel:** A raw, lightweight local WebSocket relay on the server to route high-frequency controller inputs (MIDI, slider values, LFO modulation) directly from Thin-Controllers to the Host-Renderer, bypassing Yjs's document syncing cycle.
+1.  **Dual-Mode Client Architecture:** Supports `Host-Renderer` mode (active Web Audio relative to host viewport) and `Thin-Controller` mode (silent participant laptops for coding, tweaking, and navigation). To keep codebase logic identical, Thin-Controller clients are provided with a robust mockup of `audioCtx` and `audioOut` that replication-tracks connections silently rather than throwing runtime errors.
+2.  **Low-Latency Controller Channel:** A raw, lightweight local WebSocket relay on the server to route high-frequency, instantaneous controller inputs (MIDI keys, CC slider values, and real-time gate triggers) directly from Thin-Controllers to the Host-Renderer, completely bypassing the heavier Yjs document synchronization cycle. This bypasses network CRDT overhead to deliver a sub-$15\text{ms}$ controller-to-sound response time, with the Host scheduling incoming socket events with an optional tiny $5\text{ms}$ safety buffer to mask network jitter.
 3.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys on a fixed 1080p canvas. Elements are draggable by default and resizable on request.
 4.  **Modular Shadow DOM Elements:** Direct Shadow DOM mounting utilizing dynamic ESM imports of server-served/compiled modules, with full support for CDN imports (e.g. `esm.sh`).
 5.  **Host-Side Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter calculated relative to the Host camera.
