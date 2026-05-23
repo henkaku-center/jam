@@ -9,7 +9,7 @@ A jam is **a collaborative 2D space designed for local, in-person jam sessions a
 To eliminate multi-machine speaker phasing, audio latency, and browser autoplay blockades, the system runs on a **Host-Renderer / Thin-Controller** model:
 *   **The Host-Renderer (Master Feed):** A single central machine connected to the venue's main sound system (speakers) and projector. It is the sole client that initializes the Web Audio `AudioContext` and renders the master spatial mix.
 *   **The Spatial Projector Viewport:** What the room hears and sees depends on where the **Host** machine looks. The Host viewport acts as the master stereo frame and camera. Distance on the canvas relative to the Host camera attenuates volume, horizontal offset sets stereo panning, and distant sources are dynamically lowpassed. The Host acts like a spatial "Cameraman" or "DJ," focusing the room's attention on different pockets of the canvas.
-*   **Thin-Controller Clients:** Other participants connect to the local server on their own laptops. Their local clients are completely silent (the local Web Audio engine is omitted or suspended to conserve CPU/battery). However, they retain full interactive control of the 2D canvas — dragging elements, writing code, editing sequencers, and playing MIDI keyboards. To ensure code runs identically across clients without conditional checks, the Thin-Controller context mocks `audioCtx` and `audioOut` as functional but silent dummy objects.
+*   **Thin-Controller Clients:** Other participants connect to the local server on their own laptops. Their local clients are completely silent. To ensure element code runs identically across both Host and Controller contexts without requiring custom mocks or conditional checks (such as `if (ctx.audioOut)`), Thin-Controllers initialize a real Web Audio `AudioContext`, but the parent context routes the final audio output to a master `GainNode` set to `0`. This guarantees identical API execution and syntax validity while keeping participants' laptops perfectly silent.
 *   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The server-side LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller, record sequences, or modulate it with an LFO element running in an adjacent quadrant, all rendered instantly in real-time on the master room projector.
 *   **The YOLO Ethos:** This is a high-trust, playful space. Breaking things is part of the fun. We optimize for low latency, rapid iteration, and direct access to Web Audio over strict security boundaries.
 
@@ -79,13 +79,13 @@ Elements are self-contained visual/audio modules written in pure ES Modules (ESM
     ```
 
 ### 3. Spatial Mix & Viewport
-Only the **Host-Renderer** maintains an active Web Audio `AudioContext`. 
+*   **Audio Engines:** Both Host and Controller environments run a real Web Audio `AudioContext`. The parent harness on Thin-Controllers mutes its master output (`gainNode.gain.setValueAtTime(0, now)`) to prevent local sound rendering, while the Host-Renderer's master output remains audible.
 *   **The Master Viewport:** The Host viewport `(x, y, zoom)` (typically projected on a wall/screen) acts as the master stereo frame. 
 *   **Spatial Calculations:** Every animation frame, the Host computes each element's relative coordinate offset relative to the **Host's visual viewport** to drive the Web Audio spatial pipeline:
     *   **Attenuation:** Full volume inside the Host's visual viewport; rolls off smoothly to silent as an element moves outside.
     *   **Panning:** Mapped to horizontal offset in the Host's viewport (`-1` far-left, `+1` far-right).
     *   **Lowpass:** A BiQuad filter frequency decreases as the element's distance from the center of the Host's viewport increases.
-*   **Thin Controllers:** Participant laptops render the identical canvas positions but execute silent, mocked audio sub-graphs (via a silent, mocked `audioCtx` and `audioOut` node) to bypass physical sound rendering while preserving identical code execution.
+*   **Thin Controllers:** Participant laptops render the identical canvas positions and execute identical Web Audio graphs silently. Because they execute the true Web Audio code locally, any canvas visualizers connected to audio nodes (e.g., AnalyserNode FFT) continue to work natively on developers' screens.
 
 ### 4. Focus Mode (Host Viewport Soloing)
 Holding a hotkey (e.g., `Tab`) on the **Host-Renderer** activates **Focus Mode**:
@@ -102,11 +102,13 @@ To support dozens of elements on a single canvas, we split **Audio Processing** 
 To support modular synthesizers and cross-element coordination, elements connect via a shared **SignalBus** split into two tiers under `ctx.bus`:
 
 1.  **Local Bus (High Frequency / In-Memory):**
-    High-frequency, in-memory client-side pub/sub for real-time modulation (e.g., LFO values, pitch bend, slider modulations). This is local-only, bypassing the network to prevent congestion.
+    High-frequency, in-memory client-side pub/sub for real-time algorithmic modulation (e.g., LFO values, envelope gates, frequency modulations). This is local-only, bypassing the network to prevent congestion.
+    *   **Intra-Host Modulation:** Since this bus is strictly in-memory, it is reserved for automated signal pathways running within the active audio engine (e.g., an LFO element modulating a synthesizer filter).
+    *   **No local-bus UI controls:** User-driven interactions (knobs, sliders, button triggers) manipulated by a participant on a Thin-Controller must *never* publish to the Local Bus, as those events would fail to reach the Host-Renderer. Instead, all user-initiated UI events must be routed via the **Low-Latency WebSocket Channel** or the **Global Bus**.
     *   **Publish:** `ctx.bus.pub("filter_cutoff", 0.8)`
     *   **Subscribe:** `const unsub = ctx.bus.sub("filter_cutoff", (val) => { ... })`
 2.  **Global Bus (Low Frequency / State Synced):**
-    Synced globally across clients using Yjs and WebRTC data channels for low-frequency state-level triggers and configurations (e.g., sequencer step events, play/stop, pattern changes, global instrument selections).
+    Synced globally across clients using Yjs and a local `y-websocket` server for low-frequency state-level triggers and configurations (e.g., sequencer step events, play/stop, pattern changes, global instrument selections). To ensure absolute offline reliability in physical venues, signaling completely bypasses public internet servers and runs strictly over the local LAN WebSocket server.
     *   **Publish:** `ctx.bus.pubGlobal("sequencer_pattern", [1, 0, 0, 1])`
     *   **Subscribe:** `const unsub = ctx.bus.subGlobal("sequencer_pattern", (pattern) => { ... })`
 
@@ -121,8 +123,8 @@ To support modular synthesizers and cross-element coordination, elements connect
     Because the LLM compiler resides in the same environment as the server and possesses complete awareness of the workspace layout and element IDs, we completely bypass complex dynamic routing/patching UI boilerplate. When a user asks to "connect LFO 1 to Synthesizer 2," the server-side LLM identifies the precise unique IDs of both target elements and **hardcodes the namespaced subscription key** directly into the compiled ESM code for the target elements. This creates direct, zero-overhead point-to-point local pathways.
 
 *   **Rule of Thumb for LLMs & Developers:**
-    *   If a value updates multiple times per second (e.g., > 5Hz), use local `pub/sub`.
-    *   If a value updates only on user interaction, state toggles, or structural changes, use `pubGlobal/subGlobal`.
+    *   If a value is generated algorithmically and updates multiple times per second (e.g., > 5Hz, like an LFO or clock generator), use local `pub/sub`.
+    *   If a value is modified by a human user interacting with a UI component (dragging a slider, pressing a virtual key, toggling a step), it must be broadcast over the **Low-Latency WebSocket Channel** or the **Global Bus (Yjs)** so the Host-Renderer receives the action and alters the active sound wave.
     *   Keep keys instance-specific (default) unless explicit cross-element communication is required (use `global:` prefix) or established via LLM compile-time link mapping.
 
 *   **Hot-Reload De-duplication:** During hot-reload crossfades, the old element is marked as "dying." The parent's SignalBus proxy immediately intercepts and discards all publications and subscriptions from the dying element, preventing double-triggering or parameter-clashing while the audio crossfades.
@@ -157,7 +159,7 @@ We align dynamic module loading and musical sequencing to logical ticks using a 
     - Instead of elements managing their own timers, the parent broadcasts these target times in advance via `ctx.clock.onTick(({ step, time, duration, bpm }) => { ... })`.
     - This allows elements to schedule Web Audio events sample-accurately and support micro-timings (like swing or shuffle) effortlessly, while the parent automatically cleans up all subscriptions on reload.
 *   **Downbeat Hot-Reload Sequence:** When an element's synced source file URL is updated:
-    1.  **Pre-flight Module Fetching:** To mitigate network latency risks, the parent client initiates the dynamic ESM import and caches the module *before* scheduling any downbeat: `import(fileUrl + '?v=' + Date.now())`.
+    1.  **Pre-flight Function/Module Compilation:** To mitigate network latency and completely eliminate V8 engine memory leaks caused by dynamic ESM caching, the parent fetches the module source as raw text. The server-side LLM compiler transpiles/wraps this module into a self-contained Immediately Invoked Function Expression (IIFE) string. The parent client fetches this string and compiles/evaluates it locally using `new Function()`. This ensures that when the element is eventually destroyed, the entire closure is 100% garbage-collected.
     2.  Once the module successfully compiles and is loaded in memory, the parent retrieves the old element's state via `oldElement.getState()`.
     3.  The parent instantiates the new element inside a new Shadow Root, passing the retrieved `prevState`.
     4.  The parent wires up the parallel audio sub-graph with `gain = 0` and attaches the new `onTick` scheduler events.
@@ -178,13 +180,13 @@ We align dynamic module loading and musical sequencing to logical ticks using a 
              Y.Map<id, Element>   { bpm, startTime }   Y.Map<name, val>
                       │                                     │
                       └──────────┬──────────────────────────┘
-                                 │ (Syncs over Local Wi-Fi / y-websocket / WebRTC)
+                                 │ (Syncs over Local Wi-Fi / local y-websocket)
                                  ▼
          ┌───────────────────────┴───────────────────────┐
          ▼                                               ▼
   [ Host-Renderer Client ]                       [ Thin-Controller Client ]
   (Main Projector / Sound System)                (Participant Laptops)
-  ├── AudioContext (Active)                      ├── AudioContext (Mocked / Silent)
+  ├── AudioContext (Audible)                     ├── AudioContext (Muted master gain)
   │    ├── Master Out                            └── Canvas & Viewport (Independent)
   │    └── Sub-graphs (per-elem)                      ├── Edit / Code panel
   │         ├── Gain                                  ├── Coordinate navigation
@@ -206,7 +208,7 @@ Because we embrace the YOLO space, we use high-performance main-thread execution
 *   **LLM-Driven State Schema Migration:** During hot-reloads, the parent retrieves the old instance's state via `getState()`. Since the LLM operates in the server environment with full context, the code generator automatically inspects the previous version's state schema and includes custom inline translation helpers within the new code to map older schemas (e.g., `prevState.tempo` to the new `state.bpm`) seamlessly.
 *   **Runtime Error Catching:** The parent wraps element setup, tick updates, and event callbacks in `try/catch` blocks. If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, and overlay-displays the console error on that specific element on the canvas while leaving other elements untouched.
 *   **Latest Stable Fallback Recovery:** The parent retains a cache of the last successfully initialized and error-free ESM file URL/version for each element. If a newly hot-reloaded code version fails during `setup()` or throws errors in its first few execution frames, the parent automatically and gracefully rolls back to the previous stable version. This ensures that a single buggy change or syntax slip never permanently breaks the live performance for other users.
-*   **ESM Memory Leak Limitation:** Because V8 and other modern browser JS engines do not support garbage collection or unloading of dynamically imported ES Modules (`import('...?v=...')`), every hot-reload leaves a minute trace of JS engine heap memory. For the PoC, we accept this platform constraint as the cost of zero-boilerplate main-thread execution, but mitigate it by ensuring that all associated DOM, closure reference, and Web Audio resources are aggressively garbage collected. Users are advised to perform a simple browser refresh during extended multi-hour coding runs.
+*   **Leak-Proof Dynamic Evaluation:** Because V8 and other modern browser JS engines do not support garbage collection or unloading of dynamically imported ES Modules (`import('...?v=...')`), standard dynamic hot-reloading can accumulate heap memory leaks over time. To achieve infinite continuous uptime for multi-hour venue performances, we bypass dynamic imports entirely for hot-reloads. The server-side LLM compiler transpiles modules into a self-contained functional string wrapper (e.g., an IIFE), and the parent client compiles and evaluates it via `new Function()`. Once an element's `destroy()` is called and its outer bindings are released, the dynamic function closure is 100% garbage-collected by the browser engine, ensuring a leak-proof execution environment.
 *   More robust thread-isolated sandboxing (such as offscreen canvas in Web Workers) is deferred for post-PoC development.
 
 ---
@@ -216,13 +218,13 @@ Because we embrace the YOLO space, we use high-performance main-thread execution
 The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular Shadow DOM elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
 
 ### IN (MVP Scope)
-1.  **Dual-Mode Client Architecture:** Supports `Host-Renderer` mode (active Web Audio relative to host viewport) and `Thin-Controller` mode (silent participant laptops for coding, tweaking, and navigation). To keep codebase logic identical, Thin-Controller clients are provided with a robust mockup of `audioCtx` and `audioOut` that replication-tracks connections silently rather than throwing runtime errors.
+1.  **Dual-Mode Client Architecture:** Supports `Host-Renderer` mode (audible Master audio spatial mix) and `Thin-Controller` mode (silent participant laptops). Both modes execute the identical Web Audio API engine, but the parent context on Thin-Controllers routes its final audio output to a master `GainNode` set to `0`. This keeps participant laptops silent while ensuring perfect, warning-free code replication and functional local canvas visualizers.
 2.  **Low-Latency Controller Channel:** A raw, lightweight local WebSocket relay on the server to route high-frequency, instantaneous controller inputs (MIDI keys, CC slider values, and real-time gate triggers) directly from Thin-Controllers to the Host-Renderer, completely bypassing the heavier Yjs document synchronization cycle. This bypasses network CRDT overhead to deliver a sub-$15\text{ms}$ controller-to-sound response time, with the Host scheduling incoming socket events with an optional tiny $5\text{ms}$ safety buffer to mask network jitter.
 3.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys on a fixed 1080p canvas. Elements are draggable by default and resizable on request.
-4.  **Modular Shadow DOM Elements:** Direct Shadow DOM mounting utilizing dynamic ESM imports of server-served/compiled modules, with full support for CDN imports (e.g. `esm.sh`).
+4.  **Modular Shadow DOM Elements:** Direct Shadow DOM mounting utilizing dynamic `new Function()` evaluation of server-transpiled modules to guarantee leak-proof continuous performance, with full support for CDN imports (e.g. `esm.sh`).
 5.  **Host-Side Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter calculated relative to the Host camera.
 6.  **Host Focus Mode:** Hold `Tab` on the Host client to mute everything outside the main projector viewport.
-7.  **Two-Tier Signal Bus:** High-frequency local pub/sub combined with low-frequency global state sync over Yjs.
+7.  **Two-Tier Signal Bus:** High-frequency local pub/sub combined with low-frequency global state sync over a local, offline LAN `y-websocket` server.
 8.  **Bar-Aligned Hot-Reload (Host):** Look-ahead scheduler combining global beats with sample-accurate Web Audio timelines to perform gain-ramped crossfades.
 9.  **In-Memory State Preservation:** Contract utilizing `setup(ctx, prevState)` and `getState()` to transfer state seamlessly on hot-reload.
 10. **Server-Side LLM Compiler & Target Mapping:** An active LLM agent session on the server managing dynamic element generation in the workspace:
@@ -247,6 +249,6 @@ The core objective of the MVP is to prove the viability of **a spatial 2D world 
 3.  **Static Element Rendering & Virtualization:** Place 4 dummy visual elements inside Shadow Roots on the canvas. Implement the Visual Level-of-Detail (LOD) virtualization system, testing that elements off-screen are correctly set to `visibility: hidden` and their `update` loops are skipped.
 4.  **Host-Side Spatial Audio Sub-graphs & Look-Ahead Scheduler:** Wire a continuous synthesizer loop to each element on the Host-Renderer client. Implement the spatial panning, volume attenuation, and lowpass filter calculations relative to the Host camera. Establish the Host's look-ahead scheduler converting logical beats to local `audioCtx.currentTime`.
 5.  **Two-Tier Signal Bus Integration:** Implement the two-tier SignalBus. Verify that local pub/sub works in-memory and global pub/sub syncs state via Yjs. Integrate the instance-ID namespacing proxy.
-6.  **Yjs Synchronization:** Integrate `y-webrtc` (or stable local signaling) on the local Wi-Fi network. Synchronize elements coordinates, clock configs `{ bpm, startTime }`, and global SignalBus events across multiple browser tabs and participant laptops.
-7.  **Dynamic ESM imports & Hot-Reload Crossfades:** Implement dynamic ESM imports of server-compiled modules on the Host-Renderer. Integrate pre-flight fetching, adaptive boundary offsets, `getState()`, and `setup(ctx, prevState)` to trigger seamless gain-ramped crossfades at the next bar boundary.
+6.  **Yjs Synchronization:** Integrate a local, offline LAN `y-websocket` server. Synchronize element coordinates, clock configs `{ bpm, startTime }`, and global SignalBus events across multiple browser tabs and participant laptops with zero internet dependencies.
+7.  **Dynamic new Function Evaluation & Hot-Reload Crossfades:** Implement dynamic `new Function()` compilation of server-transpiled functional modules. Integrate pre-flight fetching/compilation, adaptive boundary offsets, `getState()`, and `setup(ctx, prevState)` to trigger seamless gain-ramped crossfades at the next bar boundary with 100% garbage collectability.
 8.  **Server-Side LLM Compiler Integration:** Set up the server-side LLM compiler with targeted prompt routing (sending the active file path along with the user's prompt). Implement the canvas-to-file mapping via Yjs. Construct the compile-time wrapper to automatically inject Web Audio/DOM tracker instrumentation and state translation logic into compiled ESM modules.
