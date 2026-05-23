@@ -4,16 +4,16 @@ A shared 2D world where music and visuals are spatially situated, hot-reloadable
 
 ## Vision
 
-A jam is **a world, not a room**. You drop into a bounded, ongoing 2D landscape. You see and hear localized pockets of activity — a drum sequencer in the top-left, a generative shader responding to beats, a MIDI-reactive synthesizer, or a custom audio visualizer. You can zoom in to focus and play, zoom out to hear the entire composition, or pan around to find different sections.
+A jam is **a world, not a room**. You drop into a bounded 2D landscape. You see and hear localized pockets of activity — a drum sequencer in the top-left, a generative shader responding to beats, a MIDI-reactive synthesizer, or a custom audio visualizer. You can zoom in to focus and play, zoom out to hear the entire composition, or pan around to find different sections.
 
 *   **Spatial Audio Viewport:** What you hear depends on where you look. Your viewport is your stereo frame. Distance attenuates volume, horizontal offset sets stereo panning, and distant sources are dynamically lowpassed. Two users in the same room hear completely different mixes because they are framing different parts of the map.
-*   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller or computer keyboard, record sequences, or modulate it with an LFO element running in an adjacent grid quadrant.
+*   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller or computer keyboard, record sequences, or modulate it with an LFO element running in an adjacent quadrant.
 *   **The YOLO Ethos:** This is a high-trust, playful space. Breaking things is part of the fun. We optimize for low latency, rapid iteration, and direct access to Web Audio over strict security boundaries.
 
 ## Constraints & Guardrails
 
 - **2-16 participants per room.** Standard Yjs full-doc replication and simple signaling are sufficient.
-- **Bounded world.** Sized to `4096×4096` pixels as a baseline.
+- **Canvas Boundaries.** Bounded for testing to a standard 1080p workspace (`1920×1080` pixels).
 - **No storage, no rewind.** All performances are live and ephemeral. When the last participant leaves, the room's transient state is deleted.
 - **Keyboard & Controller-Centric Navigation:** Panning/zooming can be done via mouse (drag and wheel), but also via keyboard (WASD/arrows) and MIDI binds to keep hands free for coding and instrument playing.
 - **No Auth / Accounts.** URL hash contains the room ID. Land, jam, leave.
@@ -24,23 +24,36 @@ A jam is **a world, not a room**. You drop into a bounded, ongoing 2D landscape.
 A bounded 2D coordinate space. It holds an array of active **Elements**, a **Signal Bus** for inter-element coordination, and a single shared logical **Global Clock**.
 
 ### 2. Elements (Micro-App Contract)
-An Element is a self-contained visual/audio module. It is written in pure HTML/CSS/JS and runs in a same-origin iframe to allow zero-latency connection to the parent's `AudioContext`.
+Elements are self-contained visual/audio modules written in pure ES Modules (ESM). Instead of heavy, slow iframes, they run in the main document thread inside isolated **Shadow DOM** containers. This provides perfect CSS style encapsulation and ultra-low latency access to the parent’s `AudioContext` without the overhead, timer throttling, or garbage collection memory leaks of iframes.
 
-*   **Contract:** Every element exports a single default setup function:
+*   **Contract:** Every element exports a default `setup` function that can receive optional persistent state from a prior version (during hot-reload or page refresh).
     ```javascript
-    export default function setup(ctx) {
+    export default function setup(ctx, prevState) {
       // ctx: { audioCtx, audioOut, bus, domRoot, clock }
+      // prevState: Serialized state from previous hot-reloaded instance
       
+      let state = {
+        frequency: prevState?.frequency || 440,
+        ...prevState
+      };
+
       const osc = ctx.audioCtx.createOscillator();
+      osc.frequency.setValueAtTime(state.frequency, ctx.audioCtx.currentTime);
       osc.connect(ctx.audioOut);
       osc.start();
 
       return {
         update(tick) {
           // Optional: Per-frame animation / parameter updates
+          // Automatically skipped when element is virtualized off-screen
+        },
+        getState() {
+          // Optional: Return serializable state to preserve across hot-reloads
+          return state;
         },
         destroy() {
-          // Bulletproof cleanup
+          // Bulletproof cleanup: must disconnect Web Audio nodes
+          // and release any event listeners to prevent memory leaks
           osc.stop();
           osc.disconnect();
         }
@@ -60,30 +73,37 @@ Holding a hotkey (e.g., `Tab`) activates **Focus Mode** on the client.
 *   This is entirely client-side and silent to all other peers. It allows a creator to isolate a specific cluster of instruments to debug, program, or code in isolation without disrupting the shared global jam.
 
 ### 5. Level of Detail (Visual Virtualization)
-To support hundreds of elements on a single canvas, we split **Audio Processing** from **DOM Rendering**:
-*   **Continuous Audio:** Web Audio nodes are incredibly lightweight. The audio sub-graph for every element continues to process in the background, ensuring a continuous global soundscape.
-*   **Visual Virtualization:** If an element is positioned outside the viewport (plus a 1.5x padding margin), its iframe is set to `display: none` or unmounted, and its `requestAnimationFrame` loop is suspended. This keeps the active DOM footprint and render context count minimal, capping CPU/GPU usage regardless of total element count.
+To support dozens of elements on a single canvas, we split **Audio Processing** from **DOM Rendering**:
+*   **Continuous Audio:** Web Audio nodes are extremely lightweight. Because elements run in the main window context rather than unmounted iframes, the audio sub-graph for every element continues to process continuously in the background.
+*   **Visual Virtualization:** If an element is positioned outside the viewport (plus a 1.5x padding margin), its Shadow DOM container is set to `visibility: hidden` (maintaining its layout and running state but saving GPU render cycles) or translated off-screen, and its `update` loop execution is skipped. This keeps the active render context minimal and prevents browser background timer throttling.
 
 ### 6. The Global Nervous System (SignalBus)
-To restore rich collaboration and build interconnected modular synthesizers across the canvas, elements are connected via a shared, lightweight **SignalBus**:
-*   An element can publish a value to a named signal: `ctx.bus.pub("kick_trig", 1.0)`.
-*   Other elements can subscribe to that signal: `ctx.bus.sub("kick_trig", (val) => flash(val))`.
-*   The parent proxies this pub/sub stream. Signals can be scoped locally or synced globally across peers using Yjs or transient WebRTC data channels.
-*   This lets users build modular setups: an LFO element modulating a synth in another corner, or a sequencer sending gates to multiple sound generators.
+To support modular synthesizers and cross-element coordination, elements connect via a shared **SignalBus** split into two tiers:
+1.  **Local Bus (High Frequency):** High-frequency, in-memory client-side pub/sub for real-time modulation (e.g., LFO values, pitch bend, slider modulations).
+2.  **Global Bus (Low Frequency):** Synced globally across clients using Yjs and WebRTC data channels for state-level triggers (e.g., sequencer step events, play/stop, pattern changes).
 
-### 7. Logical Bar-Aligned Hot-Reload
-We align dynamic module loading to logical sequence ticks rather than absolute clock synchronization.
-*   **Timeline Mapping:** The Yjs doc holds `{ bpm, startTime }`. Each client calculates elapsed logical beats:
+*   **Usage:**
+    *   An element publishes: `ctx.bus.pub("kick_trig", 1.0)`.
+    *   An element subscribes: `ctx.bus.sub("kick_trig", (val) => flash(val))`.
+
+*   **Hot-Reload De-duplication:** During hot-reload crossfades, the old element is marked as "dying." The parent's SignalBus proxy immediately intercepts and discards all publications and subscriptions from the dying element, preventing double-triggering or parameter-clashing while the audio crossfades.
+
+### 7. Logical Bar-Aligned Hot-Reload & Precise Sync
+We align dynamic module loading to logical sequence ticks using a **Look-Ahead Scheduler ("A Tale of Two Clocks")** to ensure jitter-free, musical transitions:
+
+*   **The Timeline:** The Yjs doc holds `{ bpm, startTime }`. Each client calculates elapsed logical beats:
     $$\text{elapsedBeats} = (\text{Date.now()} - \text{startTime}) \times \frac{\text{bpm}}{60000}$$
     $$\text{currentBar} = \lfloor \text{elapsedBeats} / 4 \rfloor$$
+*   **Look-Ahead Scheduler:** A low-frequency JS interval (every 25ms) looks ahead 100ms into the Web Audio timeline. When a musical beat falls in this window, it translates the synchronized logical beat to the local hardware-locked `audioCtx.currentTime` and schedules Web Audio parameter changes sample-accurately.
 *   **Hot-Reload Sequence:** When an element's source code is updated:
-    1.  The parent creates a Blob URL of the new code and dynamically imports it: `import(URL.createObjectURL(blob))`.
-    2.  The parent instantiates a parallel audio sub-graph with `gain = 0` and mounts the new element.
-    3.  The parent schedules a synchronized crossfade at the exact timestamp of the **next local bar boundary**:
+    1.  The parent retrieves the old element's state via `oldElement.getState()`.
+    2.  The parent creates a Blob URL of the new code and dynamically imports it: `import(URL.createObjectURL(blob))`.
+    3.  The parent instantiates the new element inside a new Shadow Root, passing the retrieved `prevState`.
+    4.  The parent wires up the parallel audio sub-graph with `gain = 0`.
+    5.  The parent schedules a synchronized crossfade at the exact timestamp of the **next local bar boundary** on the sample-accurate Web Audio timeline:
         $$\text{targetTime} = \text{localAudioCtxStartTime} + ((\text{currentBar} + 1) \times 4 \times \frac{60}{\text{bpm}})$$
-    4.  At `targetTime`, the old gain ramps $1 \to 0$ and the new gain ramps $0 \to 1$ over 1 or 2 bars.
-    5.  Once the crossfade finishes, the old element's `destroy()` is called and its iframe is dismantled.
-*   This ensures musical continuity with zero clicks or interruptions. Transitions feel like planned arrangements.
+    6.  At `targetTime`, the old gain ramps $1 \to 0$ and the new gain ramps $0 \to 1$ over 1 or 2 bars.
+    7.  Once the crossfade finishes, the old element's `destroy()` is called (fully disconnecting its audio nodes and clearing listeners), its Shadow DOM wrapper is removed, and its Blob URL is revoked with `URL.revokeObjectURL(url)`.
 
 ## System Architecture
 
@@ -106,50 +126,52 @@ We align dynamic module loading to logical sequence ticks rather than absolute c
   └── Sub-graphs (per-elem)   ├── Keyboard/Mouse Controller
        Gain ───────┐          ├── Focus Mode Muter (Tab)
        Panner ─────┼──────────┤
-       Lowpass ────┘          └── Visually Virtualized Viewports
+       Lowpass ────┘          └── Visually Virtualized Elements
                                     │
-                         ┌──────────┴──────────┐ (Same-Origin)
+                         ┌──────────┴──────────┐ (Dynamic ESM)
                          ▼                     ▼
                    [ Element 1 ]         [ Element 2 ]
-                     (Iframe)              (Iframe)
+                    (Shadow DOM)          (Shadow DOM)
 ```
 
 ### Sandbox & Execution Safety
 
-Because we embrace the YOLO space, we use simple, high-performance try/catch isolation:
+Because we embrace the YOLO space, we use simple, high-performance isolation:
 *   The parent wraps element setup, tick updates, and event callbacks in `try/catch` blocks.
-*   If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, overlay-displays the console error on that specific element on the canvas, and leaves other elements untouched.
+*   If an element throws a runtime error, the parent intercepts it, freezes its visual update loop, and overlay-displays the console error on that specific element on the canvas while leaving other elements untouched.
+*   More robust thread-isolated sandboxing (such as offscreen canvas in Web Workers) is deferred for post-PoC development.
 
 ---
 
 ## MVP Scope
 
-The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular iframe elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
+The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular Shadow DOM elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
 
 ### IN (MVP Scope)
-1.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys.
-2.  **Modular Iframe Elements:** Direct same-origin iframe mounting utilizing ESM Blob URL dynamic imports.
-3.  **Basic Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter.
-4.  **Local Focus Mode:** Hold `Tab` to mute everything outside the current viewport.
-5.  **Signal Bus:** Direct pub/sub engine available to elements via `ctx.bus`.
-6.  **Bar-Aligned Hot-Reload:** Logical timeline mapping using Yjs clock to trigger gain-ramped crossfades.
-7.  **LLM Integration:** Prompt bar that transmits instructions to the model, which outputs ES Modules.
-8.  **Conversational Prompt Pushback:** If a prompt is ambiguous (e.g. "make it louder"), the model pushes back asking exactly which element/track is being modified.
+1.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys on a fixed 1080p canvas.
+2.  **Element Portability:** Elements are draggable by default, and resizable if explicitly requested.
+3.  **Modular Shadow DOM Elements:** Direct Shadow DOM mounting utilizing ESM Blob URL dynamic imports with full support for CDN imports (e.g. `esm.sh`).
+4.  **Basic Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter.
+5.  **Local Focus Mode:** Hold `Tab` to mute everything outside the current viewport.
+6.  **Two-Tier Signal Bus:** High-frequency local pub/sub combined with low-frequency global state sync over Yjs.
+7.  **Bar-Aligned Hot-Reload:** Look-ahead scheduler combining global beats with sample-accurate Web Audio timelines to perform gain-ramped crossfades.
+8.  **In-Memory State Preservation:** Contract utilizing `setup(ctx, prevState)` and `getState()` to transfer state seamlessly on hot-reload.
+9.  **LLM Integration & Prompt Injection:** Prompt bar that transmits instructions to the model along with a context injection describing the current canvas elements and active SignalBus keys. The model outputs clean ES Modules and pushes back on ambiguous targeting requests.
 
 ### OUT (Deferred)
 - Multi-room routing and room discovery.
 - Persistent database storage (ephemerality matches design).
-- Advanced audio isolation structures (Web Workers/AudioWorklets).
-- Sophisticated collaborative mouse pointers / presence avatars (added post-MVP).
+- Advanced sandbox boundaries / off-main-thread Web Workers.
+- Sophisticated collaborative mouse pointers / presence avatars.
 
 ---
 
 ## Build Order
 
-1.  **Visual Canvas & Viewport Navigation:** Render a subtle reference coordinate grid. Implement smooth WASD/arrow keyboard panning and mouse drag/wheel zoom.
-2.  **Static Element Rendering & Virtualization:** Place 4 dummy visual elements on the canvas. Implement the Visual Level-of-Detail (LOD) system—hiding or pausing elements outside the padded viewport.
-3.  **Spatial Audio Sub-graphs:** Wire a continuous synthesizer loop to each element. Implement the spatial coordinate formulas updating gain, pan, and filter frequency on every animation frame. Verify that panning and zooming change the stereo image and distance attenuation perfectly.
-4.  **Signal Bus Integration:** Enable a simple LFO element to publish a value, and a visual element to subscribe and animate. Verify that modular signal connections work seamlessly on the same canvas.
+1.  **Visual Canvas & Viewport Navigation:** Render a subtle reference coordinate grid. Implement smooth WASD/arrow keyboard panning and mouse drag/wheel zoom. Make elements draggable by default.
+2.  **Static Element Rendering & Virtualization:** Place 4 dummy visual elements inside Shadow Roots on the canvas. Implement the Visual Level-of-Detail (LOD) system—marking elements off-screen with `visibility: hidden` and skipping their `update` loop execution.
+3.  **Spatial Audio Sub-graphs & Look-Ahead Scheduler:** Wire a continuous synthesizer loop to each element. Implement the spatial coordinate formulas updating gain, pan, and filter frequency. Establish the look-ahead scheduler converting logical beats to local `audioCtx.currentTime`.
+4.  **Signal Bus Integration:** Enable a simple LFO element to publish a value, and a visual element to subscribe and animate. Implement de-duplication flags for "dying" elements during reload.
 5.  **Yjs Synchronization:** Integrate `y-webrtc` (or stable signaling). Synchronize element coordinates, Signal Bus events, and the logical clock across multiple browser tabs.
-6.  **Blob URL dynamic imports & Hot-Reload Crossfades:** Set up console-triggered code injections. Implement the logical timeline-matching code to execute a smooth $1 \to 0 \to 1$ crossfade on the exact next bar boundary.
-7.  **LLM Toolmaker Prompt Integration:** Build the prompt panel. Connect it to the LLM agent, configuring it to return clean ESM modules and push back on ambiguous targeting requests.
+6.  **Blob URL dynamic imports & Hot-Reload Crossfades:** Implement dynamic ESM imports. Combine the look-ahead scheduler, `getState()`, and `setup(ctx, prevState)` to trigger seamless gain-ramped crossfades at the next bar boundary.
+7.  **LLM Toolmaker Prompt Integration:** Build the prompt panel. Connect it to the LLM agent, configuring it to receive canvas state injections, output clean ESM modules, and push back on ambiguous targeting requests.
