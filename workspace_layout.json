@@ -1,8 +1,8 @@
 {
   "elem_6yvdmyw32": {
     "id": "elem_6yvdmyw32",
-    "x": 1126,
-    "y": 464,
+    "x": 1265,
+    "y": 500,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_6yvdmyw32_synth.js",
@@ -21,8 +21,8 @@
   },
   "elem_r33wx7l6t": {
     "id": "elem_r33wx7l6t",
-    "x": 472,
-    "y": 525,
+    "x": 326,
+    "y": 840,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_r33wx7l6t_synth.js",
@@ -31,8 +31,8 @@
   },
   "elem_1i6ds6woc": {
     "id": "elem_1i6ds6woc",
-    "x": 161,
-    "y": 504,
+    "x": 490,
+    "y": 838,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_1i6ds6woc_synth.js",
@@ -41,8 +41,8 @@
   },
   "elem_7n8owx0mw": {
     "id": "elem_7n8owx0mw",
-    "x": 368,
-    "y": 367,
+    "x": 64,
+    "y": 213,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_7n8owx0mw_synth.js",
@@ -61,8 +61,8 @@
   },
   "elem_vb83y4upc": {
     "id": "elem_vb83y4upc",
-    "x": 397,
-    "y": 502,
+    "x": 578,
+    "y": 293,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_vb83y4upc_synth.js",
@@ -71,8 +71,8 @@
   },
   "elem_6vhufj5x2": {
     "id": "elem_6vhufj5x2",
-    "x": 842,
-    "y": 272,
+    "x": 1288,
+    "y": 271,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_6vhufj5x2_synth.js",
@@ -81,12 +81,42 @@
   },
   "elem_fym437ld9": {
     "id": "elem_fym437ld9",
-    "x": 676,
-    "y": 106,
+    "x": 997,
+    "y": 70,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_fym437ld9_synth.js",
     "type": "synth",
     "prompt": "testing testing 123"
+  },
+  "elem_wlt5d6ic3": {
+    "id": "elem_wlt5d6ic3",
+    "x": 1251,
+    "y": 745,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_wlt5d6ic3_synth.js",
+    "type": "synth",
+    "prompt": ""
+  },
+  "elem_oqsdz3gnc": {
+    "id": "elem_oqsdz3gnc",
+    "x": 1009,
+    "y": 327,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_oqsdz3gnc_synth.js",
+    "type": "synth",
+    "prompt": ""
+  },
+  "elem_voicerec01": {
+    "id": "elem_voicerec01",
+    "x": 400,
+    "y": 80,
+    "width": 280,
+    "height": 220,
+    "filePath": "/elements/elem_voicerec01_rec.js",
+    "type": "rec",
+    "prompt": "voice recorder, ska upbeats (r4538)"
   }
 }

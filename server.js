@@ -101,25 +101,28 @@ function appendTerminalData(data) {
   });
 }
 
-function getInteractiveAgentConfig() {
-  if (CODEGEN_PROVIDER === 'claude') {
-    const args = ['--permission-mode', 'dontAsk'];
-    if (CLAUDE_MODEL) args.push('--model', CLAUDE_MODEL);
-    return { command: 'claude', args };
-  }
-
+function buildCodexAgentConfig() {
   const args = ['--yolo', '--cd', process.cwd()];
   if (CODEX_MODEL) args.push('--model', CODEX_MODEL);
   return { command: 'codex', args };
+}
+
+function buildClaudeAgentConfig() {
+  const args = ['--permission-mode', 'dontAsk'];
+  if (CLAUDE_MODEL) args.push('--model', CLAUDE_MODEL);
+  return { command: 'claude', args };
+}
+
+function getInteractiveAgentConfig() {
+  if (commandExists('codex')) return buildCodexAgentConfig();
+  if (commandExists('claude')) return buildClaudeAgentConfig();
+  throw new Error('No interactive agent CLI found on PATH. Install codex (preferred) or claude.');
 }
 
 function ensureAgentPty() {
   if (agentPty) return agentPty;
 
   const { command, args } = getInteractiveAgentConfig();
-  if (!commandExists(command)) {
-    throw new Error(`${command} CLI is not installed or not on PATH`);
-  }
 
   agentPty = pty.spawn(command, args, {
     name: 'xterm-256color',
@@ -298,6 +301,20 @@ app.post('/api/compile', async (req, res) => {
     rawCode: generatedCode,
     transpiledCode: transpiled
   });
+});
+
+app.post('/api/add-element', (req, res) => {
+  const { id, filePath, type, prompt, x = 400, y = 100, width = 260, height = 200 } = req.body || {};
+  if (!filePath || !type) {
+    return res.status(400).json({ error: 'filePath and type are required' });
+  }
+  const elementId = id || `elem_${Math.random().toString(36).slice(2, 11)}`;
+  if (elementsMap.has(elementId)) {
+    return res.status(409).json({ error: `element ${elementId} already exists` });
+  }
+  const layout = { id: elementId, x, y, width, height, filePath, type, prompt: prompt || '' };
+  doc.transact(() => { elementsMap.set(elementId, layout); });
+  res.json({ success: true, id: elementId, layout });
 });
 
 app.post('/api/agent-command', async (req, res) => {
@@ -1380,7 +1397,7 @@ wssTerminal.on('connection', (ws) => {
   });
 
   ws.on('message', raw => {
-    try {
+    const dispatch = () => {
       const msg = JSON.parse(raw.toString());
       if (msg.type === 'input') {
         writeAgentPtyInput(String(msg.data || ''));
@@ -1389,8 +1406,16 @@ wssTerminal.on('connection', (ws) => {
       } else if (msg.type === 'clear') {
         clearTerminalHistory();
       }
+    };
+
+    try {
+      dispatch();
     } catch (err) {
-      writeAgentPtyInput(raw.toString());
+      try {
+        writeAgentPtyInput(raw.toString());
+      } catch (ptyErr) {
+        sendTerminalMessage(ws, { type: 'data', data: `\r\n${ptyErr.message}\r\n` });
+      }
     }
   });
 

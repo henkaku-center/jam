@@ -925,14 +925,75 @@ function updateSpatialAudioAndLOD() {
 
 let isFocusModeActive = false;
 
+let preMuteMasterGain = 1;
+let isMasterMuted = false;
+let areSynthsMuted = false;
+
+function setSynthsMuted(muted) {
+  if (!audioCtx) return;
+  const target = muted ? 0 : 1;
+  activeElements.forEach((el) => {
+    if (el.layout?.type === 'synth' && el.audioVolumeNode) {
+      el.audioVolumeNode.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05);
+    }
+  });
+  areSynthsMuted = muted;
+}
+window.setSynthsMuted = setSynthsMuted;
+
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {
     e.preventDefault();
     if (!isFocusModeActive) {
       activateFocusMode();
     }
+  } else if (e.code === 'Space') {
+    if (document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea')) return;
+    if (!audioCtx || !masterGain) return;
+    e.preventDefault();
+    const now = audioCtx.currentTime;
+    if (!isMasterMuted) {
+      preMuteMasterGain = masterGain.gain.value;
+      masterGain.gain.setValueAtTime(0, now);
+      isMasterMuted = true;
+    } else {
+      masterGain.gain.setValueAtTime(preMuteMasterGain, now);
+      isMasterMuted = false;
+    }
+  } else if (e.key === 'm' || e.key === 'M') {
+    if (document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea')) return;
+    if (!audioCtx) return;
+    e.preventDefault();
+    setSynthsMuted(!areSynthsMuted);
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea')) return;
+    if (!elementsMap) return;
+    const focused = document.querySelector('.canvas-element-wrapper.active-focus');
+    if (!focused) return;
+    const id = focused.id.replace(/^wrapper-/, '');
+    if (!id || !elementsMap.has(id)) return;
+    e.preventDefault();
+    elementsMap.delete(id);
   }
 });
+
+function removeElementsByType(type) {
+  if (!elementsMap) return 0;
+  const victims = [...elementsMap.keys()].filter(id => elementsMap.get(id)?.type === type);
+  victims.forEach(id => elementsMap.delete(id));
+  return victims.length;
+}
+window.removeElementsByType = removeElementsByType;
+window.removeSynths = () => removeElementsByType('synth');
+
+function addElement({ id, filePath, type, prompt, x = 400, y = 100, width = 260, height = 200 }) {
+  if (!elementsMap) return null;
+  if (!id) id = `elem_${Math.random().toString(36).slice(2, 11)}`;
+  if (elementsMap.has(id)) return null;
+  elementsMap.set(id, { id, x, y, width, height, filePath, type, prompt });
+  return id;
+}
+window.addElement = addElement;
 
 window.addEventListener('keyup', (e) => {
   if (e.key === 'Tab') {
