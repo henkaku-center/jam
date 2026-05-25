@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A collaborative 2D space designed for local, in-person jam sessions and live performances.">
+  <title>🎵 jam — spatial creative workspace</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "yjs": "https://esm.sh/yjs@13.6.14",
+        "y-websocket": "https://esm.sh/y-websocket@2.0.4?external=yjs"
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/vendor/xterm/css/xterm.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- Load Tailwind or other stylesheets if requested, but as per DESIGN.md: "Prefer Vanilla CSS" -->
+</head>
+<body>
+  <!-- Click to Join Overlay (Autoplay Handling) -->
+  <div id="autoplay-overlay" class="overlay">
+    <div class="overlay-card">
+      <div class="logo">🎵 jam</div>
+      <p class="subtitle">A shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable.</p>
+      
+      <div class="mode-selection">
+        <button id="join-host-btn" class="btn btn-primary">
+          <div class="btn-title">🔊 Host-Renderer</div>
+          <div class="btn-desc">Master projector feed. Direct audio output. Audibly renders the 2D spatial canvas mix.</div>
+        </button>
+        
+        <button id="join-controller-btn" class="btn btn-secondary">
+          <div class="btn-title">🔇 Thin-Controller</div>
+          <div class="btn-desc">Silent participant deck. Write code, play synths, connect LFOs. Perfect local sync, zero sound.</div>
+        </button>
+      </div>
+      <div class="footer-tip">Collectively jam with 2-16 friends on your local Wi-Fi.</div>
+    </div>
+  </div>
+
+  <!-- Main Workspace UI -->
+  <div id="app" class="hidden">
+    <!-- Spatial 2D Canvas Container -->
+    <div id="canvas-viewport" class="viewport">
+      <div id="canvas-grid" class="grid-layer"></div>
+      <div id="canvas-elements" class="elements-layer"></div>
+    </div>
+
+    <!-- Spatial Camera Indicator Frame (Host's Viewport Box shown on Controllers) -->
+    <div id="host-camera-frame" class="camera-frame hidden"></div>
+
+    <!-- Live low-opacity agent terminal -->
+    <div id="agent-terminal" class="agent-terminal" aria-label="Agent terminal">
+      <div id="agent-terminal-viewport"></div>
+      <div id="agent-terminal-focus-zone" aria-hidden="true"></div>
+    </div>
+
+    <!-- Top Status / Navigation Bar -->
+    <div class="top-bar">
+      <div class="brand">🎵 jam <span id="mode-badge" class="badge">HOST</span></div>
+      
+      <div class="clock-panel">
+        <span class="label">TEMPO:</span>
+        <input type="number" id="bpm-input" value="120" min="40" max="240" step="1">
+        <span class="bpm-unit">BPM</span>
+        <div class="metro-led" id="metro-led"></div>
+        <div class="beat-counter" id="beat-counter">1.1</div>
+      </div>
+
+      <div class="viewport-stats">
+        <span>X: <span id="stat-x">0</span></span>
+        <span>Y: <span id="stat-y">0</span></span>
+        <span>Zoom: <span id="stat-zoom">1.0</span>x</span>
+      </div>
+
+      <div class="actions">
+        <button id="add-element-btn" class="action-btn">+ Add Element</button>
+        <button id="reset-cam-btn" class="action-btn">🎯 Center Cam</button>
+      </div>
+    </div>
+
+    <!-- Focus Mode Overlay Indicator -->
+    <div id="focus-overlay" class="focus-overlay hidden">
+      <div class="focus-text">🔍 FOCUS MODE</div>
+    </div>
+  </div>
+
+  <!-- Core Modules Loaded dynamically as ESM -->
+  <script src="/vendor/xterm/lib/xterm.js"></script>
+  <script src="/vendor/xterm-addon-fit/lib/addon-fit.js"></script>
+  <script type="module" src="client.js"></script>
+</body>
+</html>

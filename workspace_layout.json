@@ -1,0 +1,92 @@
+{
+  "elem_6yvdmyw32": {
+    "id": "elem_6yvdmyw32",
+    "x": 1126,
+    "y": 464,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_6yvdmyw32_synth.js",
+    "type": "synth",
+    "prompt": "create an analog synthesizer"
+  },
+  "elem_r9rre4xjv": {
+    "id": "elem_r9rre4xjv",
+    "x": 533,
+    "y": 453,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_r9rre4xjv_seq.js",
+    "type": "seq",
+    "prompt": "create a drum step sequencer"
+  },
+  "elem_r33wx7l6t": {
+    "id": "elem_r33wx7l6t",
+    "x": 472,
+    "y": 525,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_r33wx7l6t_synth.js",
+    "type": "synth",
+    "prompt": "duck the analogue synth"
+  },
+  "elem_1i6ds6woc": {
+    "id": "elem_1i6ds6woc",
+    "x": 161,
+    "y": 504,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_1i6ds6woc_synth.js",
+    "type": "synth",
+    "prompt": "not another synth - hi hat beats"
+  },
+  "elem_7n8owx0mw": {
+    "id": "elem_7n8owx0mw",
+    "x": 368,
+    "y": 367,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_7n8owx0mw_synth.js",
+    "type": "synth",
+    "prompt": "connect this to the frequency cutoff of the deeper synth"
+  },
+  "elem_d4tb6laez": {
+    "id": "elem_d4tb6laez",
+    "x": 820,
+    "y": 538,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_d4tb6laez_synth.js",
+    "type": "synth",
+    "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
+  },
+  "elem_vb83y4upc": {
+    "id": "elem_vb83y4upc",
+    "x": 397,
+    "y": 502,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_vb83y4upc_synth.js",
+    "type": "synth",
+    "prompt": "create arpegiator"
+  },
+  "elem_6vhufj5x2": {
+    "id": "elem_6vhufj5x2",
+    "x": 842,
+    "y": 272,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_6vhufj5x2_synth.js",
+    "type": "synth",
+    "prompt": "create a game of pong"
+  },
+  "elem_fym437ld9": {
+    "id": "elem_fym437ld9",
+    "x": 676,
+    "y": 106,
+    "width": 260,
+    "height": 200,
+    "filePath": "/elements/elem_fym437ld9_synth.js",
+    "type": "synth",
+    "prompt": "testing testing 123"
+  }
+}
