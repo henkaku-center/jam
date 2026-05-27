@@ -30,8 +30,12 @@ try {
     if (message.type() === 'error' && !ignored) errors.push(text);
   });
 
-  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.click(process.env.JAM_MODE === 'host' ? '#join-host-btn' : '#join-controller-btn');
+  const mode = process.env.JAM_MODE === 'host' ? 'host' : 'muted';
+  const url = new URL(baseUrl);
+  if (mode === 'host') url.searchParams.set('audio', 'on');
+
+  await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+  await page.click('#join-host-btn');
   await page.waitForFunction(() => (window.activeElements?.size || 0) > 0, null, { timeout: 15000 });
   await page.waitForTimeout(Number(process.env.SMOKE_SETTLE_MS || 1000));
 

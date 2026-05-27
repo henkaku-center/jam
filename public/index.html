@@ -26,13 +26,8 @@
       
       <div class="mode-selection">
         <button id="join-host-btn" class="btn btn-primary">
-          <div class="btn-title">🔊 Host-Renderer</div>
-          <div class="btn-desc">Master projector feed. Direct audio output. Audibly renders the 2D spatial canvas mix.</div>
-        </button>
-        
-        <button id="join-controller-btn" class="btn btn-secondary">
-          <div class="btn-title">🔇 Thin-Controller</div>
-          <div class="btn-desc">Silent participant deck. Write code, play synths, connect LFOs. Perfect local sync, zero sound.</div>
+          <div class="btn-title">🎛️ Join Jam</div>
+          <div class="btn-desc">Same shared canvas and controls for everyone.</div>
         </button>
       </div>
       <div class="footer-tip">Collectively jam with 2-16 friends on your local Wi-Fi.</div>
@@ -47,7 +42,7 @@
       <div id="canvas-elements" class="elements-layer"></div>
     </div>
 
-    <!-- Spatial Camera Indicator Frame (Host's Viewport Box shown on Controllers) -->
+    <!-- Legacy camera indicator retained for compatibility; unified clients keep it hidden. -->
     <div id="host-camera-frame" class="camera-frame hidden"></div>
 
     <!-- Live low-opacity agent terminal -->
@@ -58,7 +53,7 @@
 
     <!-- Top Status / Navigation Bar -->
     <div class="top-bar">
-      <div class="brand">🎵 jam <span id="mode-badge" class="badge">HOST</span></div>
+      <div class="brand">🎵 jam <span id="mode-badge" class="badge">MUTED</span></div>
       
       <div class="clock-panel">
         <span class="label">TEMPO:</span>
@@ -76,6 +71,7 @@
 
       <div class="actions">
         <button id="add-element-btn" class="action-btn">+ Add Element</button>
+        <button id="open-strudel-btn" class="action-btn">+ Strudel Element</button>
         <button id="reset-cam-btn" class="action-btn">🎯 Center Cam</button>
       </div>
     </div>

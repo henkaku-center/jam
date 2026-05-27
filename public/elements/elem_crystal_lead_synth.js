@@ -274,7 +274,7 @@ export default function setup(ctx, prevState) {
           width: 260px;
           height: 200px;
           box-sizing: border-box;
-          padding: 8px;
+          padding: 5px;
           background: #0c1117;
           border: 1px solid #a3e635;
           border-radius: 8px;
@@ -284,16 +284,16 @@ export default function setup(ctx, prevState) {
           box-shadow: 0 8px 22px rgba(132, 204, 22, 0.18);
         }
         h3 {
-          margin: 0 0 6px;
-          font-size: 12px;
+          margin: 0 0 3px;
+          font-size: 10px;
           line-height: 1.15;
           color: #bef264;
           text-align: center;
           letter-spacing: 0;
         }
         .scope {
-          height: 68px;
-          margin-bottom: 6px;
+          height: 48px;
+          margin-bottom: 4px;
           border: 1px solid #334155;
           background: #05070a;
           border-radius: 6px;
@@ -307,24 +307,26 @@ export default function setup(ctx, prevState) {
         .grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 4px 7px;
+          gap: 2px 6px;
         }
         label {
           display: grid;
-          gap: 1px;
+          gap: 0;
           color: #cbd5e1;
-          font-size: 8px;
+          font-size: 7px;
+          line-height: 1;
         }
         input[type="range"] {
           width: 100%;
+          height: 12px;
           accent-color: #a3e635;
         }
         .footer {
           display: grid;
-          grid-template-columns: 1fr 58px;
-          gap: 7px;
+          grid-template-columns: 1fr 52px;
+          gap: 5px;
           align-items: center;
-          margin-top: 7px;
+          margin-top: 4px;
         }
         .melody {
           display: grid;
@@ -332,7 +334,7 @@ export default function setup(ctx, prevState) {
           gap: 2px;
         }
         .note-cell {
-          height: 13px;
+          height: 11px;
           min-width: 0;
           padding: 0;
           border: 0;
@@ -340,8 +342,8 @@ export default function setup(ctx, prevState) {
           color: #d9f99d;
           border-radius: 2px;
           font: inherit;
-          font-size: 7px;
-          line-height: 13px;
+          font-size: 6px;
+          line-height: 11px;
           cursor: pointer;
         }
         .note-cell.on {
@@ -353,19 +355,20 @@ export default function setup(ctx, prevState) {
           box-shadow: 0 0 8px rgba(234, 179, 8, 0.8);
         }
         button.toggle {
-          height: 22px;
+          height: 20px;
           border: 1px solid #a3e635;
           border-radius: 4px;
           background: ${state.enabled ? '#a3e635' : '#1f2937'};
           color: ${state.enabled ? '#17200b' : '#d9f99d'};
           font: inherit;
-          font-size: 10px;
+          font-size: 8px;
+          padding: 0 2px;
           cursor: pointer;
         }
       </style>
       <div class="lead">
         <h3>CRYSTAL LEAD</h3>
-        <div class="scope"><canvas id="scope" width="238" height="42"></canvas></div>
+        <div class="scope"><canvas id="scope" width="248" height="48"></canvas></div>
         <div class="grid">
           <label>Tone <input id="tone" type="range" min="0" max="1" step="0.01" value="${state.tone}"></label>
           <label>Drive <input id="drive" type="range" min="0" max="1" step="0.01" value="${state.drive}"></label>

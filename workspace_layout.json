@@ -44,5 +44,17 @@
     "prompt": "microphone voice sampler for house vocal chops",
     "authored": "hand",
     "reloadToken": 1779870660021
+  },
+  "elem_gtkc2zv0n": {
+    "id": "elem_gtkc2zv0n",
+    "x": 571,
+    "y": 316,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }

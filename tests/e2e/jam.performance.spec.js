@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { WebSocket } from 'ws';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../..');
@@ -54,6 +55,38 @@ async function readExpectedElementCount() {
   return Object.keys(workspace).length;
 }
 
+function connectTerminalAndReadBanner() {
+  const wsUrl = appBaseURL.replace(/^http/, 'ws') + '/agent-terminal';
+  const socket = new WebSocket(wsUrl);
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      socket.close();
+      reject(new Error('timed out waiting for terminal banner'));
+    }, 5000);
+
+    socket.on('message', (raw) => {
+      try {
+        const message = JSON.parse(raw.toString());
+        if (message.type !== 'data') return;
+        const match = String(message.data).match(/jam test terminal (\d+)/);
+        if (!match) return;
+        clearTimeout(timeout);
+        resolve({ socket, pid: match[1] });
+      } catch (error) {
+        clearTimeout(timeout);
+        socket.close();
+        reject(error);
+      }
+    });
+
+    socket.on('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+  });
+}
+
 function collectBrowserFailures(page) {
   const failures = [];
 
@@ -104,26 +137,25 @@ async function installPerfObserver(page) {
   });
 }
 
-async function joinWorkspace(page, mode) {
+async function joinWorkspace(page, mode, expectedCount = expectedElementCount) {
   const startedAt = Date.now();
   await installPerfObserver(page);
-  await page.goto(`${appBaseURL}/#test-${mode}-${Date.now()}`, { waitUntil: 'domcontentloaded' });
+  const audioQuery = mode === 'host' ? '?audio=on' : '';
+  await page.goto(`${appBaseURL}/${audioQuery}#test-${mode}-${Date.now()}`, { waitUntil: 'domcontentloaded' });
 
-  await page
-    .getByRole('button', { name: mode === 'host' ? /Host-Renderer/ : /Thin-Controller/ })
-    .click();
+  await page.locator('#join-host-btn').click();
 
   await expect(page.locator('#autoplay-overlay')).toHaveClass(/hidden/);
-  await expect(page.locator('#mode-badge')).toHaveText(mode === 'host' ? 'HOST' : 'CONTROLLER');
+  await expect(page.locator('#mode-badge')).toHaveText(mode === 'host' ? 'AUDIO ON' : 'MUTED');
 
   await expect
     .poll(() => page.evaluate(() => window.activeElements?.size ?? 0), {
       message: 'workspace elements should be hydrated',
       timeout: 12_000
     })
-    .toBe(expectedElementCount);
+    .toBe(expectedCount);
 
-  await expect(page.locator('.canvas-element-wrapper')).toHaveCount(expectedElementCount);
+  await expect(page.locator('.canvas-element-wrapper')).toHaveCount(expectedCount);
 
   const hydrateMs = Date.now() - startedAt;
   const metrics = await page.evaluate(() => {
@@ -266,6 +298,18 @@ test('Agent workspace API reloads hand-authored elements without codegen overwri
   }
 });
 
+test('Agent terminal creates an independent PTY per browser connection', async () => {
+  const first = await connectTerminalAndReadBanner();
+  const second = await connectTerminalAndReadBanner();
+
+  try {
+    expect(first.pid).not.toBe(second.pid);
+  } finally {
+    first.socket.close();
+    second.socket.close();
+  }
+});
+
 test('Host workspace hydrates within the startup performance budget', async ({ page }, testInfo) => {
   const browserFailures = collectBrowserFailures(page);
   const result = await joinWorkspace(page, 'host');
@@ -308,14 +352,481 @@ test('Normal mode pan and zoom keep a global audio mix', async ({ page }) => {
   expect(browserFailures).toEqual([]);
 });
 
-test('Controller input reaches the Host within the sync budget', async ({ browser }, testInfo) => {
+test('Arrow keys do not pan the workspace camera', async ({ page }) => {
+  await joinWorkspace(page, 'controller');
+
+  const before = await page.evaluate(() => ({
+    x: document.querySelector('#stat-x')?.textContent,
+    y: document.querySelector('#stat-y')?.textContent,
+    zoom: document.querySelector('#stat-zoom')?.textContent
+  }));
+  await page.locator('#canvas-viewport').click({ position: { x: 16, y: 16 } });
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('w');
+  await page.keyboard.press('a');
+  await page.keyboard.press('s');
+  await page.keyboard.press('d');
+  await page.waitForTimeout(100);
+  const after = await page.evaluate(() => ({
+    x: document.querySelector('#stat-x')?.textContent,
+    y: document.querySelector('#stat-y')?.textContent,
+    zoom: document.querySelector('#stat-zoom')?.textContent
+  }));
+
+  expect(after).toEqual(before);
+});
+
+test('Ctrl+Backspace deletes only the selected element when terminal is not focused', async ({ page, request }) => {
+  const id = `elem_delete_${Date.now()}`;
+  const publicPath = `/elements/${id}_visual.js`;
+  await fs.writeFile(path.join(elementsDir, `${id}_visual.js`), `export default function setup(ctx) {
+  ctx.domRoot.innerHTML = '<div style="padding:12px;color:white">delete shortcut target</div>';
+  return { destroy() {} };
+}
+`, 'utf8');
+
+  const addResponse = await request.post('/api/workspace/elements', {
+    data: {
+      id,
+      filePath: publicPath,
+      type: 'visual',
+      prompt: 'delete shortcut test',
+      authored: 'hand',
+      x: 40,
+      y: 40,
+      width: 220,
+      height: 120
+    }
+  });
+  await expect(addResponse).toBeOK();
+
+  try {
+    await joinWorkspace(page, 'controller', expectedElementCount + 1);
+
+    await page.locator(`#wrapper-${id}`).click({ position: { x: 10, y: 10 } });
+    await expect(page.locator(`#wrapper-${id}`)).toHaveClass(/active-focus/);
+
+    await page.locator('.xterm-helper-textarea').focus();
+    await page.keyboard.press('Backspace');
+    await expect(page.locator(`#wrapper-${id}`)).toHaveCount(1);
+
+    await page.locator('#canvas-viewport').click({ position: { x: 12, y: 12 } });
+    await page.locator(`#wrapper-${id}`).click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press('Backspace');
+    await expect(page.locator(`#wrapper-${id}`)).toHaveCount(1);
+    await page.keyboard.press('Delete');
+    await expect(page.locator(`#wrapper-${id}`)).toHaveCount(1);
+    await page.keyboard.press('Control+Backspace');
+
+    await expect
+      .poll(() => page.evaluate((elementId) => window.elementsMap?.has(elementId) ?? true, id), {
+        message: 'selected element should be removed by Ctrl+Backspace',
+        timeout: 3_000
+      })
+      .toBe(false);
+    await expect(page.locator(`#wrapper-${id}`)).toHaveCount(0);
+  } finally {
+    await request.delete(`/api/workspace/elements/${id}`);
+  }
+});
+
+test('Strudel launcher creates a clocked jam element instead of a floating REPL', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+
+  await expect(page.locator('#strudel-window')).toHaveCount(0);
+  await expect(page.locator('strudel-repl')).toHaveCount(0);
+
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+  await page.locator('#open-strudel-btn').click();
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => {
+      for (const [id, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(id) && layout.type === 'strudel' && layout.filePath === '/elements/strudel_clocked_element.js') {
+          return id;
+        }
+      }
+      return '';
+    }, beforeIds), {
+      message: 'strudel launcher should create a normal workspace element',
+      timeout: 5_000
+    })
+    .not.toBe('');
+
+  const created = await page.evaluate((knownIds) => {
+    for (const [id, layout] of window.elementsMap.entries()) {
+      if (!knownIds.includes(id) && layout.type === 'strudel' && layout.filePath === '/elements/strudel_clocked_element.js') {
+        return { id, layout };
+      }
+    }
+    return null;
+  }, beforeIds);
+
+  try {
+    expect(created?.id).toBeTruthy();
+    await expect(page.locator('.canvas-element-wrapper')).toHaveCount(expectedElementCount + 1);
+    const shadowText = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      return element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.textContent || '';
+    }, created.id);
+    expect(shadowText).toContain('Jam Strudel');
+    expect(shadowText).toContain('Official Strudel runtime shared by jam elements');
+    const runLabel = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      return element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.querySelector('#run')?.textContent || '';
+    }, created.id);
+    expect(runLabel).toBe('stop');
+    const hasEvalButton = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      return Boolean(element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.querySelector('#eval'));
+    }, created.id);
+    expect(hasEvalButton).toBe(false);
+
+    await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+      const code = root?.querySelector('#code');
+      if (!code) throw new Error('missing Strudel code editor');
+      code.value = 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)';
+      code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => ({
+        source: window.__jamStrudelRuntimeDebug?.sources?.[id] || '',
+        status: window.activeElements
+          .get(id)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#status')
+          ?.textContent || ''
+      }), created.id), {
+        message: 'typing should update the draft without auto-evaluating Strudel',
+        timeout: 3_000
+      })
+      .toMatchObject({ status: 'edited' });
+
+    const sourceBeforeEval = await page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id);
+    expect(sourceBeforeEval).not.toContain('<c3 e3 g3>');
+
+    await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      const code = element?.domWrapper
+        .querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code?.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => ({
+        active: window.__jamStrudelRuntimeDebug?.activeElementIds?.includes(id) || false,
+        lastError: window.__jamStrudelRuntimeDebug?.lastError || '',
+        source: window.__jamStrudelRuntimeDebug?.sources?.[id] || '',
+        status: window.activeElements
+          .get(id)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#status')
+          ?.textContent || ''
+      }), created.id), {
+        message: 'official Strudel syntax should evaluate into the shared runtime',
+        timeout: 8_000
+      })
+      .toMatchObject({ active: true, lastError: '', source: 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)' });
+
+    await page.evaluate((id) => {
+      const code = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code.value = 'note("c3").s("sawtooth")\n\nnote("e3").s("sawtooth")';
+      code.selectionStart = code.value.indexOf('note("e3")') + 2;
+      code.selectionEnd = code.selectionStart;
+      code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      code.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id), {
+        message: 'Ctrl+Enter should evaluate the current block',
+        timeout: 8_000
+      })
+      .toBe('note("e3").s("sawtooth")');
+
+    await page.evaluate((id) => {
+      const code = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code.value = 'note("c3").s("sawtooth")\nnote("g3").s("sawtooth")';
+      code.selectionStart = code.value.indexOf('note("g3")') + 2;
+      code.selectionEnd = code.selectionStart;
+      code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      code.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        shiftKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id), {
+        message: 'Shift+Enter should evaluate the current line',
+        timeout: 8_000
+      })
+      .toBe('note("g3").s("sawtooth")');
+
+    await page.evaluate((id) => {
+      const code = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code.value = 'note("a3").s("sawtooth").gain(0.1)';
+      code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      code.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        altKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id), {
+        message: 'Alt+Enter should evaluate the whole editor',
+        timeout: 8_000
+      })
+      .toBe('note("a3").s("sawtooth").gain(0.1)');
+
+    await page.evaluate((id) => {
+      const code = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code.dispatchEvent(new KeyboardEvent('keydown', {
+        key: '.',
+        code: 'Period',
+        ctrlKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => ({
+        active: window.__jamStrudelRuntimeDebug?.activeElementIds?.includes(id) || false,
+        status: window.activeElements
+          .get(id)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#status')
+          ?.textContent || ''
+      }), created.id), {
+        message: 'Modifier+period should silence the Strudel element',
+        timeout: 8_000
+      })
+      .toMatchObject({ active: false, status: 'stopped' });
+    expect(browserFailures).toEqual([]);
+  } finally {
+    if (created?.id) await request.delete(`/api/workspace/elements/${created.id}`);
+  }
+});
+
+test('Multiple Strudel elements keep independent runtime patterns', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+
+  await page.locator('#open-strudel-btn').click();
+  await page.locator('#open-strudel-btn').click();
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].filter(id => !knownIds.includes(id)), beforeIds), {
+      message: 'two Strudel elements should be added',
+      timeout: 8_000
+    })
+    .toHaveLength(2);
+
+  const ids = await page.evaluate((knownIds) => [...window.elementsMap.keys()].filter(id => !knownIds.includes(id)), beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((createdIds) => createdIds.every(id => window.activeElements.has(id)), ids), {
+        message: 'created Strudel elements should hydrate',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    const evalStrudel = async (id, code) => {
+      await page.evaluate(({ elementId, source }) => {
+        const input = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#code');
+        if (!input) throw new Error(`missing Strudel editor for ${elementId}`);
+        input.value = source;
+        input.selectionStart = source.length;
+        input.selectionEnd = source.length;
+        input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'Enter',
+          code: 'Enter',
+          altKey: true,
+          bubbles: true,
+          composed: true,
+          cancelable: true
+        }));
+      }, { elementId: id, source: code });
+    };
+
+    const firstSource = 'note("c3").s("sawtooth").gain(0.1)';
+    const secondSource = 'note("g3").s("sawtooth").gain(0.1)';
+    await evalStrudel(ids[0], firstSource);
+    await evalStrudel(ids[1], secondSource);
+
+    await expect
+      .poll(() => page.evaluate(() => window.__jamStrudelRuntimeDebug?.sources || {}), {
+        message: 'both Strudel elements should own separate runtime sources',
+        timeout: 8_000
+      })
+      .toMatchObject({
+        [ids[0]]: firstSource,
+        [ids[1]]: secondSource
+      });
+
+    await expect
+      .poll(() => page.evaluate(() => window.__jamStrudelRuntimeDebug?.activeElementIds || []), {
+        message: 'both Strudel elements should be active',
+        timeout: 8_000
+      })
+      .toEqual(expect.arrayContaining(ids));
+
+    await page.evaluate((elementId) => {
+      window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#run')
+        ?.click();
+    }, ids[1]);
+
+    await expect
+      .poll(() => page.evaluate((createdIds) => ({
+        createdActiveElementIds: (window.__jamStrudelRuntimeDebug?.activeElementIds || [])
+          .filter(id => createdIds.includes(id)),
+        firstSource: window.__jamStrudelRuntimeDebug?.sources?.[createdIds[0]] || '',
+        secondSource: window.__jamStrudelRuntimeDebug?.sources?.[createdIds[1]] || '',
+        running: window.__jamStrudelRuntimeDebug?.running || {}
+      }), ids), {
+        message: 'stopping one Strudel element should remove only that element pattern',
+        timeout: 8_000
+      })
+      .toMatchObject({
+        createdActiveElementIds: [ids[0]],
+        firstSource,
+        secondSource: '',
+        running: { [ids[0]]: true, [ids[1]]: false }
+      });
+
+    expect(browserFailures).toEqual([]);
+  } finally {
+    await Promise.all(ids.map(id => request.delete(`/api/workspace/elements/${id}`)));
+  }
+});
+
+test('Controller input reaches the Host within the sync budget', async ({ browser, request }, testInfo) => {
+  const testElementId = `elem_sync_${Date.now()}`;
+  const testElementFile = `/elements/${testElementId}_synth.js`;
+  await fs.writeFile(path.join(elementsDir, `${testElementId}_synth.js`), `export default function setup(ctx, prevState) {
+  const state = { frequency: prevState?.frequency || 220 };
+  const osc = ctx.audioCtx.createOscillator();
+  const gain = ctx.audioCtx.createGain();
+  osc.frequency.value = state.frequency;
+  gain.gain.value = 0.01;
+  osc.connect(gain);
+  gain.connect(ctx.audioOut);
+  osc.start();
+  ctx.domRoot.innerHTML = '<label>Freq <input id="freq-slider" type="range" min="80" max="1200" value="' + state.frequency + '"><span id="freq-val">' + state.frequency + 'Hz</span></label>';
+  const slider = ctx.domRoot.querySelector('#freq-slider');
+  const label = ctx.domRoot.querySelector('#freq-val');
+  const setFrequency = (value) => {
+    state.frequency = Number(value);
+    slider.value = String(state.frequency);
+    label.textContent = state.frequency + 'Hz';
+    osc.frequency.setTargetAtTime(state.frequency, ctx.audioCtx.currentTime, 0.01);
+  };
+  const onInput = () => {
+    setFrequency(slider.value);
+    ctx.bus.pubGlobal('sync_test_frequency', state.frequency);
+  };
+  slider.addEventListener('input', onInput);
+  const unsubscribe = ctx.bus.subGlobal('sync_test_frequency', setFrequency);
+  return {
+    getState() { return state; },
+    destroy() {
+      slider.removeEventListener('input', onInput);
+      unsubscribe();
+      osc.stop();
+      osc.disconnect();
+      gain.disconnect();
+    }
+  };
+}
+`, 'utf8');
+
+  const addResponse = await request.post('/api/workspace/elements', {
+    data: {
+      id: testElementId,
+      filePath: testElementFile,
+      type: 'synth',
+      prompt: 'controller sync test synth',
+      authored: 'hand',
+      x: 20,
+      y: 20,
+      width: 260,
+      height: 120
+    }
+  });
+  await expect(addResponse).toBeOK();
+
   const hostPage = await browser.newPage();
   const controllerPage = await browser.newPage();
   const hostFailures = collectBrowserFailures(hostPage);
   const controllerFailures = collectBrowserFailures(controllerPage);
+  const expectedCount = expectedElementCount + 1;
 
-  const hostResult = await joinWorkspace(hostPage, 'host');
-  const controllerResult = await joinWorkspace(controllerPage, 'controller');
+  const hostResult = await joinWorkspace(hostPage, 'host', expectedCount);
+  const controllerResult = await joinWorkspace(controllerPage, 'controller', expectedCount);
 
   const changed = await setFirstSynthFrequency(controllerPage, 444);
   expect(changed).toBe(true);
@@ -343,6 +854,7 @@ test('Controller input reaches the Host within the sync budget', async ({ browse
   expect(hostFailures).toEqual([]);
   expect(controllerFailures).toEqual([]);
 
+  await request.delete(`/api/workspace/elements/${testElementId}`);
   await controllerPage.close();
   await hostPage.close();
 });

@@ -6,6 +6,9 @@ Guidance for Claude Code and other coding agents working in this repository.
 
 - `npm start` runs the Express/WebSocket server on `PORT` or `3000`.
 - `npm run jam -- <command>` calls the live workspace control plane. Start with `npm run jam -- state`.
+- `npm run agent -- create <name> [port]` creates an isolated worktree for parallel agent work.
+- `npm run agent -- promote <worktree-path> [--commit]` validates and applies a finished worktree diff to the live checkout.
+- `npm run agent -- validate [worktree-path] [--full]` runs syntax checks, with `--full` also running Playwright.
 - `npm run smoke:live` opens the running app with Chrome Canary/headless Playwright and reports mounted elements plus browser errors.
 - `npm test` runs the Playwright end-to-end suite with `CODEGEN_PROVIDER=mock`.
 - `npm run test:e2e:headed` runs the same suite headed.
@@ -15,7 +18,26 @@ There is no build step. This is pure ESM JavaScript served from `public/`.
 
 ## Read First
 
-`DESIGN.md` is the product and architecture spec. The key runtime idea is a shared spatial canvas where elements are hot-reloadable micro-apps. A single server hosts the UI, Yjs sync, low-latency controller relay, and the browser-visible Codex/Claude PTY terminal.
+`DESIGN.md` is the product and architecture spec. The key runtime idea is a shared spatial canvas where elements are hot-reloadable micro-apps. A single server hosts the UI, Yjs sync, and browser-visible Codex/Claude PTY terminals.
+
+## Parallel Agent Rule
+
+Do not treat the live checkout as a multiplayer scratchpad. The live server normally runs on port `3000`; browser-connected agents should work in their assigned git worktree with their assigned `PORT` and `JAM_BASE_URL`.
+
+If you need to run the app from an agent worktree, use the `PORT` already in your environment:
+
+```bash
+PORT="${PORT:-3001}" npm start
+```
+
+Validate in the worktree first, then promote to the live checkout:
+
+```bash
+npm run agent -- validate . --full
+npm run agent -- promote "$PWD"
+```
+
+Promotion is the step that brings code into the live room and triggers hot reload. See `docs/AGENT_WORKTREES.md`.
 
 ## Agent Control Plane
 
@@ -59,12 +81,13 @@ Do not bump `prompt` as a generic reload trick. Use `/api/workspace/elements/:id
 
 ## Architecture Notes
 
-- Host and controller are the same client code. Controllers create normal element graphs but mute `masterGain`.
+- Every browser runs the same jam client. Clients are muted by default; the audible room feed opts in with `?audio=on`.
 - `/yjs` syncs the shared `jam-workspace` doc.
-- `/controller` relays low-latency controller messages to the host.
-- `/agent-terminal` bridges a single shared `node-pty` Codex/Claude session into xterm.js.
+- `/controller` is a legacy low-latency relay.
+- `/agent-terminal` bridges one Codex/Claude PTY per browser into xterm.js. By default, each PTY starts in an isolated git worktree under `../jam-agent-worktrees` with its own `PORT`.
 - Elements export `default function setup(ctx, prevState)` and are evaluated with `new Function()` after server-side transpilation from ESM default export syntax.
 - Hot reload is bar-aligned and crossfaded. State transfers through `runtime.getState()`.
 - Element code must connect audio to `ctx.audioOut`, render into `ctx.domRoot`, and publish controller/user state through `ctx.bus.pubGlobal(...)` unless the signal is purely local and high-frequency.
+- Strudel-style code belongs inside normal jam elements. Do not add a floating Strudel REPL or app-level generator; use `/elements/strudel_clocked_element.js` or another element that schedules from `ctx.clock.onTick`.
 
 See `public/elements/element-contract.d.ts` and `public/elements/_template_element.js` for the machine-readable contract and a minimal reference element.

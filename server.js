@@ -43,6 +43,7 @@ if (!fs.existsSync(elementsDir)) {
 app.use(express.static(publicDir));
 app.use('/vendor/xterm', express.static(path.resolve('node_modules/@xterm/xterm')));
 app.use('/vendor/xterm-addon-fit', express.static(path.resolve('node_modules/@xterm/addon-fit')));
+app.use('/vendor/strudel-web', express.static(path.resolve('node_modules/@strudel/web/dist')));
 
 function resolveElementFilePath(filePath) {
   if (!filePath || typeof filePath !== 'string') {

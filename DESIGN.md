@@ -6,10 +6,11 @@ A shared 2D world where music and visuals are spatially situated, hot-reloadable
 
 A jam is **a collaborative 2D space designed for local, in-person jam sessions and live performances**. Participants bring their laptops, MIDI controllers, and instruments to the physical venue, plug into a local network, and jam together. 
 
-To eliminate multi-machine speaker phasing, audio latency, and browser autoplay blockades, the system runs on a **Host-Renderer / Thin-Controller** model:
-*   **The Host-Renderer (Master Feed):** A single central machine connected to the venue's main sound system (speakers) and projector. It is the sole client that initializes the Web Audio `AudioContext` and renders the master spatial mix.
-*   **The Spatial Projector Viewport:** What the room hears and sees depends on where the **Host** machine looks. The Host viewport acts as the master stereo frame and camera. Distance on the canvas relative to the Host camera attenuates volume, horizontal offset sets stereo panning, and distant sources are dynamically lowpassed. The Host acts like a spatial "Cameraman" or "DJ," focusing the room's attention on different pockets of the canvas.
-*   **Thin-Controller Clients:** Other participants connect to the local server on their own laptops. Their local clients are completely silent. To ensure element code runs identically across both Host and Controller contexts without requiring custom mocks or conditional checks (such as `if (ctx.audioOut)`), Thin-Controllers initialize a real Web Audio `AudioContext`, but the parent context routes the final audio output to a master `GainNode` set to `0`. This guarantees identical API execution and syntax validity while keeping participants' laptops perfectly silent.
+To eliminate multi-machine speaker phasing while keeping collaboration symmetric, the system now runs one **unified jam client** in every browser:
+*   **One Shared Source of Truth:** Every participant connects to the same local Yjs room, runs the same canvas, sees the same elements, and executes the same element code.
+*   **Audible Room Feed:** The machine connected to the venue's main sound system opens the same client with `?audio=on` (or `?muted=false`). Its master `GainNode` is audible.
+*   **Muted Collaborator Clients:** Other participants open the same URL without an audio opt-in. They still initialize a real Web Audio `AudioContext` and execute identical graphs, but their final master `GainNode` is set to `0`. This keeps laptops silent while preserving visualizers, analyzers, and element behavior.
+*   **Spatial Focus:** In normal mode, the audible client plays a global mix so panning and zooming around the canvas does not unexpectedly move or attenuate instruments. Holding Focus Mode makes the local viewport drive spatial panning, attenuation, and filtering so the room feed can isolate a canvas region.
 *   **A World of Tools, Built Together:** Elements are not just static loops; they are interactive instruments and visualizers. The server-side LLM acts as an agentic toolmaker. If you want to play a synth, you ask the LLM to build you a keyboard interface. Once built, you play it with your MIDI controller, record sequences, or modulate it with an LFO element running in an adjacent quadrant, all rendered instantly in real-time on the master room projector.
 *   **The YOLO Ethos:** This is a high-trust, playful space. Breaking things is part of the fun. We optimize for low latency, rapid iteration, and direct access to Web Audio over strict security boundaries.
 
@@ -17,7 +18,7 @@ To eliminate multi-machine speaker phasing, audio latency, and browser autoplay 
 
 - **Local Jam Setting:** Specifically designed for 2-16 participants gathered in a physical room sharing a local network (Wi-Fi or Ethernet), feeding a single projector and main sound system.
 - **Canvas Boundaries:** Bounded for testing to a standard 1080p workspace (`1920×1080` pixels).
-- **Ephemeral State with Server-Backed Recovery:** While transient runtime states (like current LFO phase or unsaved volume faders) are ephemeral, the server automatically commits compiled element source `.js` files and a canvas workspace manifest (`workspace_layout.json`) to disk on every successful build or merge. If the Host-Renderer crashes or is refreshed, it automatically queries the manifest and restores the entire canvas structure, preventing catastrophic silence in physical venues.
+- **Ephemeral State with Server-Backed Recovery:** While transient runtime states (like current LFO phase or unsaved volume faders) are ephemeral, the server automatically commits compiled element source `.js` files and a canvas workspace manifest (`workspace_layout.json`) to disk on every successful build or merge. If any client crashes or is refreshed, it automatically queries the manifest and restores the entire canvas structure.
 - **Keyboard & Controller-Centric Navigation:** Panning/zooming can be done via mouse (drag and wheel), but also via keyboard (WASD/arrows) and MIDI binds to keep hands free for coding and instrument playing.
 - **No Auth / Accounts:** URL hash contains the room ID. Land, jam, leave.
 
@@ -78,33 +79,35 @@ Elements are self-contained visual/audio modules written in pure ES Modules (ESM
     }
     ```
 
-### 3. Spatial Mix & Viewport
-*   **Audio Engines:** Both Host and Controller environments run a real Web Audio `AudioContext`. The parent harness on Thin-Controllers mutes its master output (`gainNode.gain.setValueAtTime(0, now)`) to prevent local sound rendering, while the Host-Renderer's master output remains audible.
-*   **The Master Viewport:** The Host viewport `(x, y, zoom)` (typically projected on a wall/screen) acts as the master stereo frame. 
-*   **Spatial Calculations:** Every animation frame, the Host computes each element's relative coordinate offset relative to the **Host's visual viewport** to drive the Web Audio spatial pipeline:
-    *   **Attenuation:** Full volume inside the Host's visual viewport; rolls off smoothly to silent as an element moves outside.
-    *   **Panning:** Mapped to horizontal offset in the Host's viewport (`-1` far-left, `+1` far-right).
-    *   **Lowpass:** A BiQuad filter frequency decreases as the element's distance from the center of the Host's viewport increases.
-*   **Thin Controllers:** Participant laptops render the identical canvas positions and execute identical Web Audio graphs silently. Because they execute the true Web Audio code locally, any canvas visualizers connected to audio nodes (e.g., AnalyserNode FFT) continue to work natively on developers' screens.
+*   **Strudel-Style Code:** Pattern-code surfaces are elements, not floating app-level REPLs. They must schedule from `ctx.clock.onTick`, connect generated sound through `ctx.audioOut`, and sync code/play state with `ctx.bus.pubGlobal` so collaborators share the same timed pattern.
 
-### 4. Focus Mode (Host Viewport Soloing)
-Holding a hotkey (e.g., `Tab`) on the **Host-Renderer** activates **Focus Mode**:
-*   All audio-producing elements *outside* the Host's current visual viewport are instantly and smoothly muted (`gainNode.gain.setTargetAtTime(0, now, 0.1)`).
-*   This allows the live spatial "DJ" or operator running the Host machine to instantly isolate a specific cluster of instruments on the projector for the physical audience.
-*   On Thin-Controller clients, Focus Mode can visually dim all other canvas elements to help the developer focus on their current code block.
+### 3. Spatial Mix & Viewport
+*   **Audio Engines:** Every client runs a real Web Audio `AudioContext`. Clients are silent by default because their master output is muted (`gainNode.gain.setValueAtTime(0, now)`); the room feed is just a client opened with `?audio=on`.
+*   **Normal Mix:** In normal mode, element audio is routed as a global mix (`volume=1`, centered pan, open lowpass). Camera navigation remains purely visual.
+*   **Focus Spatial Mix:** In Focus Mode, each client computes element offset relative to its local viewport to drive the Web Audio spatial pipeline:
+    *   **Attenuation:** Full volume inside the local visual viewport; rolls off smoothly to silent as an element moves outside.
+    *   **Panning:** Mapped to horizontal offset in the viewport (`-1` far-left, `+1` far-right).
+    *   **Lowpass:** A BiQuad filter frequency decreases as the element's distance from the viewport center increases.
+*   **Muted Collaboration:** Participant laptops execute identical Web Audio graphs silently. Because they execute the true Web Audio code locally, any canvas visualizers connected to audio nodes (e.g., AnalyserNode FFT) continue to work natively on developers' screens.
+
+### 4. Focus Mode (Viewport Soloing)
+Holding a hotkey (e.g., `Tab`) activates **Focus Mode** on that client:
+*   Audio-producing elements *outside* the local visual viewport are instantly and smoothly muted (`gainNode.gain.setTargetAtTime(0, now, 0.1)`).
+*   This lets the audible room-feed client isolate a specific cluster of instruments for the physical audience while collaborators can use the same behavior locally with muted output.
+*   Focus Mode can visually dim all other canvas elements to help the developer focus on their current code block.
 
 ### 5. Level of Detail (Visual Virtualization)
 To support dozens of elements on a single canvas, we split **Audio Processing** from **DOM Rendering**:
-*   **Continuous Audio (Host-Only):** Web Audio nodes run in the main window context rather than unmounted iframes. Even if an element is off-screen, its audio sub-graph continues to process continuously on the Host machine.
-*   **Visual Virtualization (All Clients):** If an element is positioned outside a client's local viewport (plus a 1.5x padding margin), its Shadow DOM container is set to `visibility: hidden` (maintaining its layout and running state but saving GPU render cycles), and its `update` loop execution is skipped. This keeps the active render context minimal and prevents browser background timer throttling on both Host and Controller screens.
+*   **Continuous Audio:** Web Audio nodes run in the main window context rather than unmounted iframes. Even if an element is off-screen, its audio sub-graph continues to process continuously.
+*   **Visual Virtualization:** If an element is positioned outside a client's local viewport (plus a padding margin), its Shadow DOM container is set to `visibility: hidden` (maintaining its layout and running state but saving GPU render cycles), and its `update` loop execution is skipped. This keeps the active render context minimal and prevents browser background timer throttling.
 
 ### 6. The Global Nervous System (SignalBus)
 To support modular synthesizers and cross-element coordination, elements connect via a shared **SignalBus** split into two tiers under `ctx.bus`:
 
 1.  **Local Bus (High Frequency / In-Memory):**
     High-frequency, in-memory client-side pub/sub for real-time algorithmic modulation (e.g., LFO values, envelope gates, frequency modulations). This is local-only, bypassing the network to prevent congestion.
-    *   **Intra-Host Modulation:** Since this bus is strictly in-memory, it is reserved for automated signal pathways running within the active audio engine (e.g., an LFO element modulating a synthesizer filter).
-    *   **No local-bus UI controls:** User-driven interactions (knobs, sliders, button triggers) manipulated by a participant on a Thin-Controller must *never* publish to the Local Bus, as those events would fail to reach the Host-Renderer. Instead, all user-initiated UI events must be routed via the **Low-Latency WebSocket Channel** or the **Global Bus**.
+    *   **Local Modulation:** Since this bus is strictly in-memory, it is reserved for automated signal pathways running within one browser's active audio engine (e.g., an LFO element modulating a synthesizer filter).
+    *   **No local-bus UI controls:** User-driven interactions (knobs, sliders, button triggers) must *never* publish only to the Local Bus, as those events would not reach other clients. Instead, all user-initiated UI events must be routed via the **Global Bus**.
     *   **Publish:** `ctx.bus.pub("filter_cutoff", 0.8)`
     *   **Subscribe:** `const unsub = ctx.bus.sub("filter_cutoff", (val) => { ... })`
 2.  **Global Bus (Low Frequency / State Synced):**
@@ -184,20 +187,19 @@ We align dynamic module loading and musical sequencing to logical ticks using a 
                                  ▼
          ┌───────────────────────┴───────────────────────┐
          ▼                                               ▼
-  [ Host-Renderer Client ]                       [ Thin-Controller Client ]
+  [ Jam Client ?audio=on ]                       [ Jam Client muted ]
   (Main Projector / Sound System)                (Participant Laptops)
-  ├── AudioContext (Audible)                     ├── AudioContext (Muted master gain)
-  │    ├── Master Out                            └── Canvas & Viewport (Independent)
-  │    └── Sub-graphs (per-elem)                      ├── Edit / Code panel
-  │         ├── Gain                                  ├── Coordinate navigation
-  │         ├── Panner (Host viewport)                └── MIDI / Keyboard controller
-  │         └── Lowpass                                        │
-  └── Canvas & Viewport (Master Camera)                        │
-       └── Visually Virtualized Elements                       ▼
-                │                                    [ Fast Controller Channel ]
-                │                                     (Low-Latency Raw WebSocket)
-                ▼                                              │
-         [ Dynamic ESM ] <─────────────────────────────────────┘
+  ├── AudioContext (Audible master gain)         ├── AudioContext (Muted master gain)
+  │    ├── Master Out                            │    └── Same per-element graph
+  │    └── Sub-graphs (per-elem)                 └── Canvas & Viewport
+  │         ├── Gain                                  ├── Edit / Code panel
+  │         ├── Panner (focus mode)                   ├── Coordinate navigation
+  │         └── Lowpass (focus mode)                  └── MIDI / Keyboard controller
+  └── Canvas & Viewport
+       └── Visually Virtualized Elements
+                │
+                ▼
+         [ Dynamic ESM ]
           (Shadow DOM)
 ```
 
@@ -218,21 +220,21 @@ Because we embrace the YOLO space, we use high-performance main-thread execution
 The core objective of the MVP is to prove the viability of **a spatial 2D world where dynamically loaded, modular Shadow DOM elements can be hot-reloaded seamlessly on beat boundaries and interact via a shared Signal Bus**.
 
 ### IN (MVP Scope)
-1.  **Dual-Mode Client Architecture:** Supports `Host-Renderer` mode (audible Master audio spatial mix) and `Thin-Controller` mode (silent participant laptops). Both modes execute the identical Web Audio API engine, but the parent context on Thin-Controllers routes its final audio output to a master `GainNode` set to `0`. This keeps participant laptops silent while ensuring perfect, warning-free code replication and functional local canvas visualizers.
-2.  **Low-Latency Controller Channel:** A raw, lightweight local WebSocket relay on the server to route high-frequency, instantaneous controller inputs (MIDI keys, CC slider values, and real-time gate triggers) directly from Thin-Controllers to the Host-Renderer, completely bypassing the heavier Yjs document synchronization cycle. This bypasses network CRDT overhead to deliver a sub-$15\text{ms}$ controller-to-sound response time, with the Host scheduling incoming socket events with an optional tiny $5\text{ms}$ safety buffer to mask network jitter.
+1.  **Unified Client Architecture:** Every browser runs the same full jam client and shares the same Yjs source of truth. Clients are locally muted by default; the room-feed device opts into audible output with `?audio=on`.
+2.  **Global Interaction Sync:** User-facing controls publish via the Global Bus/Yjs so collaborator actions update the same element state on every browser. Local bus remains available for high-frequency in-process modulation.
 3.  **Spatial 2D Canvas:** Viewport navigation via mouse drag/wheel and keyboard arrow/WASD keys on a fixed 1080p canvas. Elements are draggable by default and resizable on request.
 4.  **Modular Shadow DOM Elements:** Direct Shadow DOM mounting utilizing dynamic `new Function()` evaluation of server-transpiled modules to guarantee leak-proof continuous performance, with full support for CDN imports (e.g. `esm.sh`).
-5.  **Host-Side Spatial Mix:** Distance-based volume attenuation, stereo panning, and lowpass filter calculated relative to the Host camera.
-6.  **Host Focus Mode:** Hold `Tab` on the Host client to mute everything outside the main projector viewport.
+5.  **Focus-Scoped Spatial Mix:** Normal mode uses a global mix; Focus Mode applies distance-based volume attenuation, stereo panning, and lowpass filtering relative to the local viewport.
+6.  **Focus Mode:** Hold `Tab` to mute everything outside the current viewport.
 7.  **Two-Tier Signal Bus:** High-frequency local pub/sub combined with low-frequency global state sync over a local, offline LAN `y-websocket` server.
-8.  **Bar-Aligned Hot-Reload (Host):** Look-ahead scheduler combining global beats with sample-accurate Web Audio timelines to perform gain-ramped crossfades.
+8.  **Bar-Aligned Hot-Reload:** Look-ahead scheduler combining global beats with sample-accurate Web Audio timelines to perform gain-ramped crossfades.
 9.  **In-Memory State Preservation:** Contract utilizing `setup(ctx, prevState)` and `getState()` to transfer state seamlessly on hot-reload.
 10. **Server-Side LLM Compiler & Target Mapping:** An active LLM agent session on the server managing dynamic element generation in the workspace:
     - **Canvas-to-File Mapping:** The Yjs document maps each canvas Element ID 1-to-1 with its physical source file path on the server (e.g., `element_123 -> /public/elements/sequencer_123.js`).
     - **Targeted Prompt Routing:** The client-side prompt bar routes the prompt along with the target element's active file path to the server. The LLM agent receives both, enabling direct, surgical modification of the correct source file.
     - **Automated Wrapper Instrumentation:** During compile-time, the server can wrap the generated ES modules to inject safety hooks, intercepting Web Audio nodes and EventListeners for bulletproof parent-managed tracking and teardown.
     - **State Migration Injector:** The server compiles old state structures back into the LLM context, instructing the model to generate custom translation helpers to automatically bridge schema gaps inside the returned module.
-11. **Audio Autoplay Policy Handling:** A "Click to join" landing screen requiring an explicit user gesture to resume the Host's `AudioContext` before any synchronization, coordinates, or audio nodes initialize.
+11. **Audio Autoplay Policy Handling:** A "Click to join" landing screen requiring an explicit user gesture before any synchronization, coordinates, or audio nodes initialize.
 
 ### OUT (Deferred)
 - Multi-room routing and room discovery.
@@ -244,10 +246,10 @@ The core objective of the MVP is to prove the viability of **a spatial 2D world 
 
 ## Build Order
 
-1.  **Dual-Mode Canvas & Autoplay:** Render the subtle reference coordinate grid. Implement smooth mouse and keyboard WASD navigation on the 1080p canvas. Create the `?host=true` (Host-Renderer) vs. `?host=false` (Thin-Controller) toggle. Add the autoplay overlay requiring a Host user gesture to resume the `AudioContext` while letting Controller clients skip the overlay.
-2.  **Low-Latency WebSocket Controller Channel:** Build a raw Node.js WebSocket server relay. Enable Thin-Controllers to send high-frequency MIDI and slider control events, broadcasting them directly to the Host-Renderer to bypass Yjs latency and verify $<15\text{ms}$ controller response.
+1.  **Unified Canvas & Autoplay:** Render the subtle reference coordinate grid. Implement smooth mouse and keyboard WASD navigation on the 1080p canvas. Create the default-muted join flow and `?audio=on` audible-room-feed opt-in.
+2.  **Global Interaction Sync:** Ensure UI controls use the Global Bus/Yjs for shared state so every client observes the same interaction results.
 3.  **Static Element Rendering & Virtualization:** Place 4 dummy visual elements inside Shadow Roots on the canvas. Implement the Visual Level-of-Detail (LOD) virtualization system, testing that elements off-screen are correctly set to `visibility: hidden` and their `update` loops are skipped.
-4.  **Host-Side Spatial Audio Sub-graphs & Look-Ahead Scheduler:** Wire a continuous synthesizer loop to each element on the Host-Renderer client. Implement the spatial panning, volume attenuation, and lowpass filter calculations relative to the Host camera. Establish the Host's look-ahead scheduler converting logical beats to local `audioCtx.currentTime`.
+4.  **Spatial Audio Sub-graphs & Look-Ahead Scheduler:** Wire a continuous synthesizer loop to each element. Implement global normal mix plus Focus Mode spatial panning, volume attenuation, and lowpass filtering relative to the local viewport. Establish the look-ahead scheduler converting logical beats to local `audioCtx.currentTime`.
 5.  **Two-Tier Signal Bus Integration:** Implement the two-tier SignalBus. Verify that local pub/sub works in-memory and global pub/sub syncs state via Yjs. Integrate the instance-ID namespacing proxy.
 6.  **Yjs Synchronization:** Integrate a local, offline LAN `y-websocket` server. Synchronize element coordinates, clock configs `{ bpm, startTime }`, and global SignalBus events across multiple browser tabs and participant laptops with zero internet dependencies.
 7.  **Dynamic new Function Evaluation & Hot-Reload Crossfades:** Implement dynamic `new Function()` compilation of server-transpiled functional modules. Integrate pre-flight fetching/compilation, adaptive boundary offsets, `getState()`, and `setup(ctx, prevState)` to trigger seamless gain-ramped crossfades at the next bar boundary with 100% garbage collectability.

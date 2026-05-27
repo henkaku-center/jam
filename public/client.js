@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
 // App State Variables
-let isHost = true;
+let isAudioOutputEnabled = shouldEnableAudioFromUrl();
 let isAudioInitialized = false;
 
 // Web Audio API Global objects
@@ -13,11 +13,11 @@ let masterGain = null;
 // Viewport / Navigation State (Camera coordinates)
 let camera = { x: 0, y: 0, zoom: 1.0 };
 const canvasBoundary = { width: 1920, height: 1080 };
-const hostViewportDimensions = { width: 1024, height: 768 }; // Bounded frame
 
 // Active Elements State
 const activeElements = new Map(); // id -> Element Hashing/Harness object
 const compilingElements = new Set(); // id -> track elements currently compiling/loading
+let selectedElementId = null;
 
 // Global Sync State (Yjs)
 let ydoc = null;
@@ -28,9 +28,6 @@ let globalBusMap = null; // Y.Map: name -> value
 
 // Local Signal Bus (In-memory, High Frequency)
 const localBusListeners = new Map(); // key -> Set of callbacks
-
-// Low-Latency Controller Channel Websocket connection
-let controllerSocket = null;
 
 // Visual NTP Sync parameters
 let serverClockOffset = 0; // ms
@@ -50,6 +47,7 @@ const statX = document.getElementById('stat-x');
 const statY = document.getElementById('stat-y');
 const statZoom = document.getElementById('stat-zoom');
 const addElementBtn = document.getElementById('add-element-btn');
+const openStrudelBtn = document.getElementById('open-strudel-btn');
 const resetCamBtn = document.getElementById('reset-cam-btn');
 const focusOverlay = document.getElementById('focus-overlay');
 const agentTerminal = document.getElementById('agent-terminal');
@@ -57,35 +55,45 @@ const agentTerminalViewport = document.getElementById('agent-terminal-viewport')
 const agentTerminalFocusZone = document.getElementById('agent-terminal-focus-zone');
 let agentTerminalTerm = null;
 
+const DEFAULT_STRUDEL_CODE = `setcps(1)
+n("<0 2 4 6>*8").scale('G4 minor')
+  .s("gm_lead_6_voice")
+  .clip(sine.range(.25, .8).slow(8))
+  .jux(rev)
+  .room(.8)
+  .lpf(perlin.range(500, 8000).slow(4))`;
+
 // Ensure correct room ID
 const roomName = window.location.hash.slice(1) || 'default-jam';
 window.location.hash = roomName;
 
 // --- STEP 1: INITIALIZATION & AUDIO RESUME OVERLAYS ---
 
-document.getElementById('join-host-btn').addEventListener('click', () => {
-  isHost = true;
-  initializeSystem();
-});
+function shouldEnableAudioFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const audio = (params.get('audio') || '').toLowerCase();
+  const muted = (params.get('muted') || '').toLowerCase();
+  return audio === 'on' || audio === '1' || audio === 'true' || muted === 'false' || params.get('host') === 'true';
+}
 
-document.getElementById('join-controller-btn').addEventListener('click', () => {
-  isHost = false;
+document.getElementById('join-host-btn').addEventListener('click', () => {
+  isAudioOutputEnabled = shouldEnableAudioFromUrl();
   initializeSystem();
 });
 
 function initializeSystem() {
   autoplayOverlay.classList.add('hidden');
   appContainer.classList.remove('hidden');
+  window.jamAudioOutputEnabled = isAudioOutputEnabled;
   
-  // Set badges
-  if (isHost) {
-    modeBadge.textContent = 'HOST';
+  hostCameraFrame.classList.add('hidden');
+
+  if (isAudioOutputEnabled) {
+    modeBadge.textContent = 'AUDIO ON';
     modeBadge.className = 'badge host';
-    hostCameraFrame.classList.add('hidden'); // Host doesn't need to see its own bounding box outline
   } else {
-    modeBadge.textContent = 'CONTROLLER';
+    modeBadge.textContent = 'MUTED';
     modeBadge.className = 'badge controller';
-    hostCameraFrame.classList.remove('hidden'); // Controller sees Host's frame
   }
 
   // Init AudioContext
@@ -93,9 +101,6 @@ function initializeSystem() {
   
   // Init Yjs & WS
   initYjs();
-
-  // Init controller websocket channel
-  initControllerSocket();
 
   // Init agent terminal stream
   initAgentTerminalSocket();
@@ -119,14 +124,14 @@ function initAudio() {
   // Create primary master gain node
   masterGain = audioCtx.createGain();
   masterGain.connect(audioCtx.destination);
+  window.jamMasterGain = masterGain;
   
-  if (!isHost) {
-    // Mute Thin-Controller to avoid physical speaker feedback/phasing!
+  if (!isAudioOutputEnabled) {
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    console.log('[Audio] Thin-Controller loaded in SILENT mode. Master gain = 0.');
+    console.log('[Audio] Jam client loaded with local audio muted. Master gain = 0.');
   } else {
     masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
-    console.log('[Audio] Host-Renderer loaded in AUDIBLE mode. Master gain = 1.');
+    console.log('[Audio] Jam client loaded with local audio enabled. Master gain = 1.');
   }
 }
 
@@ -178,9 +183,9 @@ function initYjs() {
     });
   });
 
-  // Initialize clock if we are Host and Yjs doesn't have it
+  // Initialize clock if the shared Yjs document does not have one yet.
   provider.on('synced', () => {
-    if (isHost && !clockMap.has('bpm')) {
+    if (!clockMap.has('bpm')) {
       ydoc.transact(() => {
         clockMap.set('bpm', 120);
         clockMap.set('startTime', Date.now());
@@ -392,31 +397,6 @@ const signalBus = {
 
 const globalBusListeners = new Map(); // key -> Set
 
-// --- STEP 6: LOW-LATENCY WEBSOCKET CONTROLLER CHANNEL ---
-
-function initControllerSocket() {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const url = `${protocol}//${window.location.host}/controller?host=${isHost}`;
-  
-  controllerSocket = new WebSocket(url);
-  
-  controllerSocket.onopen = () => {
-    console.log(`[Controller Socket] Connected to low-latency channel as ${isHost ? 'Host' : 'Controller'}`);
-  };
-
-  controllerSocket.onmessage = (event) => {
-    if (isHost) {
-      // Host receives controller events (e.g. MIDI or Slider moves) and handles them
-      try {
-        const msg = JSON.parse(event.data);
-        handleControllerMessageOnHost(msg);
-      } catch (err) {
-        console.error('[Controller Socket] Failed parsing message:', err);
-      }
-    }
-  };
-}
-
 function initAgentTerminalSocket() {
   if (!agentTerminal || !agentTerminalViewport || !window.Terminal || !window.FitAddon) return;
 
@@ -534,19 +514,17 @@ function initAgentTerminalSocket() {
   };
 }
 
-// Send light-weight raw control messages from Thin-Controller to Host
-function sendControllerMessage(msg) {
-  if (controllerSocket && controllerSocket.readyState === WebSocket.OPEN && !isHost) {
-    controllerSocket.send(JSON.stringify(msg));
-  }
+function isTextEntryOrTerminalFocused() {
+  const active = document.activeElement;
+  return Boolean(active?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea'));
 }
 
-function handleControllerMessageOnHost(msg) {
-  // Routes to specific target elements on the Host
+// Legacy helper for older generated elements. New shared-client elements should use
+// ctx.bus.pubGlobal for user actions so every client sees the same state.
+function sendControllerMessage(msg) {
   const targetId = msg.elementId;
   const element = activeElements.get(targetId);
   if (element && element.runtime && typeof element.runtime.handleControllerInput === 'function') {
-    // Custom trigger hook inside generated element code
     element.runtime.handleControllerInput(msg.data);
   }
 }
@@ -632,7 +610,9 @@ function createElementHarnessContext(elementId, audioOutNode) {
 
   // Build the complete context object
   const ctx = {
+    elementId,
     audioCtx: audioCtxProxy,
+    rawAudioCtx: audioCtx,
     audioOut: audioOutNode,
     domRoot: domRootProxy,
     clock: clockProxy,
@@ -679,31 +659,22 @@ async function instantiateElement(id, layout, options = {}) {
     }
   }
 
-  // Create spatial audio nodes for Host client, or dummy nodes for Controller client
+  // Create the same full spatial audio graph on every client. Muted clients only differ at masterGain.
   let elementAudioOut = null;
   let elementPanner = null;
   let elementFilter = null;
   let elementVolume = null;
 
-  if (isHost) {
-    // 3D Spatial Audio Sub-graph: Element Output -> Volume Gain -> Biquad Filter -> Stereo Panner -> Master Gain
-    elementVolume = audioCtx.createGain();
-    elementFilter = audioCtx.createBiquadFilter();
-    elementFilter.type = 'lowpass';
-    elementPanner = audioCtx.createStereoPanner();
+  elementVolume = audioCtx.createGain();
+  elementFilter = audioCtx.createBiquadFilter();
+  elementFilter.type = 'lowpass';
+  elementPanner = audioCtx.createStereoPanner();
 
-    elementVolume.connect(elementFilter);
-    elementFilter.connect(elementPanner);
-    elementPanner.connect(masterGain);
+  elementVolume.connect(elementFilter);
+  elementFilter.connect(elementPanner);
+  elementPanner.connect(masterGain);
 
-    elementAudioOut = elementVolume;
-  } else {
-    // Controller still creates real nodes for visualizers but connects to dummy mute gain
-    const dummyGain = audioCtx.createGain();
-    dummyGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    dummyGain.connect(masterGain);
-    elementAudioOut = dummyGain;
-  }
+  elementAudioOut = elementVolume;
 
   // Create harness context
   const harness = createElementHarnessContext(id, elementAudioOut);
@@ -786,7 +757,7 @@ async function instantiateElement(id, layout, options = {}) {
 
     console.log(`[Hot-Reload] Queuing downbeat crossfade at AudioContext time ${crossfadeTime.toFixed(3)}s`);
 
-    if (isHost && elementVolume) {
+    if (elementVolume) {
       // Crossfade Web Audio gains on the exact beat downbeat
       elementVolume.gain.setValueAtTime(0, audioCtx.currentTime);
       elementVolume.gain.setValueAtTime(0, crossfadeTime - 0.05);
@@ -811,7 +782,7 @@ async function instantiateElement(id, layout, options = {}) {
 
   } else {
     // Fresh instantiation
-    if (isHost && elementVolume) {
+    if (elementVolume) {
       elementVolume.gain.setValueAtTime(1, audioCtx.currentTime);
     }
   }
@@ -868,7 +839,7 @@ function renderErrorUI(shadowRoot, err) {
 
 // Run every animation frame to update spatial positioning and level of detail virtualization
 function updateSpatialAudioAndLOD() {
-  if (!audioCtx || !isHost) return;
+  if (!audioCtx) return;
 
   activeElements.forEach((element, id) => {
     const layout = element.layout;
@@ -939,6 +910,9 @@ window.addEventListener('keydown', (e) => {
     if (!isFocusModeActive) {
       activateFocusMode();
     }
+  } else if ((e.key === 'Backspace' || e.key === 'Delete') && e.ctrlKey && !isTextEntryOrTerminalFocused()) {
+    e.preventDefault();
+    deleteSelectedElement();
   }
 });
 
@@ -962,6 +936,23 @@ function deactivateFocusMode() {
   
   // Restore original volume mixing
   updateSpatialAudioAndLOD();
+}
+
+function selectElement(id, domWrapper) {
+  selectedElementId = id;
+  document.querySelectorAll('.canvas-element-wrapper').forEach(w => w.classList.remove('active-focus'));
+  domWrapper?.classList.add('active-focus');
+}
+
+function deleteSelectedElement() {
+  if (!selectedElementId || !ydoc || !elementsMap?.has(selectedElementId)) return;
+
+  const id = selectedElementId;
+  selectedElementId = null;
+  document.querySelectorAll('.canvas-element-wrapper').forEach(w => w.classList.remove('active-focus'));
+  ydoc.transact(() => {
+    elementsMap.delete(id);
+  });
 }
 
 function getHostViewportBoundingBox() {
@@ -1046,7 +1037,7 @@ function animationLoop(timestamp) {
   requestAnimationFrame(animationLoop);
 }
 
-// --- STEP 11: VIEWPORT NAVIGATION (drag, zoom, keys) ---
+// --- STEP 11: VIEWPORT NAVIGATION (drag, zoom) ---
 
 function setupViewportNavigation() {
   let isDragging = false;
@@ -1095,26 +1086,6 @@ function setupViewportNavigation() {
     applyViewportTransform();
   });
 
-  // Keyboard navigation arrow/WASD
-  window.addEventListener('keydown', (e) => {
-    // If typing into any text control, bypass keyboard pan.
-    if (document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea')) return;
-
-    const panSpeed = 20 / camera.zoom;
-    if (e.key === 'w' || e.key === 'ArrowUp') {
-      camera.y += panSpeed;
-    } else if (e.key === 's' || e.key === 'ArrowDown') {
-      camera.y -= panSpeed;
-    } else if (e.key === 'a' || e.key === 'ArrowLeft') {
-      camera.x += panSpeed;
-    } else if (e.key === 'd' || e.key === 'ArrowRight') {
-      camera.x -= panSpeed;
-    } else {
-      return;
-    }
-    applyViewportTransform();
-  });
-
   // Init position
   applyViewportTransform();
 }
@@ -1123,13 +1094,7 @@ function applyViewportTransform() {
   gridLayer.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
   elementsLayer.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
   
-  // Position host visual viewport bounding box frame for Controller clients
-  if (!isHost) {
-    // For simplicity, let's render Host frame centered at origin for reference
-    hostCameraFrame.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
-    hostCameraFrame.style.width = `${hostViewportDimensions.width}px`;
-    hostCameraFrame.style.height = `${hostViewportDimensions.height}px`;
-  }
+  hostCameraFrame.classList.add('hidden');
 
   // Update status UI
   statX.textContent = Math.round(camera.x);
@@ -1152,9 +1117,7 @@ function setupElementDragging(domWrapper, id) {
     e.stopPropagation();
     isMoving = true;
     
-    // Select wrapper
-    document.querySelectorAll('.canvas-element-wrapper').forEach(w => w.classList.remove('active-focus'));
-    domWrapper.classList.add('active-focus');
+    selectElement(id, domWrapper);
 
     const layout = elementsMap.get(id);
     startX = e.clientX / camera.zoom - layout.x;
@@ -1234,6 +1197,7 @@ function syncElementsFromMap() {
       element.forceTearDown();
       element.domWrapper.remove();
       activeElements.delete(id);
+      if (selectedElementId === id) selectedElementId = null;
       console.log(`[Lifecycle] Removed deleted element ${id}`);
     }
   });
@@ -1261,6 +1225,9 @@ function setupUIActions() {
     createNewElementOnCanvas();
   });
 
+  openStrudelBtn?.addEventListener('click', () => {
+    createStrudelElementOnCanvas();
+  });
 }
 
 function createNewElementOnCanvas(initialPrompt = '') {
@@ -1285,6 +1252,31 @@ function createNewElementOnCanvas(initialPrompt = '') {
     type: fileExt,
     prompt: initialPrompt,
     authored: 'codegen',
+    reloadToken: 0
+  };
+
+  ydoc.transact(() => {
+    elementsMap.set(id, layout);
+  });
+}
+
+function createStrudelElementOnCanvas() {
+  if (!ydoc || !elementsMap) return;
+
+  const id = 'elem_' + Math.random().toString(36).substr(2, 9);
+  const centerX = Math.round(-camera.x / camera.zoom + (window.innerWidth / 2) / camera.zoom - 180);
+  const centerY = Math.round(-camera.y / camera.zoom + (window.innerHeight / 2) / camera.zoom - 130);
+
+  const layout = {
+    id,
+    x: centerX,
+    y: centerY,
+    width: 360,
+    height: 260,
+    filePath: '/elements/strudel_clocked_element.js',
+    type: 'strudel',
+    prompt: DEFAULT_STRUDEL_CODE,
+    authored: 'hand',
     reloadToken: 0
   };
 
