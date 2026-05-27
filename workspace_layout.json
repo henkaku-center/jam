@@ -1,8 +1,8 @@
 {
   "elem_r9rre4xjv": {
     "id": "elem_r9rre4xjv",
-    "x": 1064,
-    "y": -449,
+    "x": 921,
+    "y": -152,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_r9rre4xjv_seq.js",
@@ -13,28 +13,18 @@
   },
   "elem_d4tb6laez": {
     "id": "elem_d4tb6laez",
-    "x": 2196,
-    "y": 16,
+    "x": 1567,
+    "y": -508,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_d4tb6laez_synth.js",
     "type": "synth",
     "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
   },
-  "elem_6vhufj5x2": {
-    "id": "elem_6vhufj5x2",
-    "x": 795,
-    "y": -495,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_6vhufj5x2_synth.js",
-    "type": "synth",
-    "prompt": "create a game of pong"
-  },
   "elem_crystal_lead": {
     "id": "elem_crystal_lead",
-    "x": 1346,
-    "y": -443,
+    "x": 1278,
+    "y": -503,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_crystal_lead_synth.js",
@@ -45,8 +35,8 @@
   },
   "elem_house_voice": {
     "id": "elem_house_voice",
-    "x": 1325,
-    "y": -230,
+    "x": 1281,
+    "y": -289,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_house_voice_sampler.js",
@@ -54,17 +44,5 @@
     "prompt": "microphone voice sampler for house vocal chops",
     "authored": "hand",
     "reloadToken": 1779870660021
-  },
-  "elem_oi2ht43ae": {
-    "id": "elem_oi2ht43ae",
-    "x": 953,
-    "y": -252,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
   }
 }
