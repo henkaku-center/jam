@@ -24,6 +24,8 @@ const REPO_ROOT = process.cwd();
 const AGENT_WORKTREE_MODE = process.env.AGENT_WORKTREE_MODE !== 'off';
 const AGENT_WORKTREE_ROOT = path.resolve(process.env.AGENT_WORKTREE_ROOT || path.join(REPO_ROOT, '..', 'jam-agent-worktrees'));
 const AGENT_PORT_START = Number(process.env.AGENT_PORT_START || (Number(PORT) || 3000) + 1);
+const LIVE_AUTO_COMMIT = process.env.LIVE_AUTO_COMMIT !== 'off';
+const LIVE_COMMIT_DEBOUNCE_MS = Number(process.env.LIVE_COMMIT_DEBOUNCE_MS || 800);
 const app = express();
 app.use(express.json());
 
@@ -103,6 +105,109 @@ function workspaceSnapshot() {
 
 // Keep track of workspace layout
 const manifestPath = path.resolve('workspace_layout.json');
+let liveCommitTimer = null;
+let liveCommitInFlight = false;
+const pendingLiveCommitPaths = new Set();
+const pendingLiveCommitReasons = new Set();
+
+function relativeRepoPath(filePath) {
+  const relative = path.relative(REPO_ROOT, path.resolve(filePath));
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+    return null;
+  }
+  return relative.split(path.sep).join('/');
+}
+
+function isLiveCommitPathAllowed(relativePath) {
+  if (!relativePath) return false;
+  if (relativePath === '.jam-agent.env' || relativePath.endsWith('/.jam-agent.env')) return false;
+  if (relativePath === '.env' || relativePath.startsWith('.env.')) return false;
+  if (relativePath === 'node_modules' || relativePath.startsWith('node_modules/')) return false;
+  return relativePath === 'workspace_layout.json' || relativePath.startsWith('public/elements/');
+}
+
+function queueLiveCommit(paths, reason) {
+  if (!LIVE_AUTO_COMMIT) return;
+
+  for (const filePath of paths) {
+    const relative = relativeRepoPath(filePath);
+    if (isLiveCommitPathAllowed(relative)) pendingLiveCommitPaths.add(relative);
+  }
+
+  if (reason) pendingLiveCommitReasons.add(reason);
+  if (!pendingLiveCommitPaths.size) return;
+
+  clearTimeout(liveCommitTimer);
+  liveCommitTimer = setTimeout(processLiveCommitQueue, LIVE_COMMIT_DEBOUNCE_MS);
+}
+
+function hasGitChangesFor(paths) {
+  const result = spawnSync('git', ['status', '--porcelain', '--', ...paths], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) {
+    console.warn('[Live Commit] git status failed:', result.stderr || result.stdout);
+    return false;
+  }
+  return Boolean(result.stdout.trim());
+}
+
+function processLiveCommitQueue() {
+  if (liveCommitInFlight) {
+    clearTimeout(liveCommitTimer);
+    liveCommitTimer = setTimeout(processLiveCommitQueue, LIVE_COMMIT_DEBOUNCE_MS);
+    return;
+  }
+
+  const paths = [...pendingLiveCommitPaths].filter(isLiveCommitPathAllowed);
+  const reasons = [...pendingLiveCommitReasons];
+  pendingLiveCommitPaths.clear();
+  pendingLiveCommitReasons.clear();
+
+  if (!paths.length || !hasGitChangesFor(paths)) return;
+
+  liveCommitInFlight = true;
+  try {
+    const add = spawnSync('git', ['add', '--', ...paths], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8'
+    });
+    if (add.status !== 0) {
+      console.warn('[Live Commit] git add failed:', add.stderr || add.stdout);
+      return;
+    }
+
+    const diff = spawnSync('git', ['diff', '--cached', '--quiet', '--', ...paths], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8'
+    });
+    if (diff.status === 0) return;
+
+    const title = reasons.length ? `Live jam update: ${reasons.slice(-1)[0]}` : 'Live jam update';
+    const commit = spawnSync('git', ['commit', '-m', title, '--only', '--', ...paths], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        JAM_AGENT_ID: 'live-server',
+        JAM_ELEMENT_IDS: paths.filter(file => file.startsWith('public/elements/')).join(',')
+      }
+    });
+    if (commit.status !== 0) {
+      console.warn('[Live Commit] git commit failed:', commit.stderr || commit.stdout);
+      return;
+    }
+
+    console.log(`[Live Commit] ${title}\n${commit.stdout.trim()}`);
+  } finally {
+    liveCommitInFlight = false;
+    if (pendingLiveCommitPaths.size) {
+      clearTimeout(liveCommitTimer);
+      liveCommitTimer = setTimeout(processLiveCommitQueue, LIVE_COMMIT_DEBOUNCE_MS);
+    }
+  }
+}
 
 // Initialize Yjs workspace document on server
 const doc = getYDoc('jam-workspace');
@@ -463,6 +568,7 @@ app.post('/api/compile', async (req, res) => {
   // Write the code to disk
   fs.writeFileSync(resolvedPath, generatedCode, 'utf8');
   console.log(`[Compiler] Code written to: ${resolvedPath}`);
+  queueLiveCommit([resolvedPath], `compile ${elementId}`);
 
   // Transpile to IIFE string for new Function()
   // Replace 'export default function setup' with 'return function setup'
@@ -497,6 +603,7 @@ app.post('/api/workspace/elements', (req, res) => {
     doc.transact(() => {
       elementsMap.set(layout.id, layout);
     }, AGENT_ORIGIN);
+    queueLiveCommit([manifestPath], `add ${layout.id}`);
     res.json({ success: true, id: layout.id, layout: publicElementLayout(layout) });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -515,6 +622,7 @@ app.patch('/api/workspace/elements/:id', (req, res) => {
     doc.transact(() => {
       elementsMap.set(id, layout);
     }, AGENT_ORIGIN);
+    queueLiveCommit([manifestPath], `update ${id}`);
     res.json({ success: true, id, layout: publicElementLayout(layout) });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -529,6 +637,7 @@ app.delete('/api/workspace/elements/:id', (req, res) => {
   doc.transact(() => {
     elementsMap.delete(id);
   }, AGENT_ORIGIN);
+  queueLiveCommit([manifestPath], `delete ${id}`);
   res.json({ success: true, id });
 });
 
@@ -544,6 +653,13 @@ app.post('/api/workspace/elements/:id/reload', (req, res) => {
   doc.transact(() => {
     elementsMap.set(id, layout);
   }, AGENT_ORIGIN);
+  const commitPaths = [manifestPath];
+  try {
+    commitPaths.push(resolveElementFilePath(layout.filePath));
+  } catch {
+    // Invalid paths are rejected by compile/load paths; keep reload commit scoped to manifest.
+  }
+  queueLiveCommit(commitPaths, `reload ${id}`);
   res.json({ success: true, id, layout });
 });
 

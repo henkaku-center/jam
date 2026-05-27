@@ -43,6 +43,16 @@ npm run agent -- promote ../jam-agent-worktrees/alice --commit
 
 Promotion applies the agent diff to the live checkout, runs quick validation, asks the live server to reload changed element files when possible, and optionally commits only the promoted paths.
 
+## Live Auto-Commits
+
+The live server auto-commits narrow file sets after successful live changes:
+
+- generated element source written by `/api/compile`
+- `workspace_layout.json` mutations from add, patch, delete, and reload workspace API calls
+- changed element source plus `workspace_layout.json` when `/api/workspace/elements/:id/reload` is used
+
+Set `LIVE_AUTO_COMMIT=off` to disable this. Auto-commits are path-limited to `workspace_layout.json` and `public/elements/*`, and never include `.jam-agent.env`.
+
 ## Embedded Terminal Workflow
 
 By default, each browser-connected agent terminal is launched in a fresh git worktree under `../jam-agent-worktrees`. The terminal receives:
