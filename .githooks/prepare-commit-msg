@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+msg_file="$1"
+
+{
+  echo
+  echo "Jam-Agent: ${JAM_AGENT_ID:-manual}"
+  if [[ -n "${JAM_AGENT_BRANCH:-}" ]]; then
+    echo "Jam-Agent-Branch: ${JAM_AGENT_BRANCH}"
+  fi
+  if [[ -n "${JAM_ELEMENT_IDS:-}" ]]; then
+    echo "Jam-Elements: ${JAM_ELEMENT_IDS}"
+  fi
+  if [[ -n "${JAM_SESSION_ID:-}" ]]; then
+    echo "Jam-Session: ${JAM_SESSION_ID}"
+  fi
+} >> "$msg_file"

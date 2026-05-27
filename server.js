@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import os from 'os';
+import net from 'net';
 import { spawn, spawnSync } from 'child_process';
 import pty from 'node-pty';
 import { getYDoc, setupWSConnection } from './node_modules/y-websocket/bin/utils.cjs';
@@ -19,6 +20,10 @@ const CODEX_MODEL = process.env.CODEX_MODEL || '';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 30000);
+const REPO_ROOT = process.cwd();
+const AGENT_WORKTREE_MODE = process.env.AGENT_WORKTREE_MODE !== 'off';
+const AGENT_WORKTREE_ROOT = path.resolve(process.env.AGENT_WORKTREE_ROOT || path.join(REPO_ROOT, '..', 'jam-agent-worktrees'));
+const AGENT_PORT_START = Number(process.env.AGENT_PORT_START || (Number(PORT) || 3000) + 1);
 const app = express();
 app.use(express.json());
 
@@ -136,13 +141,12 @@ if (fs.existsSync(manifestPath)) {
 const controllerClients = new Set();
 let hostClient = null;
 
-// Persistent browser-visible agent PTY. This is intentionally a raw terminal
-// bridge so the browser sees the same interface as the CLI.
-const terminalClients = new Set();
-const terminalHistory = [];
+// Browser-visible agent PTYs. Each connected browser gets an independent
+// terminal session so collaborators can prompt Codex/Claude in parallel.
+const terminalSessions = new Set();
 const TERMINAL_HISTORY_LIMIT = 200000;
-let agentPty = null;
 let codexSessionId = null;
+let nextAgentPort = AGENT_PORT_START;
 
 function sendTerminalMessage(client, message) {
   if (client.readyState === 1) {
@@ -150,90 +154,202 @@ function sendTerminalMessage(client, message) {
   }
 }
 
-function appendTerminalData(data) {
-  terminalHistory.push(data);
-  let total = terminalHistory.reduce((sum, chunk) => sum + chunk.length, 0);
-  while (total > TERMINAL_HISTORY_LIMIT && terminalHistory.length > 1) {
-    total -= terminalHistory.shift().length;
+function appendTerminalData(session, data) {
+  session.history.push(data);
+  let total = session.history.reduce((sum, chunk) => sum + chunk.length, 0);
+  while (total > TERMINAL_HISTORY_LIMIT && session.history.length > 1) {
+    total -= session.history.shift().length;
   }
 
-  const message = { type: 'data', data };
-  terminalClients.forEach(client => {
-    sendTerminalMessage(client, message);
+  sendTerminalMessage(session.ws, { type: 'data', data });
+}
+
+function sanitizeAgentId(value) {
+  return String(value || 'agent')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'agent';
+}
+
+function canListenOnPort(port) {
+  return new Promise(resolve => {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.once('listening', () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, '127.0.0.1');
   });
 }
 
-function getInteractiveAgentConfig() {
-  if (CODEGEN_PROVIDER === 'claude') {
+async function allocateAgentPort() {
+  for (let i = 0; i < 100; i += 1) {
+    const port = nextAgentPort++;
+    if (await canListenOnPort(port)) return port;
+  }
+  throw new Error(`No available agent dev-server port found starting at ${AGENT_PORT_START}`);
+}
+
+async function createAgentWorkspace() {
+  const provider = (process.env.AGENT_TERMINAL_PROVIDER || CODEGEN_PROVIDER || 'codex').toLowerCase();
+  const port = await allocateAgentPort();
+
+  if (!AGENT_WORKTREE_MODE || provider === 'mock' || provider === 'none') {
+    return {
+      id: 'live-checkout',
+      cwd: REPO_ROOT,
+      branch: null,
+      port,
+      baseUrl: `http://localhost:${port}`,
+      isolated: false
+    };
+  }
+
+  const id = sanitizeAgentId(`agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+  const branch = `agent/${id}`;
+  const cwd = path.join(AGENT_WORKTREE_ROOT, id);
+
+  fs.mkdirSync(AGENT_WORKTREE_ROOT, { recursive: true });
+  const result = spawnSync('git', ['worktree', 'add', '-b', branch, cwd, 'HEAD'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) {
+    throw new Error(`Failed to create agent worktree: ${result.stderr || result.stdout}`);
+  }
+
+  const baseUrl = `http://localhost:${port}`;
+  fs.writeFileSync(path.join(cwd, '.jam-agent.env'), [
+    `JAM_AGENT_ID=${id}`,
+    `JAM_AGENT_BRANCH=${branch}`,
+    `PORT=${port}`,
+    `JAM_BASE_URL=${baseUrl}`,
+    `JAM_LIVE_BASE_URL=http://localhost:${PORT}`,
+    ''
+  ].join('\n'));
+
+  return { id, cwd, branch, port, baseUrl, isolated: true };
+}
+
+function getInteractiveAgentConfig(workspace) {
+  workspace = workspace || { cwd: REPO_ROOT };
+  const provider = (process.env.AGENT_TERMINAL_PROVIDER || CODEGEN_PROVIDER || 'codex').toLowerCase();
+  if (provider === 'mock' || provider === 'none') {
+    return { command: process.env.SHELL || 'bash', args: ['-lc', 'printf "jam test terminal $$\\n"; sleep 86400'] };
+  }
+  if (provider === 'claude') {
     const args = ['--permission-mode', 'dontAsk'];
     if (CLAUDE_MODEL) args.push('--model', CLAUDE_MODEL);
     return { command: 'claude', args };
   }
 
-  const args = ['--yolo', '--cd', process.cwd()];
+  const args = ['--yolo', '--cd', workspace.cwd];
   if (CODEX_MODEL) args.push('--model', CODEX_MODEL);
   return { command: 'codex', args };
 }
 
-function ensureAgentPty() {
-  if (agentPty) return agentPty;
+function removeAgentWorkspace(workspace) {
+  if (!workspace?.isolated) return;
 
-  const { command, args } = getInteractiveAgentConfig();
-  if (!commandExists(command)) {
-    throw new Error(`${command} CLI is not installed or not on PATH`);
+  const removeResult = spawnSync('git', ['worktree', 'remove', '--force', workspace.cwd], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8'
+  });
+  if (removeResult.status !== 0) {
+    console.warn(`[Agent Terminal] Failed to remove worktree ${workspace.cwd}: ${removeResult.stderr || removeResult.stdout}`);
   }
 
-  agentPty = pty.spawn(command, args, {
-    name: 'xterm-256color',
-    cols: 120,
-    rows: 36,
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      TERM: 'xterm-256color',
-      COLORTERM: 'truecolor',
-      FORCE_COLOR: '1'
+  if (workspace.branch) {
+    const branchResult = spawnSync('git', ['branch', '-D', workspace.branch], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8'
+    });
+    if (branchResult.status !== 0) {
+      console.warn(`[Agent Terminal] Failed to delete branch ${workspace.branch}: ${branchResult.stderr || branchResult.stdout}`);
     }
-  });
-
-  agentPty.onData(appendTerminalData);
-  agentPty.onExit(() => {
-    agentPty = null;
-  });
-
-  return agentPty;
+  }
 }
 
-function clearTerminalHistory() {
-  terminalHistory.length = 0;
-  terminalClients.forEach(client => {
-    sendTerminalMessage(client, { type: 'clear' });
+async function createAgentTerminalSession(ws) {
+  const preflight = getInteractiveAgentConfig();
+  if (!commandExists(preflight.command)) {
+    throw new Error(`${preflight.command} CLI is not installed or not on PATH`);
+  }
+
+  const workspace = await createAgentWorkspace();
+  const { command, args } = getInteractiveAgentConfig(workspace);
+
+  let agentPty = null;
+  try {
+    agentPty = pty.spawn(command, args, {
+      name: 'xterm-256color',
+      cols: 120,
+      rows: 36,
+      cwd: workspace.cwd,
+      env: {
+        ...process.env,
+        JAM_AGENT_ID: workspace.id,
+        JAM_AGENT_BRANCH: workspace.branch || '',
+        JAM_BASE_URL: workspace.baseUrl,
+        JAM_LIVE_BASE_URL: `http://localhost:${PORT}`,
+        PORT: String(workspace.port),
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+        FORCE_COLOR: '1'
+      }
+    });
+  } catch (err) {
+    removeAgentWorkspace(workspace);
+    throw err;
+  }
+
+  const session = {
+    ws,
+    workspace,
+    history: [],
+    pty: agentPty
+  };
+
+  terminalSessions.add(session);
+  appendTerminalData(session, [
+    `\r\n[jam agent] workspace: ${workspace.cwd}`,
+    workspace.isolated ? `[jam agent] branch: ${workspace.branch}` : '[jam agent] using live checkout',
+    `[jam agent] private dev URL: ${workspace.baseUrl}`,
+    `[jam agent] live jam URL: http://localhost:${PORT}\r\n`
+  ].join('\r\n'));
+  session.pty.onData(data => appendTerminalData(session, data));
+  session.pty.onExit(() => {
+    terminalSessions.delete(session);
+    sendTerminalMessage(ws, { type: 'data', data: '\r\n[agent terminal exited]\r\n' });
   });
+
+  return session;
 }
 
-function writeAgentPtyInput(data) {
-  ensureAgentPty().write(data);
-}
-
-function resizeAgentPty(cols, rows) {
-  if (!agentPty) return;
+function resizeAgentPty(session, cols, rows) {
+  if (!session?.pty) return;
   const safeCols = Math.max(20, Math.min(240, Number(cols) || 120));
   const safeRows = Math.max(6, Math.min(80, Number(rows) || 36));
   try {
-    agentPty.resize(safeCols, safeRows);
+    session.pty.resize(safeCols, safeRows);
   } catch (err) {
     console.warn('[Agent Terminal] Resize failed:', err.message);
   }
 }
 
-process.on('exit', () => {
-  if (agentPty) {
-    try {
-      agentPty.kill();
-    } catch {
-      // Process is already gone.
-    }
+function closeAgentTerminalSession(session) {
+  terminalSessions.delete(session);
+  if (!session?.pty) return;
+  try {
+    session.pty.kill();
+  } catch {
+    // Process is already gone.
   }
+}
+
+process.on('exit', () => {
+  terminalSessions.forEach(closeAgentTerminalSession);
 });
 
 // Server-side compilation cache to throttle client loop conditions
@@ -479,23 +595,9 @@ app.post('/api/workspace/global-bus/:key', (req, res) => {
 });
 
 app.post('/api/agent-command', async (req, res) => {
-  const command = String(req.body?.command || '').trim();
-  if (!command) {
-    return res.status(400).json({ error: 'Missing command' });
-  }
-
-  try {
-    if (command === '/clear') {
-      clearTerminalHistory();
-      return res.json({ success: true, handledLocally: true });
-    }
-
-    writeAgentPtyInput(`${command}\r`);
-    res.json({ success: true, handledLocally: false });
-  } catch (err) {
-    console.error('[Agent Command] Failed:', err);
-    res.status(500).json({ error: err.message });
-  }
+  res.status(410).json({
+    error: 'Agent commands are terminal-session scoped. Send input over the /agent-terminal WebSocket.'
+  });
 });
 
 function buildCompilerPrompt({ prompt, elementId, filePath, resolvedPath, existingCode, prevState, environmentSummary }) {
@@ -545,7 +647,7 @@ Safety & Architecture Rules:
 4. Keep the UI beautiful, responsive, and styled using inline styles or a \`<style>\` block inside \`domRoot\`. Feel free to make it highly visual with colorful canvas or svg animations.
 5. Pub/Sub rules:
    - For high-frequency continuous signals (like LFO modulating filter cutoff), use local \`ctx.bus.pub("name", val)\` / \`sub\`.
-   - For user-initiated interactions (like dragging a slider, toggling a sequencer step, clicking a button), you MUST broadcast this globally via \`ctx.bus.pubGlobal("name", val)\` (which syncs via Yjs/websockets) so that the Host machine (which is playing the actual master audio) receives the update and modifies the sound. Otherwise, the Thin-Controller will update locally but remain silent!
+   - For user-initiated interactions (like dragging a slider, toggling a sequencer step, clicking a button), you MUST broadcast this globally via \`ctx.bus.pubGlobal("name", val)\` (which syncs via Yjs/websockets) so every connected jam client receives the same source of truth. Some browsers are locally muted by their master gain; the audible room feed is just the client opened with \`?audio=on\`.
    - Ensure you namespace your keys or rely on the parent wrapper's automatic instance-specific namespacing. Use 'global:prefix' for actual global cross-element communication (like global:tempo_bpm).
 6. Timing: Use \`ctx.clock.onTick(({ step, time, duration, bpm }) => { ... })\` for precise beat-aligned scheduling. Schedule audio events at the exact timeline \`time\`.
 7. Teardown: Your \`destroy()\` hook must be absolute. Disconnect nodes, stop oscillators, and unsubscribe from everything to avoid severe memory leaks!
@@ -1294,8 +1396,8 @@ export default function setup(ctx, prevState) {
     colorPicker.value = val;
   });
 
-  // Local analyser node setup - Note that since this element is on a Thin-Controller,
-  // local Web Audio runs silently but the local audio nodes are still active and process data!
+  // Local analyser node setup. Muted jam clients still run real local Web Audio graphs,
+  // so visualizers can inspect analyser data without producing speaker output.
   const analyser = ctx.audioCtx.createAnalyser();
   analyser.fftSize = 64;
   
@@ -1543,37 +1645,34 @@ wssController.on('connection', (ws, req) => {
   });
 });
 
-// Bridge the persistent interactive agent PTY into connected browser clients.
-wssTerminal.on('connection', (ws) => {
-  terminalClients.add(ws);
+// Bridge one independent interactive agent PTY into each connected browser client.
+wssTerminal.on('connection', async (ws) => {
+  let session = null;
 
   try {
-    ensureAgentPty();
+    session = await createAgentTerminalSession(ws);
   } catch (err) {
     sendTerminalMessage(ws, { type: 'data', data: `\r\n${err.message}\r\n` });
   }
-
-  terminalHistory.forEach(data => {
-    sendTerminalMessage(ws, { type: 'data', data });
-  });
 
   ws.on('message', raw => {
     try {
       const msg = JSON.parse(raw.toString());
       if (msg.type === 'input') {
-        writeAgentPtyInput(String(msg.data || ''));
+        session?.pty.write(String(msg.data || ''));
       } else if (msg.type === 'resize') {
-        resizeAgentPty(msg.cols, msg.rows);
+        resizeAgentPty(session, msg.cols, msg.rows);
       } else if (msg.type === 'clear') {
-        clearTerminalHistory();
+        session.history.length = 0;
+        sendTerminalMessage(ws, { type: 'clear' });
       }
     } catch (err) {
-      writeAgentPtyInput(raw.toString());
+      session?.pty.write(raw.toString());
     }
   });
 
   ws.on('close', () => {
-    terminalClients.delete(ws);
+    closeAgentTerminalSession(session);
   });
 });
 

@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "jam": "node scripts/jamctl.mjs",
+    "agent": "node scripts/agent-worktree.mjs",
+    "validate:quick": "node scripts/agent-worktree.mjs validate",
+    "validate:full": "node scripts/agent-worktree.mjs validate --full",
     "smoke:live": "node scripts/live-smoke.mjs",
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",

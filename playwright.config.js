@@ -25,7 +25,7 @@ export default defineConfig({
     video: 'off'
   },
   webServer: {
-    command: `CODEGEN_PROVIDER=mock GEMINI_API_KEY= PORT=${port} npm start`,
+    command: `CODEGEN_PROVIDER=mock AGENT_TERMINAL_PROVIDER=mock GEMINI_API_KEY= PORT=${port} npm start`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 15_000
