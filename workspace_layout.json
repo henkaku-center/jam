@@ -83,14 +83,14 @@
   },
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 60,
-    "y": 60,
+    "x": 1131,
+    "y": -970,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
     "type": "visual",
     "prompt": "hand-authored WebGL rotating shader cube visual",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779888744270
   }
 }
