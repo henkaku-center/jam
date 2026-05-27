@@ -31,7 +31,7 @@
     "type": "synth",
     "prompt": "cool high quality lead synth with rich unison and effects",
     "authored": "hand",
-    "reloadToken": 1779870719028
+    "reloadToken": 1779886995948
   },
   "elem_house_voice": {
     "id": "elem_house_voice",
@@ -54,6 +54,30 @@
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zefiro_midi": {
+    "id": "elem_zefiro_midi",
+    "x": 260,
+    "y": -480,
+    "width": 320,
+    "height": 280,
+    "filePath": "/elements/elem_zefiro_midi.js",
+    "type": "input",
+    "prompt": "Zefiro USB MIDI source: publishes CCs to global:zefiro:cc<N>",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zefiro_breath_drone": {
+    "id": "elem_zefiro_breath_drone",
+    "x": 600,
+    "y": -480,
+    "width": 300,
+    "height": 280,
+    "filePath": "/elements/elem_zefiro_breath_drone.js",
+    "type": "synth",
+    "prompt": "Breath-driven detuned-saw drone subscribed to global:zefiro:cc11 + cc1",
     "authored": "hand",
     "reloadToken": 0
   }

@@ -440,6 +440,47 @@ export default function setup(ctx, prevState) {
     }))
   ];
 
+  // --- Zefiro wind controller: breath -> master expression, lip -> tone bias ---
+  // Base output gain is preserved; breath multiplies it. When no breath has
+  // arrived (cc11 still undefined) we keep the original constant level so the
+  // synth is usable without the wind controller plugged in.
+  const BASE_OUTPUT_GAIN = 0.48;
+  let zefiroBreath = null; // 0..1 once first message arrives
+  let zefiroLip = null;    // 0..1 once first message arrives
+
+  const applyZefiroExpression = () => {
+    const t = now();
+    if (zefiroBreath === null) {
+      output.gain.setTargetAtTime(BASE_OUTPUT_GAIN, t, 0.02);
+    } else {
+      // Mild exponential feel so quiet breath stays quiet, like an EWI.
+      const env = Math.pow(zefiroBreath, 1.4);
+      output.gain.setTargetAtTime(BASE_OUTPUT_GAIN * env, t, 0.015);
+    }
+  };
+
+  const applyZefiroTone = () => {
+    if (zefiroLip === null) return;
+    const t = now();
+    // Lip biases the delay-filter brightness around whatever 'tone' is set to.
+    const toneWithBias = clamp(state.tone + (zefiroLip - 0.5) * 0.6, 0, 1);
+    delayFilter.frequency.setTargetAtTime(2400 + toneWithBias * 5200, t, 0.04);
+  };
+
+  unsubscribers.push(
+    ctx.bus.subGlobal('global:zefiro:cc11', (value) => {
+      if (!Number.isFinite(value)) return;
+      zefiroBreath = clamp(value, 0, 1);
+      applyZefiroExpression();
+    }),
+    ctx.bus.subGlobal('global:zefiro:cc1', (value) => {
+      if (!Number.isFinite(value)) return;
+      zefiroLip = clamp(value, 0, 1);
+      applyZefiroTone();
+    })
+  );
+  applyZefiroExpression();
+
   const waveData = new Uint8Array(analyser.frequencyBinCount);
   const freqData = new Uint8Array(analyser.frequencyBinCount);
 
