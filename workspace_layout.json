@@ -1,18 +1,8 @@
 {
-  "elem_6yvdmyw32": {
-    "id": "elem_6yvdmyw32",
-    "x": 1126,
-    "y": 464,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_6yvdmyw32_synth.js",
-    "type": "synth",
-    "prompt": "create an analog synthesizer"
-  },
   "elem_r9rre4xjv": {
     "id": "elem_r9rre4xjv",
-    "x": 1567,
-    "y": 45,
+    "x": 1064,
+    "y": -449,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_r9rre4xjv_seq.js",
@@ -21,62 +11,20 @@
     "authored": "codegen",
     "reloadToken": 1779775334734
   },
-  "elem_r33wx7l6t": {
-    "id": "elem_r33wx7l6t",
-    "x": 1213,
-    "y": 680,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_r33wx7l6t_synth.js",
-    "type": "synth",
-    "prompt": "duck the analogue synth",
-    "authored": "hand",
-    "reloadToken": 1779776509659
-  },
-  "elem_1i6ds6woc": {
-    "id": "elem_1i6ds6woc",
-    "x": 1793,
-    "y": 571,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_1i6ds6woc_synth.js",
-    "type": "synth",
-    "prompt": "not another synth - hi hat beats"
-  },
-  "elem_7n8owx0mw": {
-    "id": "elem_7n8owx0mw",
-    "x": 1556,
-    "y": 246,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_7n8owx0mw_synth.js",
-    "type": "synth",
-    "prompt": "connect this to the frequency cutoff of the deeper synth"
-  },
   "elem_d4tb6laez": {
     "id": "elem_d4tb6laez",
-    "x": 1202,
-    "y": 71,
+    "x": 2196,
+    "y": 16,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_d4tb6laez_synth.js",
     "type": "synth",
     "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
   },
-  "elem_vb83y4upc": {
-    "id": "elem_vb83y4upc",
-    "x": 1492,
-    "y": 500,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_vb83y4upc_synth.js",
-    "type": "synth",
-    "prompt": "create arpegiator"
-  },
   "elem_6vhufj5x2": {
     "id": "elem_6vhufj5x2",
-    "x": 2063,
-    "y": 228,
+    "x": 795,
+    "y": -495,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_6vhufj5x2_synth.js",
@@ -85,26 +33,38 @@
   },
   "elem_crystal_lead": {
     "id": "elem_crystal_lead",
-    "x": 1833,
-    "y": 359,
+    "x": 1346,
+    "y": -443,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_crystal_lead_synth.js",
     "type": "synth",
     "prompt": "cool high quality lead synth with rich unison and effects",
     "authored": "hand",
-    "reloadToken": 1779775796561
+    "reloadToken": 1779870719028
   },
   "elem_house_voice": {
     "id": "elem_house_voice",
-    "x": 1886,
-    "y": 27,
+    "x": 1325,
+    "y": -230,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_house_voice_sampler.js",
     "type": "synth",
     "prompt": "microphone voice sampler for house vocal chops",
     "authored": "hand",
-    "reloadToken": 1779776555855
+    "reloadToken": 1779870660021
+  },
+  "elem_oi2ht43ae": {
+    "id": "elem_oi2ht43ae",
+    "x": 953,
+    "y": -252,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
