@@ -37,12 +37,74 @@ app.use(express.static(publicDir));
 app.use('/vendor/xterm', express.static(path.resolve('node_modules/@xterm/xterm')));
 app.use('/vendor/xterm-addon-fit', express.static(path.resolve('node_modules/@xterm/addon-fit')));
 
+function resolveElementFilePath(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    throw new Error('filePath is required');
+  }
+  const resolvedPath = path.resolve(publicDir, filePath.replace(/^\/+/, ''));
+  const relativePath = path.relative(elementsDir, resolvedPath);
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    throw new Error('filePath must be inside public/elements');
+  }
+  return resolvedPath;
+}
+
+function createElementId() {
+  return `elem_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function normalizeElementLayout(input = {}, existing = {}) {
+  const hasExisting = Object.keys(existing).length > 0;
+  const id = String(input.id || existing.id || createElementId());
+  const filePath = input.filePath ?? existing.filePath;
+  const type = input.type ?? existing.type;
+  if (!filePath) throw new Error('filePath is required');
+  if (!type) throw new Error('type is required');
+  resolveElementFilePath(filePath);
+
+  const numberOrDefault = (value, fallback) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  };
+
+  return {
+    ...existing,
+    id,
+    x: numberOrDefault(input.x ?? existing.x, 400),
+    y: numberOrDefault(input.y ?? existing.y, 100),
+    width: numberOrDefault(input.width ?? input.w ?? existing.width, 260),
+    height: numberOrDefault(input.height ?? input.h ?? existing.height, 200),
+    filePath,
+    type: String(type),
+    prompt: String(input.prompt ?? existing.prompt ?? ''),
+    authored: input.authored === 'codegen' ? 'codegen' : (input.authored === 'hand' ? 'hand' : (existing.authored || (hasExisting ? 'codegen' : 'hand'))),
+    reloadToken: input.reloadToken ?? existing.reloadToken ?? 0
+  };
+}
+
+function publicElementLayout(layout) {
+  return {
+    ...layout,
+    authored: layout.authored || 'codegen',
+    reloadToken: layout.reloadToken || 0
+  };
+}
+
+function workspaceSnapshot() {
+  return [...elementsMap.entries()]
+    .map(([id, layout]) => publicElementLayout({ id, ...layout }))
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+}
+
 // Keep track of workspace layout
 const manifestPath = path.resolve('workspace_layout.json');
 
 // Initialize Yjs workspace document on server
 const doc = getYDoc('jam-workspace');
 const elementsMap = doc.getMap('elements');
+const clockMap = doc.getMap('clock');
+const globalBusMap = doc.getMap('global_bus');
+const AGENT_ORIGIN = { origin: 'agent-api' };
 
 // Watch elements map and save manifest to disk
 elementsMap.observe(() => {
@@ -179,7 +241,7 @@ const compileCache = new Map(); // filePath -> { rawCode, transpiledCode, timest
 
 // LLM Code Compilation endpoint
 app.post('/api/compile', async (req, res) => {
-  const { prompt, elementId, filePath, prevState, forceCompile = false } = req.body;
+  const { prompt, elementId, filePath, prevState, forceCompile = false, authored, allowOverwrite = false } = req.body;
   
   if (!prompt || !elementId || !filePath) {
     return res.status(400).json({ error: 'Missing required parameters: prompt, elementId, or filePath' });
@@ -191,8 +253,10 @@ app.post('/api/compile', async (req, res) => {
   }
 
   // Ensure filePath is within public/elements for safety
-  const resolvedPath = path.resolve(publicDir, filePath.replace(/^\/+/, ''));
-  if (!resolvedPath.startsWith(elementsDir)) {
+  let resolvedPath = '';
+  try {
+    resolvedPath = resolveElementFilePath(filePath);
+  } catch (err) {
     return res.status(400).json({ error: 'Invalid file path. Path must be inside public/elements' });
   }
 
@@ -217,8 +281,12 @@ app.post('/api/compile', async (req, res) => {
     existingCode = fs.readFileSync(resolvedPath, 'utf8');
   }
 
-  if (existingCode.trim() && !forceCompile) {
-    console.log(`[Compiler] Reusing existing source for element ${elementId}; forceCompile=false.`);
+  const layout = elementsMap.get(elementId);
+  const isHandAuthored = authored === 'hand' || layout?.authored === 'hand';
+  const shouldReuseExistingSource = existingCode.trim() && (!forceCompile || (isHandAuthored && !allowOverwrite));
+
+  if (shouldReuseExistingSource) {
+    console.log(`[Compiler] Reusing existing source for element ${elementId}; forceCompile=${Boolean(forceCompile)}, authored=${isHandAuthored ? 'hand' : 'codegen'}.`);
     const transpiledCode = transpileModuleSource(existingCode);
     compileCache.set(filePath, {
       rawCode: existingCode,
@@ -298,6 +366,116 @@ app.post('/api/compile', async (req, res) => {
     rawCode: generatedCode,
     transpiledCode: transpiled
   });
+});
+
+app.get('/api/workspace/elements', (req, res) => {
+  res.json({ elements: workspaceSnapshot() });
+});
+
+app.post('/api/workspace/elements', (req, res) => {
+  try {
+    const layout = normalizeElementLayout(req.body || {});
+    if (elementsMap.has(layout.id)) {
+      return res.status(409).json({ error: `element ${layout.id} already exists` });
+    }
+    doc.transact(() => {
+      elementsMap.set(layout.id, layout);
+    }, AGENT_ORIGIN);
+    res.json({ success: true, id: layout.id, layout: publicElementLayout(layout) });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch('/api/workspace/elements/:id', (req, res) => {
+  const id = req.params.id;
+  const existing = elementsMap.get(id);
+  if (!existing) {
+    return res.status(404).json({ error: `element ${id} not found` });
+  }
+
+  try {
+    const layout = normalizeElementLayout({ ...req.body, id }, { id, ...existing });
+    doc.transact(() => {
+      elementsMap.set(id, layout);
+    }, AGENT_ORIGIN);
+    res.json({ success: true, id, layout: publicElementLayout(layout) });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/workspace/elements/:id', (req, res) => {
+  const id = req.params.id;
+  if (!elementsMap.has(id)) {
+    return res.status(404).json({ error: `element ${id} not found` });
+  }
+  doc.transact(() => {
+    elementsMap.delete(id);
+  }, AGENT_ORIGIN);
+  res.json({ success: true, id });
+});
+
+app.post('/api/workspace/elements/:id/reload', (req, res) => {
+  const id = req.params.id;
+  const existing = elementsMap.get(id);
+  if (!existing) {
+    return res.status(404).json({ error: `element ${id} not found` });
+  }
+
+  const layout = publicElementLayout({ id, ...existing });
+  layout.reloadToken = Date.now();
+  doc.transact(() => {
+    elementsMap.set(id, layout);
+  }, AGENT_ORIGIN);
+  res.json({ success: true, id, layout });
+});
+
+app.get('/api/workspace/state', (req, res) => {
+  res.json({
+    elements: workspaceSnapshot(),
+    clock: {
+      bpm: clockMap.get('bpm') || 120,
+      startTime: clockMap.get('startTime') || null
+    },
+    globalBus: globalBusMap.toJSON()
+  });
+});
+
+app.post('/api/workspace/clock', (req, res) => {
+  const allowed = {};
+  if (req.body && req.body.bpm !== undefined) {
+    const bpm = Number(req.body.bpm);
+    if (!Number.isFinite(bpm) || bpm < 40 || bpm > 240) {
+      return res.status(400).json({ error: 'bpm must be a number between 40 and 240' });
+    }
+    allowed.bpm = bpm;
+  }
+  if (req.body && req.body.startTime !== undefined) {
+    const startTime = Number(req.body.startTime);
+    if (!Number.isFinite(startTime)) {
+      return res.status(400).json({ error: 'startTime must be a timestamp number' });
+    }
+    allowed.startTime = startTime;
+  }
+
+  doc.transact(() => {
+    for (const [key, value] of Object.entries(allowed)) {
+      clockMap.set(key, value);
+    }
+  }, AGENT_ORIGIN);
+  res.json({ success: true, clock: { bpm: clockMap.get('bpm') || 120, startTime: clockMap.get('startTime') || null } });
+});
+
+app.post('/api/workspace/global-bus/:key', (req, res) => {
+  const key = req.params.key;
+  if (!key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+  doc.transact(() => {
+    globalBusMap.set(key, req.body?.value);
+  }, AGENT_ORIGIN);
+  res.json({ success: true, key, value: globalBusMap.get(key) });
 });
 
 app.post('/api/agent-command', async (req, res) => {

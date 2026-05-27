@@ -207,6 +207,65 @@ test('PING compile fast-path stays lightweight', async ({ request }) => {
   expect(elapsedMs).toBeLessThan(pingBudgetMs);
 });
 
+test('Agent workspace API reloads hand-authored elements without codegen overwrite', async ({ request }) => {
+  const id = `elem_hand_${Date.now()}`;
+  const publicPath = `/elements/${id}_visual.js`;
+  const diskPath = path.join(elementsDir, `${id}_visual.js`);
+  const marker = `HAND_AUTHORED_${Date.now()}`;
+  const source = `export default function setup(ctx) {
+  ctx.domRoot.innerHTML = '<div>${marker}</div>';
+  return { getState() { return { marker: '${marker}' }; }, destroy() {} };
+}
+`;
+
+  await fs.writeFile(diskPath, source, 'utf8');
+
+  try {
+    const addResponse = await request.post('/api/workspace/elements', {
+      data: {
+        id,
+        filePath: publicPath,
+        type: 'visual',
+        prompt: 'hand-authored visual that should not be overwritten',
+        authored: 'hand',
+        x: 64,
+        y: 96,
+        width: 240,
+        height: 160
+      }
+    });
+    await expect(addResponse).toBeOK();
+
+    const compileResponse = await request.post('/api/compile', {
+      data: {
+        prompt: 'replace this with a drum step sequencer',
+        elementId: id,
+        filePath: publicPath,
+        prevState: {},
+        forceCompile: true,
+        authored: 'hand'
+      }
+    });
+    await expect(compileResponse).toBeOK();
+    const compiled = await compileResponse.json();
+    expect(compiled.rawCode).toContain(marker);
+    expect(await fs.readFile(diskPath, 'utf8')).toContain(marker);
+
+    const reloadResponse = await request.post(`/api/workspace/elements/${id}/reload`);
+    await expect(reloadResponse).toBeOK();
+    const reload = await reloadResponse.json();
+    expect(reload.layout.authored).toBe('hand');
+    expect(reload.layout.reloadToken).toBeGreaterThan(0);
+
+    const stateResponse = await request.get('/api/workspace/state');
+    await expect(stateResponse).toBeOK();
+    const state = await stateResponse.json();
+    expect(state.elements.some((element) => element.id === id && element.authored === 'hand')).toBe(true);
+  } finally {
+    await request.delete(`/api/workspace/elements/${id}`);
+  }
+});
+
 test('Host workspace hydrates within the startup performance budget', async ({ page }, testInfo) => {
   const browserFailures = collectBrowserFailures(page);
   const result = await joinWorkspace(page, 'host');
@@ -219,6 +278,33 @@ test('Host workspace hydrates within the startup performance budget', async ({ p
   expect(result.hydrateMs).toBeLessThan(hostHydrateBudgetMs);
   expect(result.metrics.slowestCompileCallMs).toBeLessThan(5_000);
   expect(result.metrics.maxLongTaskMs).toBeLessThan(1_000);
+  expect(browserFailures).toEqual([]);
+});
+
+test('Normal mode pan and zoom keep a global audio mix', async ({ page }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+
+  await page.mouse.move(640, 400);
+  await page.mouse.wheel(0, -900);
+  await page.mouse.down();
+  await page.mouse.move(240, 160, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+
+  const mix = await page.evaluate(() => [...window.activeElements.values()].map((element) => ({
+    id: element.id,
+    volume: element.audioVolumeNode?.gain.value ?? null,
+    pan: element.audioPannerNode?.pan.value ?? null,
+    cutoff: element.audioFilterNode?.frequency.value ?? null,
+    visible: element.domWrapper.style.visibility !== 'hidden'
+  })));
+
+  expect(mix.length).toBe(expectedElementCount);
+  expect(mix.every((element) => element.volume === null || element.volume > 0.85)).toBe(true);
+  expect(mix.every((element) => element.pan === null || Math.abs(element.pan) < 0.1)).toBe(true);
+  expect(mix.every((element) => element.cutoff === null || element.cutoff > 15_000)).toBe(true);
+  expect(mix.some((element) => element.visible)).toBe(true);
   expect(browserFailures).toEqual([]);
 });
 

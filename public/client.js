@@ -719,7 +719,9 @@ async function instantiateElement(id, layout, options = {}) {
         elementId: id,
         filePath: layout.filePath,
         prevState: prevState,
-        forceCompile: Boolean(options.forceCompile)
+        forceCompile: Boolean(options.forceCompile),
+        authored: layout.authored || 'codegen',
+        allowOverwrite: layout.authored !== 'hand'
       })
     });
     const data = await res.json();
@@ -868,21 +870,30 @@ function renderErrorUI(shadowRoot, err) {
 function updateSpatialAudioAndLOD() {
   if (!audioCtx || !isHost) return;
 
-  const currentBPM = clockMap ? clockMap.get('bpm') || 120 : 120;
-
   activeElements.forEach((element, id) => {
     const layout = element.layout;
     if (!layout) return;
+    if (!element.audioVolumeNode || !element.audioFilterNode || !element.audioPannerNode) return;
+
+    const now = audioCtx.currentTime;
+
+    if (!isFocusModeActive) {
+      element.audioVolumeNode.gain.setTargetAtTime(1, now, 0.08);
+      element.audioFilterNode.frequency.setTargetAtTime(20000, now, 0.08);
+      element.audioPannerNode.pan.setTargetAtTime(0, now, 0.08);
+      return;
+    }
 
     // Spatial calculations are done relative to the Host camera.
     // The visual bounds of the camera frame acts as the master listening box.
     // Let's assume the center of the Host view represents our listener position.
-    const hostCenterX = -camera.x / camera.zoom + (window.innerWidth / 2) / camera.zoom;
-    const hostCenterY = -camera.y / camera.zoom + (window.innerHeight / 2) / camera.zoom;
+    const hostBox = getHostViewportBoundingBox();
+    const hostCenterX = (hostBox.left + hostBox.right) / 2;
+    const hostCenterY = (hostBox.top + hostBox.bottom) / 2;
 
     // Compute element absolute visual center
-    const elemCenterX = layout.x + 120; // estimate 240px width
-    const elemCenterY = layout.y + 100; // estimate 200px height
+    const elemCenterX = layout.x + (layout.width || 260) / 2;
+    const elemCenterY = layout.y + (layout.height || 200) / 2;
 
     // Offset coordinates
     const dx = elemCenterX - hostCenterX;
@@ -912,12 +923,9 @@ function updateSpatialAudioAndLOD() {
     }
 
     // --- Apply to spatial audio nodes ---
-    if (element.audioVolumeNode && element.audioFilterNode && element.audioPannerNode) {
-      const now = audioCtx.currentTime;
-      element.audioVolumeNode.gain.setTargetAtTime(volume, now, 0.05);
-      element.audioFilterNode.frequency.setTargetAtTime(cutoff, now, 0.05);
-      element.audioPannerNode.pan.setTargetAtTime(pan, now, 0.05);
-    }
+    element.audioVolumeNode.gain.setTargetAtTime(volume, now, 0.05);
+    element.audioFilterNode.frequency.setTargetAtTime(cutoff, now, 0.05);
+    element.audioPannerNode.pan.setTargetAtTime(pan, now, 0.05);
   });
 }
 
@@ -945,20 +953,7 @@ window.addEventListener('keyup', (e) => {
 function activateFocusMode() {
   isFocusModeActive = true;
   focusOverlay.classList.remove('hidden');
-
-  // Visually dim non-host elements and mute off-viewport audio
-  if (isHost && audioCtx) {
-    const hostBox = getHostViewportBoundingBox();
-    activeElements.forEach((element) => {
-      const layout = element.layout;
-      const isInside = isElementInsideBox(layout, hostBox);
-      
-      if (!isInside && element.audioVolumeNode) {
-        // Instantly and smoothly mute off-viewport elements
-        element.audioVolumeNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-      }
-    });
-  }
+  updateSpatialAudioAndLOD();
 }
 
 function deactivateFocusMode() {
@@ -970,18 +965,22 @@ function deactivateFocusMode() {
 }
 
 function getHostViewportBoundingBox() {
-  // Let's compute the visible visual coordinate boundaries
+  const viewportWidth = viewport.clientWidth || window.innerWidth;
+  const viewportHeight = viewport.clientHeight || window.innerHeight;
+  const left = -camera.x / camera.zoom;
+  const top = -camera.y / camera.zoom;
+
   return {
-    left: camera.x,
-    top: camera.y,
-    right: camera.x + window.innerWidth / camera.zoom,
-    bottom: camera.y + window.innerHeight / camera.zoom
+    left,
+    top,
+    right: left + viewportWidth / camera.zoom,
+    bottom: top + viewportHeight / camera.zoom
   };
 }
 
 function isElementInsideBox(layout, box) {
-  const elemWidth = 300; // estimated maximum bounding box
-  const elemHeight = 300;
+  const elemWidth = layout.width || 260;
+  const elemHeight = layout.height || 200;
   return !(
     layout.x + elemWidth < box.left ||
     layout.x > box.right ||
@@ -994,9 +993,9 @@ function isElementInsideBox(layout, box) {
 function runLevelOfDetailCheck() {
   const box = getHostViewportBoundingBox();
   
-  // Add a 1.5x padding margin to LOD boundary to prevent visual popping on borders
-  const lodPaddingX = (box.right - box.left) * 0.25;
-  const lodPaddingY = (box.bottom - box.top) * 0.25;
+  // Keep a minimum world-space margin so zooming in does not aggressively hide nearby controls.
+  const lodPaddingX = Math.max(600, (box.right - box.left) * 0.75);
+  const lodPaddingY = Math.max(450, (box.bottom - box.top) * 0.75);
   const paddedBox = {
     left: box.left - lodPaddingX,
     right: box.right + lodPaddingX,
@@ -1206,11 +1205,17 @@ function syncElementsFromMap() {
       if (compilingElements.has(id)) return;
       instantiateElement(id, layout);
     } else {
-      // Trigger hot-reload across all synchronized clients if prompt or filePath changes!
-      if (element.layout.prompt !== layout.prompt || element.layout.filePath !== layout.filePath) {
+      const promptChanged = element.layout.prompt !== layout.prompt;
+      const filePathChanged = element.layout.filePath !== layout.filePath;
+      const reloadTokenChanged = element.layout.reloadToken !== layout.reloadToken;
+      const authoredChanged = element.layout.authored !== layout.authored;
+
+      // Prompt changes regenerate codegen-authored elements. File/reload changes only re-fetch from disk.
+      if (promptChanged || filePathChanged || reloadTokenChanged || authoredChanged) {
         if (compilingElements.has(id)) return;
-        console.log(`[Hot-Reload] Synchronized config change for ${id}. Compiling...`);
-        instantiateElement(id, layout, { forceCompile: true });
+        const forceCompile = Boolean(promptChanged && layout.authored !== 'hand' && !reloadTokenChanged && !filePathChanged);
+        console.log(`[Hot-Reload] Synchronized config change for ${id}. forceCompile=${forceCompile}`);
+        instantiateElement(id, layout, { forceCompile });
       } else {
         // Update local position coords
         element.layout = layout;
@@ -1278,7 +1283,9 @@ function createNewElementOnCanvas(initialPrompt = '') {
     height: 200,
     filePath: `/elements/${id}_${fileExt}.js`,
     type: fileExt,
-    prompt: initialPrompt
+    prompt: initialPrompt,
+    authored: 'codegen',
+    reloadToken: 0
   };
 
   ydoc.transact(() => {
