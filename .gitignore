@@ -6,3 +6,6 @@ dist
 .claude
 playwright-report
 test-results
+
+# WSL/Windows filesystem metadata
+*Zone.Identifier

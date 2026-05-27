@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zefiro MIDI Test</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #06090d;
+    --fg: #d1fae5;
+    --dim: #64748b;
+    --accent: #67e8f9;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --err: #f87171;
+    --line: #1e293b;
+    --panel: #0f172a;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); height: 100%; }
+  body {
+    font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  h1 { margin: 0; font: 600 14px ui-sans-serif, system-ui, sans-serif; color: var(--accent); letter-spacing: 0.05em; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .status { padding: 4px 8px; border: 1px solid var(--line); border-radius: 3px; }
+  .status.ok { color: var(--ok); border-color: var(--ok); }
+  .status.warn { color: var(--warn); border-color: var(--warn); }
+  .status.err { color: var(--err); border-color: var(--err); }
+  select, button {
+    background: var(--panel);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    font: inherit;
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  button:hover { border-color: var(--accent); cursor: pointer; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .panel h2 {
+    margin: 0;
+    font: 600 11px ui-sans-serif, system-ui, sans-serif;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .meters, .log { overflow: auto; }
+  .meter {
+    display: grid;
+    grid-template-columns: 90px 1fr 50px 60px;
+    gap: 8px;
+    align-items: center;
+    padding: 2px 0;
+  }
+  .meter .label { color: #a5f3fc; }
+  .meter .bar {
+    position: relative;
+    height: 10px;
+    background: #020617;
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .meter .bar > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: linear-gradient(90deg, #22d3ee, #a78bfa);
+    transition: right 16ms linear;
+  }
+  .meter .val { text-align: right; color: #cbd5e1; }
+  .meter .hz { text-align: right; color: var(--dim); font-size: 10px; }
+  .log pre {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 16px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .stats b { color: var(--fg); font-weight: 600; margin-left: 4px; }
+  .empty { color: var(--dim); font-style: italic; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<h1>ZEFIRO / WEB MIDI TEST</h1>
+
+<div class="row">
+  <span id="status" class="status">requesting MIDI access&hellip;</span>
+  <label>device:
+    <select id="picker"><option>(none)</option></select>
+  </label>
+  <button id="clearLog">clear log</button>
+  <div class="stats">
+    <div>total msgs: <b id="msgCount">0</b></div>
+    <div>CCs seen: <b id="ccCount">0</b></div>
+    <div>aggregate Hz: <b id="aggHz">0</b></div>
+    <div>uptime: <b id="uptime">0s</b></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Live CC meters</h2>
+    <div id="meters" class="meters"><div class="empty">no CC traffic yet &mdash; blow into the Zefiro, wiggle the lip sensor, or tilt (Pro)</div></div>
+  </div>
+  <div class="panel">
+    <h2>Raw MIDI log (newest first, last 60)</h2>
+    <div id="log" class="log"><pre id="logPre"></pre></div>
+  </div>
+</div>
+
+<script>
+const PREFERRED = /zefiro|artinoise|wind/i;
+const MAX_LOG = 60;
+const HZ_WINDOW_MS = 1000;
+
+const statusEl = document.querySelector('#status');
+const pickerEl = document.querySelector('#picker');
+const metersEl = document.querySelector('#meters');
+const logPre = document.querySelector('#logPre');
+const msgCountEl = document.querySelector('#msgCount');
+const ccCountEl = document.querySelector('#ccCount');
+const aggHzEl = document.querySelector('#aggHz');
+const uptimeEl = document.querySelector('#uptime');
+document.querySelector('#clearLog').addEventListener('click', () => {
+  logBuffer.length = 0;
+  renderLog();
+});
+
+const setStatus = (text, cls = '') => {
+  statusEl.textContent = text;
+  statusEl.className = `status ${cls}`.trim();
+};
+
+const ccLabel = (n) => ({
+  1: 'lip/mod', 2: 'breath2', 7: 'volume', 11: 'breath',
+  16: 'tilt', 17: 'roll', 18: 'accel-z',
+  64: 'sustain', 74: 'brightness'
+}[n] || `cc${n}`);
+
+const noteName = (n) => {
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return names[n % 12] + (Math.floor(n / 12) - 1);
+};
+
+const ccState = new Map(); // cc -> { value, timestamps: [...] }
+const logBuffer = []; // newest first
+const t0 = performance.now();
+let msgCount = 0;
+let aggregateTimestamps = [];
+
+const ensureMeter = (cc) => {
+  let row = metersEl.querySelector(`.meter[data-cc="${cc}"]`);
+  if (row) return row;
+  const empty = metersEl.querySelector('.empty');
+  if (empty) empty.remove();
+  row = document.createElement('div');
+  row.className = 'meter';
+  row.dataset.cc = String(cc);
+  row.innerHTML = `
+    <span class="label">cc${cc} ${ccLabel(cc)}</span>
+    <span class="bar"><span style="right:100%"></span></span>
+    <span class="val">0</span>
+    <span class="hz">0 Hz</span>
+  `;
+  // Insert sorted by CC number.
+  const rows = [...metersEl.querySelectorAll('.meter')];
+  const next = rows.find((r) => Number(r.dataset.cc) > cc);
+  if (next) metersEl.insertBefore(row, next);
+  else metersEl.appendChild(row);
+  return row;
+};
+
+const updateMeter = (cc, value, now) => {
+  const row = ensureMeter(cc);
+  const pct = Math.round((value / 127) * 100);
+  row.querySelector('.bar > span').style.right = `${100 - pct}%`;
+  row.querySelector('.val').textContent = String(value);
+  // Hz computed in tick loop, not per-message.
+};
+
+const renderLog = () => {
+  logPre.textContent = logBuffer.join('\n');
+};
+
+const hex = (n) => n.toString(16).padStart(2, '0');
+const formatMessage = (data, t) => {
+  const bytes = [...data].map(hex).join(' ');
+  if ((data[0] & 0xf0) === 0xb0) {
+    const ch = (data[0] & 0x0f) + 1;
+    return `${t.toFixed(2).padStart(8)}s  CH${ch} CC ${String(data[1]).padStart(3)} = ${String(data[2] ?? 0).padStart(3)}   [${bytes}]`;
+  }
+  if ((data[0] & 0xf0) === 0x90) {
+    const ch = (data[0] & 0x0f) + 1;
+    return `${t.toFixed(2).padStart(8)}s  CH${ch} NOTE ON  ${noteName(data[1])} v=${data[2]}   [${bytes}]`;
+  }
+  if ((data[0] & 0xf0) === 0x80) {
+    const ch = (data[0] & 0x0f) + 1;
+    return `${t.toFixed(2).padStart(8)}s  CH${ch} NOTE OFF ${noteName(data[1])} v=${data[2]}   [${bytes}]`;
+  }
+  if ((data[0] & 0xf0) === 0xd0) {
+    const ch = (data[0] & 0x0f) + 1;
+    return `${t.toFixed(2).padStart(8)}s  CH${ch} AFTERTOUCH = ${data[1]}   [${bytes}]`;
+  }
+  if ((data[0] & 0xf0) === 0xe0) {
+    const ch = (data[0] & 0x0f) + 1;
+    const val = ((data[2] << 7) | data[1]) - 8192;
+    return `${t.toFixed(2).padStart(8)}s  CH${ch} PITCHBEND = ${val}   [${bytes}]`;
+  }
+  return `${t.toFixed(2).padStart(8)}s  [${bytes}]`;
+};
+
+let midiAccess = null;
+let currentInput = null;
+const inputHandlers = new WeakMap();
+
+const detachCurrent = () => {
+  if (currentInput && inputHandlers.has(currentInput)) {
+    currentInput.removeEventListener('midimessage', inputHandlers.get(currentInput));
+    inputHandlers.delete(currentInput);
+  }
+  currentInput = null;
+};
+
+const handleMessage = (event) => {
+  const data = event.data;
+  if (!data || data.length === 0) return;
+  msgCount += 1;
+  const t = (performance.now() - t0) / 1000;
+  const ts = performance.now();
+  aggregateTimestamps.push(ts);
+
+  if ((data[0] & 0xf0) === 0xb0) {
+    const cc = data[1];
+    const value = data[2] ?? 0;
+    let entry = ccState.get(cc);
+    if (!entry) {
+      entry = { value: 0, timestamps: [] };
+      ccState.set(cc, entry);
+    }
+    entry.value = value;
+    entry.timestamps.push(ts);
+    updateMeter(cc, value, ts);
+  }
+
+  // Non-CC events get a meter slot too, just so you can see notes from a non-Zefiro device.
+  logBuffer.unshift(formatMessage(data, t));
+  if (logBuffer.length > MAX_LOG) logBuffer.length = MAX_LOG;
+};
+
+const attachInput = (input) => {
+  detachCurrent();
+  currentInput = input;
+  input.addEventListener('midimessage', handleMessage);
+  inputHandlers.set(input, handleMessage);
+  setStatus(`listening: ${input.name || input.id}`, 'ok');
+  logBuffer.unshift(`-- attached ${input.name || input.id} (manuf="${input.manufacturer || ''}", id="${input.id}")`);
+  renderLog();
+};
+
+const rebuildPicker = () => {
+  if (!midiAccess) return [];
+  const inputs = [...midiAccess.inputs.values()];
+  pickerEl.innerHTML = inputs.map((i) => {
+    const selected = currentInput && i.id === currentInput.id ? 'selected' : '';
+    return `<option value="${i.id}" ${selected}>${i.name || i.id}</option>`;
+  }).join('') || '<option value="">(no inputs)</option>';
+  return inputs;
+};
+
+const autoPick = (inputs) => {
+  if (currentInput) {
+    const same = inputs.find((i) => i.id === currentInput.id);
+    if (same) return same;
+  }
+  const preferred = inputs.find((i) => PREFERRED.test(i.name || ''));
+  return preferred || inputs[0] || null;
+};
+
+const onStateChange = () => {
+  const inputs = rebuildPicker();
+  if (inputs.length === 0) {
+    detachCurrent();
+    setStatus('no MIDI inputs connected', 'warn');
+    return;
+  }
+  if (currentInput && !inputs.some((i) => i.id === currentInput.id)) {
+    detachCurrent();
+  }
+  if (!currentInput) {
+    const pick = autoPick(inputs);
+    if (pick) attachInput(pick);
+  }
+};
+
+pickerEl.addEventListener('change', () => {
+  if (!midiAccess) return;
+  const input = midiAccess.inputs.get(pickerEl.value);
+  if (input) attachInput(input);
+});
+
+async function init() {
+  if (!navigator.requestMIDIAccess) {
+    setStatus('Web MIDI not supported (use Chrome/Edge on Windows)', 'err');
+    return;
+  }
+  try {
+    midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+  } catch (err) {
+    setStatus(`MIDI access denied: ${err.message || err}`, 'err');
+    return;
+  }
+  midiAccess.addEventListener('statechange', onStateChange);
+  onStateChange();
+}
+
+function tick() {
+  const now = performance.now();
+  // Aggregate Hz over last second.
+  aggregateTimestamps = aggregateTimestamps.filter((t) => now - t < HZ_WINDOW_MS);
+  aggHzEl.textContent = String(aggregateTimestamps.length);
+  msgCountEl.textContent = String(msgCount);
+  ccCountEl.textContent = String(ccState.size);
+  uptimeEl.textContent = `${Math.floor((now - t0) / 1000)}s`;
+
+  // Per-CC Hz.
+  for (const [cc, entry] of ccState) {
+    entry.timestamps = entry.timestamps.filter((t) => now - t < HZ_WINDOW_MS);
+    const row = metersEl.querySelector(`.meter[data-cc="${cc}"]`);
+    if (row) row.querySelector('.hz').textContent = `${entry.timestamps.length} Hz`;
+  }
+
+  renderLog();
+}
+setInterval(tick, 200);
+
+init();
+</script>
+
+</body>
+</html>
