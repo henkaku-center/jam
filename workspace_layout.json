@@ -47,6 +47,18 @@
     "authored": "hand",
     "reloadToken": 0
   },
+  "elem_c6wdaaaaz": {
+    "id": "elem_c6wdaaaaz",
+    "x": 420,
+    "y": 120,
+    "width": 380,
+    "height": 300,
+    "filePath": "/elements/elem_c6wdaaaaz.js",
+    "type": "audio",
+    "prompt": "salsa beat with dhol and sitar",
+    "authored": "hand",
+    "reloadToken": 0
+  },
   "elem_yodel_vocal_loop": {
     "id": "elem_yodel_vocal_loop",
     "x": 1552,
@@ -128,6 +140,30 @@
     "filePath": "/elements/elem_beautiful_piano.js",
     "type": "synth",
     "prompt": "hand-authored beautiful felt piano with soft chords, arpeggio motion, room, and sparkle controls",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zre4uey3n": {
+    "id": "elem_zre4uey3n",
+    "x": 1308,
+    "y": 165,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_oyudq5xkf": {
+    "id": "elem_oyudq5xkf",
+    "x": 1194,
+    "y": -1467,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
     "reloadToken": 0
   }
