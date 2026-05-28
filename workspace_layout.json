@@ -13,8 +13,8 @@
   },
   "elem_zefiro_midi": {
     "id": "elem_zefiro_midi",
-    "x": 2117,
-    "y": -573,
+    "x": 2089,
+    "y": -571,
     "width": 280,
     "height": 260,
     "filePath": "/elements/elem_zefiro_midi.js",
@@ -205,8 +205,8 @@
   },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
-    "x": 1323,
-    "y": -1115,
+    "x": 1360,
+    "y": -1311,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_psytrance_synth.js",
@@ -229,8 +229,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1300,
-    "y": -832,
+    "x": 1735,
+    "y": -1480,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -289,8 +289,8 @@
   },
   "elem_3o3hi1pfr": {
     "id": "elem_3o3hi1pfr",
-    "x": 522,
-    "y": 769,
+    "x": 1020,
+    "y": 529,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -325,8 +325,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 2928,
-    "y": -1289,
+    "x": 1143,
+    "y": -1129,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -337,14 +337,14 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 1700,
-    "y": -960,
+    "x": 900,
+    "y": 430,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
     "type": "visual",
     "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
     "authored": "hand",
-    "reloadToken": 1779956742963
+    "reloadToken": 1779956785036
   }
 }
