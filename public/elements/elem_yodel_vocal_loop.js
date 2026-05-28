@@ -60,6 +60,7 @@ export default function setup(ctx, prevState) {
   let pulse = 0;
   let stepSeconds = 0.125;
   let raf = 0;
+  let audioStateKey = '';
 
   const liveNodes = new Set();
   const cleanupTimers = new Set();
@@ -370,6 +371,16 @@ export default function setup(ctx, prevState) {
     stage.style.setProperty('--pan', String(event.pan));
   };
 
+  const applyAudioState = () => {
+    const nextKey = [state.enabled, state.volume, state.echo, state.brightness].join('|');
+    if (nextKey === audioStateKey) return;
+    audioStateKey = nextKey;
+    output.gain.setTargetAtTime(state.enabled ? state.volume : 0, audio.currentTime, 0.035);
+    wet.gain.setTargetAtTime(state.echo, audio.currentTime, 0.05);
+    feedback.gain.setTargetAtTime(0.12 + state.echo * 0.58, audio.currentTime, 0.05);
+    delayTone.frequency.setTargetAtTime(1900 + state.brightness * 4200, audio.currentTime, 0.05);
+  };
+
   const render = () => {
     enabledButton.textContent = state.enabled ? 'on' : 'off';
     enabledButton.classList.toggle('off', !state.enabled);
@@ -377,10 +388,7 @@ export default function setup(ctx, prevState) {
       if (sliders[key].value !== String(state[key])) sliders[key].value = String(state[key]);
       values[key].textContent = Number(state[key]).toFixed(2);
     });
-    output.gain.setTargetAtTime(state.enabled ? state.volume : 0, audio.currentTime, 0.035);
-    wet.gain.setTargetAtTime(state.echo, audio.currentTime, 0.05);
-    feedback.gain.setTargetAtTime(0.12 + state.echo * 0.58, audio.currentTime, 0.05);
-    delayTone.frequency.setTargetAtTime(1900 + state.brightness * 4200, audio.currentTime, 0.05);
+    applyAudioState();
     syllable.textContent = currentSyllable;
     stepEls.forEach((el, index) => el.classList.toggle('on', index === currentStep));
     stage.style.setProperty('--pulse', pulse.toFixed(3));

@@ -37,8 +37,8 @@
   },
   "elem_zefiro_drum_beat": {
     "id": "elem_zefiro_drum_beat",
-    "x": 1727,
-    "y": -969,
+    "x": 1864,
+    "y": -705,
     "width": 340,
     "height": 300,
     "filePath": "/elements/elem_zefiro_drum_beat.js",
@@ -61,8 +61,8 @@
   },
   "elem_hydra_pop": {
     "id": "elem_hydra_pop",
-    "x": 1900,
-    "y": -1240,
+    "x": 1714,
+    "y": -1042,
     "width": 520,
     "height": 340,
     "filePath": "/elements/elem_hydra_pop_visual.js",
@@ -121,14 +121,14 @@
   },
   "elem_yodel_vocal_loop": {
     "id": "elem_yodel_vocal_loop",
-    "x": 1727,
-    "y": -638,
+    "x": 1545,
+    "y": -636,
     "width": 340,
     "height": 250,
     "filePath": "/elements/elem_yodel_vocal_loop.js",
     "type": "synth",
     "prompt": "hand-authored beat-clocked vocal yodeling loop",
     "authored": "hand",
-    "reloadToken": 1779953962484
+    "reloadToken": 1779954019646
   }
 }
