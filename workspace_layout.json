@@ -201,6 +201,18 @@
     "type": "synth",
     "prompt": "hand-authored psytrance synth with rolling bassline acid lead and gated blips",
     "authored": "hand",
+    "reloadToken": 1779955602007
+  },
+  "elem_w56sfs9ii": {
+    "id": "elem_w56sfs9ii",
+    "x": 1561,
+    "y": -1332,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
     "reloadToken": 0
   }
 }
