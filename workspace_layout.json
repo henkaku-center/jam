@@ -13,8 +13,8 @@
   },
   "elem_zefiro_midi": {
     "id": "elem_zefiro_midi",
-    "x": 2063,
-    "y": -942,
+    "x": 2117,
+    "y": -573,
     "width": 280,
     "height": 260,
     "filePath": "/elements/elem_zefiro_midi.js",
@@ -337,14 +337,14 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 2670,
-    "y": -790,
-    "width": 560,
-    "height": 360,
+    "x": 1700,
+    "y": -960,
+    "width": 620,
+    "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
     "type": "visual",
     "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779956742963
   }
 }
