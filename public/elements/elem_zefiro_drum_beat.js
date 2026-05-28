@@ -89,6 +89,229 @@ export default function setup(ctx, prevState) {
     return curve;
   };
 
+  const noiseBuffer = (() => {
+    const bufferSize = Math.floor(audio.sampleRate * 0.9);
+    const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i += 1) {
+      const crackle = Math.random() * 2 - 1;
+      data[i] = crackle * (0.76 + Math.random() * 0.24);
+    }
+    return buffer;
+  })();
+
+  const randomFor = (step, salt) => {
+    const raw = Math.sin((step + 1) * 131.9 + salt * 313.37) * 43758.5453;
+    return raw - Math.floor(raw);
+  };
+
+  const playKick = (time, velocity, punch = 1) => {
+    const { tone } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const osc = audio.createOscillator();
+    const click = audio.createOscillator();
+    const bodyGain = audio.createGain();
+    const clickGain = audio.createGain();
+    const shaper = audio.createWaveShaper();
+
+    osc.type = 'sine';
+    click.type = 'triangle';
+    osc.frequency.setValueAtTime(128 + punch * 22, t);
+    osc.frequency.exponentialRampToValueAtTime(42 + tone * 7, t + 0.22);
+    click.frequency.setValueAtTime(1120 + tone * 700, t);
+    click.frequency.exponentialRampToValueAtTime(92, t + 0.026);
+    bodyGain.gain.setValueAtTime(0.0001, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.46 * velocity, t + 0.006);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32 + punch * 0.06);
+    clickGain.gain.setValueAtTime(0.07 * velocity, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.034);
+    shaper.curve = makeDriveCurve(1.6 + punch * 2.2 + tone * 1.6);
+    shaper.oversample = '2x';
+
+    osc.connect(bodyGain);
+    bodyGain.connect(shaper);
+    shaper.connect(output);
+    click.connect(clickGain);
+    clickGain.connect(output);
+    osc.start(t);
+    click.start(t);
+    osc.stop(t + 0.44);
+    click.stop(t + 0.045);
+    track(0.5, osc, click, bodyGain, clickGain, shaper);
+  };
+
+  const playSnare = (time, velocity, tight = false) => {
+    const { tone, shimmer } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const noise = audio.createBufferSource();
+    const noiseFilter = audio.createBiquadFilter();
+    const noiseGain = audio.createGain();
+    const body = audio.createOscillator();
+    const bodyGain = audio.createGain();
+    const snap = audio.createBiquadFilter();
+    const length = tight ? 0.095 : 0.18 + shimmer * 0.06;
+
+    noise.buffer = noiseBuffer;
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(1450 + tone * 1700 + shimmer * 900, t);
+    noiseFilter.Q.setValueAtTime(tight ? 1.6 : 0.8, t);
+    snap.type = 'highpass';
+    snap.frequency.setValueAtTime(1200 + tone * 1800, t);
+    noiseGain.gain.setValueAtTime(0.0001, t);
+    noiseGain.gain.exponentialRampToValueAtTime((tight ? 0.12 : 0.28) * velocity, t + 0.005);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+    body.type = 'triangle';
+    body.frequency.setValueAtTime(tight ? 248 : 194, t);
+    body.frequency.exponentialRampToValueAtTime(tight ? 190 : 145, t + 0.08);
+    bodyGain.gain.setValueAtTime((tight ? 0.035 : 0.07) * velocity, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(snap);
+    snap.connect(noiseGain);
+    noiseGain.connect(output);
+    if (!tight) noiseGain.connect(delay);
+    body.connect(bodyGain);
+    bodyGain.connect(output);
+    noise.start(t, 0, length + 0.02);
+    body.start(t);
+    body.stop(t + 0.14);
+    track(length + 0.08, noise, noiseFilter, snap, noiseGain, body, bodyGain);
+  };
+
+  const playHat = (time, velocity, open = false) => {
+    const { tone, shimmer } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const noise = audio.createBufferSource();
+    const highpass = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    const panner = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
+    const length = open ? 0.3 + shimmer * 0.18 : 0.045 + shimmer * 0.035;
+
+    noise.buffer = noiseBuffer;
+    highpass.type = 'highpass';
+    highpass.frequency.setValueAtTime(open ? 4300 + tone * 1300 : 6100 + tone * 2600, t);
+    highpass.Q.setValueAtTime(open ? 0.65 : 1.1, t);
+    gain.gain.setValueAtTime((open ? 0.105 : 0.045) * velocity, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    if (panner) panner.pan.setValueAtTime(open ? 0.34 : -0.18 + randomFor(Math.round(t * 100), 7) * 0.36, t);
+
+    noise.connect(highpass);
+    highpass.connect(gain);
+    if (panner) {
+      gain.connect(panner);
+      panner.connect(output);
+    } else {
+      gain.connect(output);
+    }
+    noise.start(t, 0, length + 0.02);
+    track(length + 0.08, noise, highpass, gain, ...(panner ? [panner] : []));
+  };
+
+  const playRim = (time, velocity) => {
+    const { tone } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const osc = audio.createOscillator();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    const panner = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(720 + tone * 420, t);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(980 + tone * 900, t);
+    filter.Q.setValueAtTime(9, t);
+    gain.gain.setValueAtTime(0.06 * velocity, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    if (panner) panner.pan.setValueAtTime(-0.42, t);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    if (panner) {
+      gain.connect(panner);
+      panner.connect(output);
+      panner.connect(delay);
+    } else {
+      gain.connect(output);
+      gain.connect(delay);
+    }
+    osc.start(t);
+    osc.stop(t + 0.09);
+    track(0.14, osc, filter, gain, ...(panner ? [panner] : []));
+  };
+
+  const playTom = (time, velocity, high = false) => {
+    const { orbit } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    const filter = audio.createBiquadFilter();
+    const startFreq = high ? 210 + orbit * 80 : 132 + orbit * 42;
+    const endFreq = high ? 92 + orbit * 38 : 64 + orbit * 24;
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(startFreq, t);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.18);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(high ? 1200 : 820, t);
+    filter.Q.setValueAtTime(2.2, t);
+    gain.gain.setValueAtTime(0.12 * velocity, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(output);
+    gain.connect(delay);
+    osc.start(t);
+    osc.stop(t + 0.28);
+    track(0.34, osc, filter, gain);
+  };
+
+  const playDrumStep = (step, time, stepSeconds, expression) => {
+    const { tone, orbit, shimmer } = values();
+    const swing = step % 2 ? stepSeconds * (0.02 + orbit * 0.1) : 0;
+    const phraseStep = step % 32;
+    const barStep = step % 16;
+    const variation = shimmer > 0.52 || phraseStep >= 24;
+    const breathPush = clamp(0.62 + expression * 0.34, 0.55, 1.05);
+    const human = (salt) => (randomFor(step, salt) - 0.5) * 0.006;
+    const at = time + swing;
+
+    const kickPattern = [1, 0, 0.22, 0.36, 0, 0.18, 0.68, 0, 0.9, 0, 0.4, 0.16, 0.52, 0, 0.18, 0.42];
+    const snarePattern = [0, 0, 0.12, 0.22, 0.86, 0.18, 0, 0.24, 0, 0.14, 0.2, 0.32, 0.94, 0.18, 0.3, 0.46];
+    const rimPattern = [0, 0.28, 0, 0, 0, 0, 0.24, 0, 0, 0.18, 0, 0.26, 0, 0, 0.22, 0];
+    const tomPattern = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.22, 0, 0, 0.2, 0, 0.42];
+
+    let kickVelocity = kickPattern[barStep];
+    if (variation && [23, 27, 30, 31].includes(phraseStep)) kickVelocity = Math.max(kickVelocity, phraseStep === 31 ? 0.74 : 0.36);
+    if (kickVelocity) playKick(at + human(2), clamp(kickVelocity * breathPush, 0.06, 1), barStep % 8 === 0 ? 1.12 : 0.78);
+
+    let snareVelocity = snarePattern[barStep];
+    if (!variation && snareVelocity < 0.28) snareVelocity *= 0.45;
+    if (variation && [14, 15, 30, 31].includes(phraseStep)) snareVelocity = Math.max(snareVelocity, phraseStep % 2 ? 0.56 : 0.38);
+    if (snareVelocity) playSnare(at + human(3), clamp(snareVelocity * (0.82 + tone * 0.28), 0.04, 0.98), snareVelocity < 0.38);
+
+    const hatBase = barStep % 2 === 0 ? 0.46 : 0.58;
+    const hatAccent = barStep % 4 === 3 ? 1.18 : barStep % 4 === 1 ? 0.86 : 1;
+    playHat(at + human(4), clamp(hatBase * hatAccent * (0.78 + shimmer * 0.42), 0.08, 0.85), false);
+    if (variation && shimmer > 0.62 && [6, 7, 14, 15].includes(barStep)) {
+      playHat(at + stepSeconds * 0.48 + human(5), 0.34 + shimmer * 0.22, false);
+    }
+    if ([3, 7, 11, 15].includes(barStep) && shimmer > 0.34) {
+      playHat(at + stepSeconds * 0.72 + human(6), 0.22 + shimmer * 0.18, false);
+    }
+    if ([2, 6, 10, 14].includes(barStep)) {
+      playHat(at + stepSeconds * (0.38 + orbit * 0.12) + human(7), clamp(0.34 + shimmer * 0.38, 0.16, 0.78), true);
+    }
+
+    const rimVelocity = rimPattern[barStep];
+    if (rimVelocity && (variation || randomFor(step, 9) > 0.32)) playRim(at + stepSeconds * 0.24 + human(8), rimVelocity * (0.72 + tone * 0.44));
+
+    let tomVelocity = tomPattern[barStep];
+    if (variation && phraseStep >= 28 && barStep % 2 === 0) tomVelocity = Math.max(tomVelocity, 0.22 + (barStep === 14 ? 0.2 : 0));
+    if (tomVelocity) playTom(at + stepSeconds * 0.52 + human(10), tomVelocity * (0.72 + orbit * 0.48), barStep < 12);
+  };
+
   const playOrbNote = (time, midi, velocity, length, pan = 0, octaveGlow = false) => {
     const { tone, shimmer } = values();
     const t = Math.max(time, audio.currentTime + 0.001);
@@ -211,6 +434,7 @@ export default function setup(ctx, prevState) {
     if (shimmer > 0.66 && currentStep % 4 === 2) {
       playOrbNote(time + swing + stepSeconds * 0.48, note + 12, clamp(expression * 0.38, 0.08, 0.7), stepSeconds * 0.7, -pan, true);
     }
+    playDrumStep(step, time, stepSeconds, expression);
 
     pulse = Math.max(pulse, 0.5 + accent * 0.45);
   };
@@ -315,7 +539,7 @@ export default function setup(ctx, prevState) {
     </style>
     <div class="root">
       <div class="top">
-        <h1>ZEFIRO ORB</h1>
+        <h1>ZEFIRO ORB DRUMS</h1>
         <div class="buttons">
           <button id="start" type="button">start</button>
           <button id="enabled" type="button" class="${state.enabled ? 'on' : ''}">${state.enabled ? 'on' : 'off'}</button>
