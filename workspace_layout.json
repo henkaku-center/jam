@@ -157,8 +157,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": 1133,
-    "y": 710,
+    "x": 1506,
+    "y": 675,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -289,8 +289,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 1092,
-    "y": -994,
+    "x": 1084,
+    "y": -990,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -313,8 +313,8 @@
   },
   "elem_iyjg23cpw": {
     "id": "elem_iyjg23cpw",
-    "x": 768,
-    "y": -1497,
+    "x": 1045,
+    "y": -603,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -325,8 +325,8 @@
   },
   "elem_jazzy_trumpet_riff": {
     "id": "elem_jazzy_trumpet_riff",
-    "x": 40,
-    "y": 300,
+    "x": 341,
+    "y": 335,
     "width": 380,
     "height": 260,
     "filePath": "/elements/elem_jazzy_trumpet_riff.js",
@@ -337,13 +337,37 @@
   },
   "elem_zoo_stick_animals": {
     "id": "elem_zoo_stick_animals",
-    "x": 440,
-    "y": 40,
+    "x": 119,
+    "y": -81,
     "width": 420,
     "height": 300,
     "filePath": "/elements/elem_zoo_stick_animals_visual.js",
     "type": "visual",
     "prompt": "hand-authored cute stick drawing zoo animal cycling visual",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_ecv8c6s14": {
+    "id": "elem_ecv8c6s14",
+    "x": 1881,
+    "y": 206,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_dancing_penguin_ocean": {
+    "id": "elem_dancing_penguin_ocean",
+    "x": 1160,
+    "y": -760,
+    "width": 520,
+    "height": 330,
+    "filePath": "/elements/elem_dancing_penguin_ocean.js",
+    "type": "synth",
+    "prompt": "hand-authored dancing penguin canvas visual with ocean waves, bubbles, and sea-like music",
     "authored": "hand",
     "reloadToken": 0
   }
