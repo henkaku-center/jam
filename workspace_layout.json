@@ -73,8 +73,8 @@
   },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
-    "x": 414,
-    "y": -308,
+    "x": 231,
+    "y": -349,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_piano.js",
@@ -217,8 +217,8 @@
   },
   "elem_random_volume_rotator": {
     "id": "elem_random_volume_rotator",
-    "x": 153,
-    "y": 431,
+    "x": 441,
+    "y": 317,
     "width": 360,
     "height": 220,
     "filePath": "/elements/elem_random_volume_rotator.js",
@@ -301,8 +301,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 1241,
-    "y": 110,
+    "x": 1300,
+    "y": 32,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -357,12 +357,12 @@
     "type": "visual",
     "prompt": "hand-authored UFO war declaration transmission video with Japanese warning message",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779958927434
   },
   "elem_shadow_pulse_bass": {
     "id": "elem_shadow_pulse_bass",
-    "x": 382,
-    "y": -35,
+    "x": 206,
+    "y": 54,
     "width": 380,
     "height": 260,
     "filePath": "/elements/elem_shadow_pulse_bass.js",
