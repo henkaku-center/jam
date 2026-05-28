@@ -349,8 +349,8 @@
   },
   "elem_ecv8c6s14": {
     "id": "elem_ecv8c6s14",
-    "x": 1881,
-    "y": 206,
+    "x": -24,
+    "y": 816,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -369,6 +369,6 @@
     "type": "synth",
     "prompt": "hand-authored dancing penguin canvas visual with ocean waves, bubbles, and sea-like music",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779957005594
   }
 }
