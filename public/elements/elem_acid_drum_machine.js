@@ -1,4 +1,5 @@
 const STATE_VERSION = 'acid-drum-machine-v2';
+const ACID_DRUM_HIT_EVENT = 'acidDrum:hit';
 
 export default function setup(ctx, prevState) {
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -144,6 +145,17 @@ export default function setup(ctx, prevState) {
   };
 
   const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+
+  const publishHit = (voice, time, velocity, detail = {}) => {
+    ctx.bus.pub(ACID_DRUM_HIT_EVENT, {
+      voice,
+      time,
+      velocity: clamp(Number(velocity) || 0, 0, 1.2),
+      step: currentStep,
+      pattern: state.pattern,
+      ...detail
+    });
+  };
 
   const playKick = (time, velocity) => {
     const t = Math.max(time, audio.currentTime + 0.001);
@@ -515,29 +527,64 @@ export default function setup(ctx, prevState) {
 
     delay.delayTime.setTargetAtTime(clockStepSeconds * (1.2 + state.shuffle * 0.8), audio.currentTime, 0.03);
 
-    if (pattern.kick[currentStep]) playKick(t, pattern.kick[currentStep] * (accent ? 1.08 : 0.9));
-    if (pattern.snare[currentStep]) playSnare(t, pattern.snare[currentStep]);
-    if (pattern.clap[currentStep]) playClap(t + 0.004, pattern.clap[currentStep]);
-    if (pattern.hat[currentStep]) playHat(t, pattern.hat[currentStep], currentStep % 8 === 6 || currentStep === 15);
+    if (pattern.kick[currentStep]) {
+      const velocity = pattern.kick[currentStep] * (accent ? 1.08 : 0.9);
+      playKick(t, velocity);
+      publishHit('kick', t, velocity);
+    }
+    if (pattern.snare[currentStep]) {
+      playSnare(t, pattern.snare[currentStep]);
+      publishHit('snare', t, pattern.snare[currentStep]);
+    }
+    if (pattern.clap[currentStep]) {
+      const clapTime = t + 0.004;
+      playClap(clapTime, pattern.clap[currentStep]);
+      publishHit('clap', clapTime, pattern.clap[currentStep]);
+    }
+    if (pattern.hat[currentStep]) {
+      const open = currentStep % 8 === 6 || currentStep === 15;
+      playHat(t, pattern.hat[currentStep], open);
+      publishHit(open ? 'openHat' : 'hat', t, pattern.hat[currentStep]);
+    }
     if (pattern.acid[currentStep] !== null) {
-      playAcid(t + clockStepSeconds * 0.018, pattern.acid[currentStep], 0.75 + accent * 0.25, Boolean(accent));
+      const acidTime = t + clockStepSeconds * 0.018;
+      const velocity = 0.75 + accent * 0.25;
+      playAcid(acidTime, pattern.acid[currentStep], velocity, Boolean(accent));
+      publishHit('acid', acidTime, velocity, {
+        midi: pattern.acid[currentStep],
+        accent: Boolean(accent)
+      });
     }
     if (state.rave > 0.02) {
-      if (pattern.crash[currentStep]) playCrash(t, pattern.crash[currentStep]);
+      if (pattern.crash[currentStep]) {
+        playCrash(t, pattern.crash[currentStep]);
+        publishHit('crash', t, pattern.crash[currentStep]);
+      }
       if (pattern.stab[currentStep] !== null) {
-        playRaveStab(t + clockStepSeconds * 0.04, pattern.stab[currentStep], 0.75 + accent * 0.2, currentStep >= 8);
+        const stabTime = t + clockStepSeconds * 0.04;
+        const velocity = 0.75 + accent * 0.2;
+        playRaveStab(stabTime, pattern.stab[currentStep], velocity, currentStep >= 8);
+        publishHit('stab', stabTime, velocity, { midi: pattern.stab[currentStep] });
       }
       if (pattern.hoover[currentStep] !== null && state.rave > 0.35) {
-        playHoover(t, pattern.hoover[currentStep], 0.55 + state.rave * 0.35);
+        const velocity = 0.55 + state.rave * 0.35;
+        playHoover(t, pattern.hoover[currentStep], velocity);
+        publishHit('hoover', t, velocity, { midi: pattern.hoover[currentStep] });
       }
       if (pattern.siren[currentStep]) {
         playSiren(t, pattern.siren[currentStep], currentStep < 12);
+        publishHit('siren', t, pattern.siren[currentStep]);
       }
       if (pattern.vox[currentStep]) {
-        playVox(t + clockStepSeconds * 0.02, pattern.vox[currentStep], 0.72);
+        const voxTime = t + clockStepSeconds * 0.02;
+        playVox(voxTime, pattern.vox[currentStep], 0.72);
+        publishHit('vox', voxTime, 0.72, { word: pattern.vox[currentStep] });
       }
       if (pattern.bleep[currentStep] !== null) {
-        playBleep(t + clockStepSeconds * 0.015, pattern.bleep[currentStep], currentStep % 4 === 0 ? 1 : 0.68);
+        const bleepTime = t + clockStepSeconds * 0.015;
+        const velocity = currentStep % 4 === 0 ? 1 : 0.68;
+        playBleep(bleepTime, pattern.bleep[currentStep], velocity);
+        publishHit('bleep', bleepTime, velocity, { midi: pattern.bleep[currentStep] });
       }
     }
   };
