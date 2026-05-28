@@ -13,8 +13,8 @@
   },
   "elem_zefiro_drum_beat": {
     "id": "elem_zefiro_drum_beat",
-    "x": 1892,
-    "y": -1262,
+    "x": 1884,
+    "y": -1258,
     "width": 340,
     "height": 300,
     "filePath": "/elements/elem_zefiro_drum_beat.js",
@@ -23,22 +23,10 @@
     "authored": "hand",
     "reloadToken": 1779959222480
   },
-  "elem_hydra_pop": {
-    "id": "elem_hydra_pop",
-    "x": 2218,
-    "y": -750,
-    "width": 520,
-    "height": 340,
-    "filePath": "/elements/elem_hydra_pop_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored Hydra-style pop WebGL visual",
-    "authored": "hand",
-    "reloadToken": 1779955161172
-  },
   "elem_c6wdaaaaz": {
     "id": "elem_c6wdaaaaz",
-    "x": 819,
-    "y": 11,
+    "x": 711,
+    "y": -96,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_c6wdaaaaz.js",
@@ -49,8 +37,8 @@
   },
   "elem_yodel_vocal_loop": {
     "id": "elem_yodel_vocal_loop",
-    "x": 1878,
-    "y": -936,
+    "x": 1895,
+    "y": -904,
     "width": 340,
     "height": 250,
     "filePath": "/elements/elem_yodel_vocal_loop.js",
@@ -58,18 +46,6 @@
     "prompt": "hand-authored beat-clocked vocal yodeling loop",
     "authored": "hand",
     "reloadToken": 1779959222479
-  },
-  "elem_beautiful_piano": {
-    "id": "elem_beautiful_piano",
-    "x": 231,
-    "y": -349,
-    "width": 390,
-    "height": 270,
-    "filePath": "/elements/elem_beautiful_piano.js",
-    "type": "synth",
-    "prompt": "hand-authored beautiful felt piano with soft chords, arpeggio motion, room, and sparkle controls",
-    "authored": "hand",
-    "reloadToken": 1779959222464
   },
   "elem_oyudq5xkf": {
     "id": "elem_oyudq5xkf",
@@ -85,8 +61,8 @@
   },
   "elem_ska_reggae_offbeats": {
     "id": "elem_ska_reggae_offbeats",
-    "x": 1586,
-    "y": -817,
+    "x": 1582,
+    "y": -869,
     "width": 340,
     "height": 260,
     "filePath": "/elements/elem_ska_reggae_offbeats.js",
@@ -107,46 +83,10 @@
     "authored": "hand",
     "reloadToken": 1779959222478
   },
-  "elem_chopin_nocturne_riff": {
-    "id": "elem_chopin_nocturne_riff",
-    "x": 1935,
-    "y": -90,
-    "width": 360,
-    "height": 270,
-    "filePath": "/elements/elem_chopin_nocturne_riff.js",
-    "type": "synth",
-    "prompt": "hand-authored clocked repeating public-domain Chopin nocturne piano riff",
-    "authored": "hand",
-    "reloadToken": 1779959222466
-  },
-  "elem_beautiful_guitar": {
-    "id": "elem_beautiful_guitar",
-    "x": 441,
-    "y": -606,
-    "width": 390,
-    "height": 270,
-    "filePath": "/elements/elem_beautiful_guitar.js",
-    "type": "synth",
-    "prompt": "hand-authored beautiful warm guitar with soft plucked chords, arpeggio motion, room, body, brightness, and shimmer controls",
-    "authored": "hand",
-    "reloadToken": 1779959222463
-  },
-  "elem_jazz_saxophone": {
-    "id": "elem_jazz_saxophone",
-    "x": 392,
-    "y": -866,
-    "width": 380,
-    "height": 290,
-    "filePath": "/elements/elem_jazz_saxophone.js",
-    "type": "synth",
-    "prompt": "hand-authored smoky clocked jazz saxophone line with breath, vibrato, swing, and room controls",
-    "authored": "hand",
-    "reloadToken": 1779959222468
-  },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
-    "x": 1359,
-    "y": -1928,
+    "x": 1355,
+    "y": -1741,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_psytrance_synth.js",
@@ -179,18 +119,6 @@
     "authored": "hand",
     "reloadToken": 1779955994516
   },
-  "elem_random_volume_rotator": {
-    "id": "elem_random_volume_rotator",
-    "x": 389,
-    "y": 362,
-    "width": 360,
-    "height": 220,
-    "filePath": "/elements/elem_random_volume_rotator.js",
-    "type": "controller",
-    "prompt": "hand-authored random one-bar volume spotlight rotator",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_otaku_culture_scene": {
     "id": "elem_otaku_culture_scene",
     "x": 582,
@@ -217,8 +145,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 1740,
-    "y": -1637,
+    "x": 1716,
+    "y": -1640,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -251,18 +179,6 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_dancing_penguin_ocean": {
-    "id": "elem_dancing_penguin_ocean",
-    "x": 1585,
-    "y": -326,
-    "width": 520,
-    "height": 330,
-    "filePath": "/elements/elem_dancing_penguin_ocean.js",
-    "type": "synth",
-    "prompt": "hand-authored dancing penguin canvas visual with ocean waves, bubbles, and sea-like music",
-    "authored": "hand",
-    "reloadToken": 1779959222467
-  },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
     "x": 1271,
@@ -274,18 +190,6 @@
     "prompt": "simple synth controlled by an external MIDI controller with automatic input selection",
     "authored": "hand",
     "reloadToken": 1779959263992
-  },
-  "elem_madoka_island_birth": {
-    "id": "elem_madoka_island_birth",
-    "x": 1040,
-    "y": -465,
-    "width": 560,
-    "height": 380,
-    "filePath": "/elements/elem_madoka_island_birth_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
-    "authored": "hand",
-    "reloadToken": 1779959305812
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
@@ -313,8 +217,8 @@
   },
   "elem_ufo_war_declaration": {
     "id": "elem_ufo_war_declaration",
-    "x": 885,
-    "y": -69,
+    "x": 1002,
+    "y": -344,
     "width": 560,
     "height": 360,
     "filePath": "/elements/elem_ufo_war_declaration_visual.js",
@@ -325,8 +229,8 @@
   },
   "elem_shadow_pulse_bass": {
     "id": "elem_shadow_pulse_bass",
-    "x": 148,
-    "y": 60,
+    "x": 631,
+    "y": -366,
     "width": 380,
     "height": 260,
     "filePath": "/elements/elem_shadow_pulse_bass.js",
@@ -337,8 +241,8 @@
   },
   "elem_beatbox": {
     "id": "elem_beatbox",
-    "x": 620,
-    "y": 54,
+    "x": 1336,
+    "y": -316,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_beatbox.js",
@@ -346,5 +250,17 @@
     "prompt": "hand-authored vocal beatbox drum machine",
     "authored": "hand",
     "reloadToken": 1779959222462
+  },
+  "elem_sparkling_buddha_thai_temple": {
+    "id": "elem_sparkling_buddha_thai_temple",
+    "x": -930,
+    "y": 80,
+    "width": 560,
+    "height": 370,
+    "filePath": "/elements/elem_sparkling_buddha_thai_temple.js",
+    "type": "synth",
+    "prompt": "hand-authored sparkling Buddha visual with Thai temple bells, gong, chimes, and drone",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
