@@ -37,7 +37,7 @@
   },
   "elem_c6wdaaaaz": {
     "id": "elem_c6wdaaaaz",
-    "x": 821,
+    "x": 819,
     "y": 11,
     "width": 380,
     "height": 300,
@@ -58,18 +58,6 @@
     "prompt": "hand-authored beat-clocked vocal yodeling loop",
     "authored": "hand",
     "reloadToken": 1779954544277
-  },
-  "elem_xdig1izwu": {
-    "id": "elem_xdig1izwu",
-    "x": 220,
-    "y": 396,
-    "width": 380,
-    "height": 270,
-    "filePath": "/elements/elem_xdig1izwu_acoustic_guitar.js",
-    "type": "synth",
-    "prompt": "hand-authored acoustic guitar with warm strums and fingerpicked motion",
-    "authored": "hand",
-    "reloadToken": 0
   },
   "elem_metal_country_music": {
     "id": "elem_metal_country_music",
@@ -133,8 +121,8 @@
   },
   "elem_chopin_nocturne_riff": {
     "id": "elem_chopin_nocturne_riff",
-    "x": 1964,
-    "y": -146,
+    "x": 1935,
+    "y": -90,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_chopin_nocturne_riff.js",
@@ -193,8 +181,8 @@
   },
   "elem_kicurqnka": {
     "id": "elem_kicurqnka",
-    "x": 562,
-    "y": 827,
+    "x": 590,
+    "y": 745,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -229,8 +217,8 @@
   },
   "elem_random_volume_rotator": {
     "id": "elem_random_volume_rotator",
-    "x": -260,
-    "y": 665,
+    "x": 153,
+    "y": 431,
     "width": 360,
     "height": 220,
     "filePath": "/elements/elem_random_volume_rotator.js",
@@ -265,8 +253,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 1676,
-    "y": -1608,
+    "x": 1740,
+    "y": -1637,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -313,8 +301,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 1255,
-    "y": 42,
+    "x": 1241,
+    "y": 110,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -356,6 +344,18 @@
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_ufo_war_declaration": {
+    "id": "elem_ufo_war_declaration",
+    "x": -360,
+    "y": 80,
+    "width": 560,
+    "height": 360,
+    "filePath": "/elements/elem_ufo_war_declaration_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored UFO war declaration transmission video with Japanese warning message",
     "authored": "hand",
     "reloadToken": 0
   }
