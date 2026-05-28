@@ -107,18 +107,6 @@
     "authored": "hand",
     "reloadToken": 1779955161173
   },
-  "elem_roland_909_beat": {
-    "id": "elem_roland_909_beat",
-    "x": 1775,
-    "y": 203,
-    "width": 330,
-    "height": 285,
-    "filePath": "/elements/elem_roland_909_beat.js",
-    "type": "synth",
-    "prompt": "hand-authored simple Roland TR-909 style drum machine",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_metal_country_music": {
     "id": "elem_metal_country_music",
     "x": 1231,
@@ -133,8 +121,8 @@
   },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
-    "x": 500,
-    "y": -120,
+    "x": 488,
+    "y": -255,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_piano.js",
@@ -191,18 +179,6 @@
     "authored": "hand",
     "reloadToken": 1779955072217
   },
-  "elem_c99y5ogpk": {
-    "id": "elem_c99y5ogpk",
-    "x": 645,
-    "y": -1240,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_chopin_nocturne_riff": {
     "id": "elem_chopin_nocturne_riff",
     "x": 1138,
@@ -229,8 +205,8 @@
   },
   "elem_97f4irwx7": {
     "id": "elem_97f4irwx7",
-    "x": -79,
-    "y": 116,
+    "x": 611,
+    "y": 296,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -241,13 +217,25 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": -153,
-    "y": -627,
+    "x": -765,
+    "y": -949,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
     "type": "synth",
     "prompt": "hand-authored Punjabi bhangra DJ club groove with dhol, tumbi hooks, bass drops, brass stabs, and synthesized hype chops",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_beautiful_guitar": {
+    "id": "elem_beautiful_guitar",
+    "x": 920,
+    "y": -120,
+    "width": 390,
+    "height": 270,
+    "filePath": "/elements/elem_beautiful_guitar.js",
+    "type": "synth",
+    "prompt": "hand-authored beautiful warm guitar with soft plucked chords, arpeggio motion, room, body, brightness, and shimmer controls",
     "authored": "hand",
     "reloadToken": 0
   }
