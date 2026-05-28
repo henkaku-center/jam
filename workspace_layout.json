@@ -37,8 +37,8 @@
   },
   "elem_c6wdaaaaz": {
     "id": "elem_c6wdaaaaz",
-    "x": 420,
-    "y": 120,
+    "x": 821,
+    "y": 11,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_c6wdaaaaz.js",
@@ -61,8 +61,8 @@
   },
   "elem_xdig1izwu": {
     "id": "elem_xdig1izwu",
-    "x": 328,
-    "y": 297,
+    "x": 220,
+    "y": 396,
     "width": 380,
     "height": 270,
     "filePath": "/elements/elem_xdig1izwu_acoustic_guitar.js",
@@ -85,8 +85,8 @@
   },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
-    "x": 611,
-    "y": -349,
+    "x": 414,
+    "y": -308,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_piano.js",
@@ -145,8 +145,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": 1151,
-    "y": 400,
+    "x": 1427,
+    "y": 761,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -193,8 +193,8 @@
   },
   "elem_kicurqnka": {
     "id": "elem_kicurqnka",
-    "x": 683,
-    "y": 492,
+    "x": 562,
+    "y": 827,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -229,8 +229,8 @@
   },
   "elem_random_volume_rotator": {
     "id": "elem_random_volume_rotator",
-    "x": -29,
-    "y": -191,
+    "x": -260,
+    "y": 665,
     "width": 360,
     "height": 220,
     "filePath": "/elements/elem_random_volume_rotator.js",
@@ -277,8 +277,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 494,
-    "y": 456,
+    "x": 725,
+    "y": 1155,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
@@ -289,8 +289,8 @@
   },
   "elem_iyjg23cpw": {
     "id": "elem_iyjg23cpw",
-    "x": 1045,
-    "y": -603,
+    "x": 957,
+    "y": -941,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -299,22 +299,10 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_ecv8c6s14": {
-    "id": "elem_ecv8c6s14",
-    "x": 99,
-    "y": 739,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_dancing_penguin_ocean": {
     "id": "elem_dancing_penguin_ocean",
-    "x": 1057,
-    "y": -415,
+    "x": 1495,
+    "y": -651,
     "width": 520,
     "height": 330,
     "filePath": "/elements/elem_dancing_penguin_ocean.js",
@@ -325,32 +313,32 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 1540,
-    "y": 1,
+    "x": 1255,
+    "y": 42,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
     "type": "synth",
     "prompt": "simple synth controlled by an external MIDI controller with automatic input selection",
     "authored": "hand",
-    "reloadToken": 1779957454182
+    "reloadToken": 1779957964209
   },
   "elem_madoka_island_birth": {
     "id": "elem_madoka_island_birth",
-    "x": 927,
-    "y": -230,
+    "x": 1067,
+    "y": -413,
     "width": 560,
     "height": 380,
     "filePath": "/elements/elem_madoka_island_birth_visual.js",
     "type": "visual",
     "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
     "authored": "hand",
-    "reloadToken": 1779957718090
+    "reloadToken": 1779958006626
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
-    "x": 107,
-    "y": 186,
+    "x": 1056,
+    "y": 389,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_webcore_os_chimes.js",
@@ -358,5 +346,17 @@
     "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
     "reloadToken": 1779957551656
+  },
+  "elem_ibmpv0o72": {
+    "id": "elem_ibmpv0o72",
+    "x": 950,
+    "y": -786,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
