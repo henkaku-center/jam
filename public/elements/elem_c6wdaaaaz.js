@@ -11,6 +11,7 @@ export default function setup(ctx, prevState) {
     drumVolume: finite(prevState?.drumVolume, 0.92),
     sitarVolume: finite(prevState?.sitarVolume, 0.58),
     dholVolume: finite(prevState?.dholVolume, 0.74),
+    bagpipeVolume: finite(prevState?.bagpipeVolume, 0.46),
     density: finite(prevState?.density, 0.78),
     swing: finite(prevState?.swing, 0.08)
   };
@@ -212,6 +213,79 @@ export default function setup(ctx, prevState) {
     track(length + 0.08, main, buzz, pluck, mainGain, buzzGain, pluckGain, body, bridge, amp, ...(panner ? [panner] : []));
   };
 
+  const playBagpipe = (time, midi, velocity, length, pan) => {
+    const t = Math.max(time, audio.currentTime + 0.002);
+    const level = clamp(state.bagpipeVolume, 0, 1);
+    if (level <= 0.001) return;
+    const freq = midiToFreq(midi);
+
+    const chanter = audio.createOscillator();
+    const reed = audio.createOscillator();
+    const droneA = audio.createOscillator();
+    const droneB = audio.createOscillator();
+    const reedGain = audio.createGain();
+    const droneGain = audio.createGain();
+    const body = audio.createBiquadFilter();
+    const bite = audio.createBiquadFilter();
+    const amp = audio.createGain();
+    const panner = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
+
+    chanter.type = 'sawtooth';
+    reed.type = 'square';
+    droneA.type = 'sawtooth';
+    droneB.type = 'triangle';
+    chanter.frequency.setValueAtTime(freq, t);
+    reed.frequency.setValueAtTime(freq * 1.005, t);
+    droneA.frequency.setValueAtTime(midiToFreq(state.rootMidi - 24), t);
+    droneB.frequency.setValueAtTime(midiToFreq(state.rootMidi - 12), t);
+    reed.detune.setValueAtTime(6, t);
+    droneA.detune.setValueAtTime(-4, t);
+    droneB.detune.setValueAtTime(5, t);
+
+    reedGain.gain.setValueAtTime(0.34 + velocity * 0.18, t);
+    droneGain.gain.setValueAtTime(0.14 + level * 0.12, t);
+    body.type = 'bandpass';
+    body.frequency.setValueAtTime(1150 + velocity * 420, t);
+    body.Q.setValueAtTime(4.8, t);
+    bite.type = 'highpass';
+    bite.frequency.setValueAtTime(560, t);
+
+    const peak = 0.12 * velocity * level;
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + 0.018);
+    amp.gain.setTargetAtTime(peak * 0.82, t + 0.04, 0.08);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    if (panner) panner.pan.setValueAtTime(pan, t);
+
+    chanter.connect(body);
+    reed.connect(reedGain);
+    reedGain.connect(body);
+    droneA.connect(droneGain);
+    droneB.connect(droneGain);
+    droneGain.connect(bite);
+    body.connect(bite);
+    bite.connect(amp);
+
+    if (panner) {
+      amp.connect(panner);
+      panner.connect(output);
+      panner.connect(delay);
+    } else {
+      amp.connect(output);
+      amp.connect(delay);
+    }
+
+    chanter.start(t);
+    reed.start(t);
+    droneA.start(t);
+    droneB.start(t);
+    chanter.stop(t + length + 0.05);
+    reed.stop(t + length + 0.05);
+    droneA.stop(t + length + 0.05);
+    droneB.stop(t + length + 0.05);
+    track(length + 0.1, chanter, reed, droneA, droneB, reedGain, droneGain, body, bite, amp, ...(panner ? [panner] : []));
+  };
+
   const playDrum = (time, kind, velocity) => {
     const t = Math.max(time, audio.currentTime + 0.002);
     const drumLevel = clamp(state.drumVolume, 0, 1);
@@ -400,10 +474,13 @@ export default function setup(ctx, prevState) {
     const root = Math.round(state.rootMidi);
     const flutePattern = [0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 10, 12, 10, 7, 5];
     const sitarPattern = [0, 2, 4, 7, 9, 7, 4, 2, 0, 4, 7, 11, 12, 11, 7, 4];
+    const bagpipePattern = [0, 2, 4, 5, 7, 9, 10, 9, 7, 5, 4, 2, 0, 4, 7, 5];
     const fluteSteps = density > 0.7 ? [2, 5, 8, 11, 14] : [2, 8, 14];
     const sitarSteps = density > 0.66 ? [0, 3, 4, 7, 10, 12, 15] : [0, 4, 10, 15];
+    const bagpipeSteps = density > 0.62 ? [1, 5, 9, 13] : [1, 9];
     const shouldPlayFlute = state.fluteVolume > 0.02 && fluteSteps.includes(stepIndex);
     const shouldPlaySitar = state.sitarVolume > 0.02 && sitarSteps.includes(stepIndex);
+    const shouldPlayBagpipe = state.bagpipeVolume > 0.02 && bagpipeSteps.includes(stepIndex);
     const breath = clamp(state.breath, 0, 1);
 
     delay.delayTime.setTargetAtTime(stepSeconds * (1.4 + density * 0.9), audio.currentTime, 0.05);
@@ -424,6 +501,12 @@ export default function setup(ctx, prevState) {
       const pan = 0.22 + ((stepIndex % 4) - 1.5) / 10;
       const length = stepSeconds * (0.52 + density * 0.46);
       playSitar(t + stepSeconds * 0.025, root - 12 + sitarPattern[stepIndex] + octave, accent, length, pan);
+    }
+
+    if (shouldPlayBagpipe) {
+      const accent = stepIndex === 1 ? 1 : 0.72 + density * 0.2;
+      const length = stepSeconds * (2.2 + density * 0.9);
+      playBagpipe(t + stepSeconds * 0.035, root + bagpipePattern[stepIndex], accent, length, -0.22);
     }
 
     const congaLow = [0, 4, 8, 12];
@@ -503,7 +586,7 @@ export default function setup(ctx, prevState) {
       }
       .meters {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 6px;
       }
       .meter {
@@ -567,7 +650,7 @@ export default function setup(ctx, prevState) {
     </style>
     <div class="root">
       <div class="top">
-        <h1>salsa dhol sitar</h1>
+        <h1>salsa dhol sitar pipes</h1>
         <button id="toggle" type="button" aria-label="toggle playback"></button>
       </div>
       <div class="meters">
@@ -575,6 +658,7 @@ export default function setup(ctx, prevState) {
         <div class="meter"><b>percussion</b><div class="bar"><span id="drumMeter"></span></div></div>
         <div class="meter"><b>sitar</b><div class="bar"><span id="sitarMeter"></span></div></div>
         <div class="meter"><b>dhol</b><div class="bar"><span id="dholMeter"></span></div></div>
+        <div class="meter"><b>pipes</b><div class="bar"><span id="bagpipeMeter"></span></div></div>
       </div>
       <div class="controls">
         <label>root <input id="root" type="range" min="48" max="74" step="1" value="${state.rootMidi}"></label>
@@ -583,6 +667,7 @@ export default function setup(ctx, prevState) {
         <label>perc <input id="drumVolume" type="range" min="0" max="1" step="0.001" value="${state.drumVolume}"></label>
         <label>sitar <input id="sitarVolume" type="range" min="0" max="1" step="0.001" value="${state.sitarVolume}"></label>
         <label>dhol <input id="dholVolume" type="range" min="0" max="1" step="0.001" value="${state.dholVolume}"></label>
+        <label>pipes <input id="bagpipeVolume" type="range" min="0" max="1" step="0.001" value="${state.bagpipeVolume}"></label>
         <label>density <input id="density" type="range" min="0" max="1" step="0.001" value="${state.density}"></label>
         <label>swing <input id="swing" type="range" min="0" max="0.42" step="0.001" value="${state.swing}"></label>
       </div>
@@ -599,12 +684,14 @@ export default function setup(ctx, prevState) {
   const drumSlider = ctx.domRoot.querySelector('#drumVolume');
   const sitarSlider = ctx.domRoot.querySelector('#sitarVolume');
   const dholSlider = ctx.domRoot.querySelector('#dholVolume');
+  const bagpipeSlider = ctx.domRoot.querySelector('#bagpipeVolume');
   const densitySlider = ctx.domRoot.querySelector('#density');
   const swingSlider = ctx.domRoot.querySelector('#swing');
   const fluteMeter = ctx.domRoot.querySelector('#fluteMeter');
   const drumMeter = ctx.domRoot.querySelector('#drumMeter');
   const sitarMeter = ctx.domRoot.querySelector('#sitarMeter');
   const dholMeter = ctx.domRoot.querySelector('#dholMeter');
+  const bagpipeMeter = ctx.domRoot.querySelector('#bagpipeMeter');
   const stepEls = Array.from(ctx.domRoot.querySelectorAll('.step'));
 
   const syncUi = () => {
@@ -621,6 +708,7 @@ export default function setup(ctx, prevState) {
     drumMeter.style.width = `${clamp((state.drumVolume * 0.45 + pulse * 0.6) * 100 * decay, 0, 100)}%`;
     sitarMeter.style.width = `${clamp((state.sitarVolume * 0.5 + pulse * 0.5) * 100 * decay, 0, 100)}%`;
     dholMeter.style.width = `${clamp((state.dholVolume * 0.48 + pulse * 0.62) * 100 * decay, 0, 100)}%`;
+    bagpipeMeter.style.width = `${clamp((state.bagpipeVolume * 0.5 + pulse * 0.48) * 100 * decay, 0, 100)}%`;
   };
 
   const onToggle = () => {
@@ -634,6 +722,7 @@ export default function setup(ctx, prevState) {
   const onDrum = () => { state.drumVolume = Number(drumSlider.value); };
   const onSitar = () => { state.sitarVolume = Number(sitarSlider.value); };
   const onDhol = () => { state.dholVolume = Number(dholSlider.value); };
+  const onBagpipe = () => { state.bagpipeVolume = Number(bagpipeSlider.value); };
   const onDensity = () => { state.density = Number(densitySlider.value); };
   const onSwing = () => { state.swing = Number(swingSlider.value); };
 
@@ -644,6 +733,7 @@ export default function setup(ctx, prevState) {
   drumSlider.addEventListener('input', onDrum);
   sitarSlider.addEventListener('input', onSitar);
   dholSlider.addEventListener('input', onDhol);
+  bagpipeSlider.addEventListener('input', onBagpipe);
   densitySlider.addEventListener('input', onDensity);
   swingSlider.addEventListener('input', onSwing);
 
@@ -668,6 +758,7 @@ export default function setup(ctx, prevState) {
       drumSlider.removeEventListener('input', onDrum);
       sitarSlider.removeEventListener('input', onSitar);
       dholSlider.removeEventListener('input', onDhol);
+      bagpipeSlider.removeEventListener('input', onBagpipe);
       densitySlider.removeEventListener('input', onDensity);
       swingSlider.removeEventListener('input', onSwing);
       liveNodes.forEach((node) => {
