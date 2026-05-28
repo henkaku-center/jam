@@ -229,8 +229,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1735,
-    "y": -1480,
+    "x": 1598,
+    "y": -1057,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -277,20 +277,8 @@
   },
   "elem_9ws8kyrcb": {
     "id": "elem_9ws8kyrcb",
-    "x": 393,
-    "y": 515,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_3o3hi1pfr": {
-    "id": "elem_3o3hi1pfr",
-    "x": 1020,
-    "y": 529,
+    "x": 389,
+    "y": 476,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -325,8 +313,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 1143,
-    "y": -1129,
+    "x": 1092,
+    "y": -994,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -337,8 +325,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 900,
-    "y": 430,
+    "x": 1100,
+    "y": -326,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
@@ -346,5 +334,53 @@
     "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
     "authored": "hand",
     "reloadToken": 1779956785036
+  },
+  "elem_iyjg23cpw": {
+    "id": "elem_iyjg23cpw",
+    "x": 1330,
+    "y": -1538,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_japanese_culture_music": {
+    "id": "elem_japanese_culture_music",
+    "x": 720,
+    "y": -1040,
+    "width": 390,
+    "height": 280,
+    "filePath": "/elements/elem_japanese_culture_music.js",
+    "type": "synth",
+    "prompt": "hand-authored Japanese culture inspired music with koto, shakuhachi, taiko, and sho-like ambience",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_jazzy_trumpet_riff": {
+    "id": "elem_jazzy_trumpet_riff",
+    "x": 40,
+    "y": 300,
+    "width": 380,
+    "height": 260,
+    "filePath": "/elements/elem_jazzy_trumpet_riff.js",
+    "type": "synth",
+    "prompt": "hand-authored original loud jazzy trumpet riff every 16 bars for 2 bars",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zoo_stick_animals": {
+    "id": "elem_zoo_stick_animals",
+    "x": 440,
+    "y": 40,
+    "width": 420,
+    "height": 300,
+    "filePath": "/elements/elem_zoo_stick_animals_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored cute stick drawing zoo animal cycling visual",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
