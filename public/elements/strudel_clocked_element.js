@@ -1,18 +1,23 @@
 export default async function setup(ctx, prevState) {
-  const defaultCode = `setcps(1)
-note("<c3 eb3 g3 bb3>*2")
+  const moodVersion = 'laidback-v1';
+  const defaultCode = `setcps(0.55)
+note("<c3 ~ eb3 ~ g3 ~ bb3 ~>")
   .s("sawtooth")
-  .lpf(sine.range(500, 2800).slow(4))
-  .gain(0.45)
+  .lpf(sine.range(420, 1500).slow(8))
+  .gain(0.32)
+  .room(0.7)
+  .delay(0.28)
   .jux(rev)`;
+  const isLaidBackState = prevState?.moodVersion === moodVersion;
+  const initialCode = isLaidBackState && typeof prevState?.code === 'string' ? prevState.code : defaultCode;
+  const initialDraftCode = isLaidBackState && typeof prevState?.draftCode === 'string' ? prevState.draftCode : initialCode;
 
   const state = {
-    code: typeof prevState?.code === 'string' ? prevState.code : defaultCode,
-    draftCode: typeof prevState?.draftCode === 'string'
-      ? prevState.draftCode
-      : (typeof prevState?.code === 'string' ? prevState.code : defaultCode),
+    moodVersion,
+    code: initialCode,
+    draftCode: initialDraftCode,
     running: typeof prevState?.running === 'boolean' ? prevState.running : true,
-    gain: Number.isFinite(prevState?.gain) ? prevState.gain : 0.75,
+    gain: isLaidBackState && Number.isFinite(prevState?.gain) ? prevState.gain : 0.58,
     error: '',
     status: 'loading'
   };
@@ -174,7 +179,8 @@ note("<c3 eb3 g3 bb3>*2")
       code: state.code,
       draftCode: state.draftCode,
       running: state.running,
-      gain: state.gain
+      gain: state.gain,
+      moodVersion: state.moodVersion
     });
   };
 
@@ -280,18 +286,25 @@ note("<c3 eb3 g3 bb3>*2")
   unsubscribers.push(ctx.bus.subGlobal('state', value => {
     if (!value || typeof value !== 'object') return;
     suppressPublish = true;
-    if (typeof value.code === 'string') {
+    const incomingIsLaidBack = value.moodVersion === moodVersion;
+    if (!incomingIsLaidBack) {
+      state.code = defaultCode;
+      state.draftCode = defaultCode;
+      state.moodVersion = moodVersion;
+    } else if (typeof value.code === 'string') {
       state.code = value.code;
       state.draftCode = typeof value.draftCode === 'string' ? value.draftCode : value.code;
     }
     if (typeof value.running === 'boolean') state.running = value.running;
-    if (Number.isFinite(value.gain)) state.gain = clamp(value.gain, 0, 1);
+    if (incomingIsLaidBack && Number.isFinite(value.gain)) state.gain = clamp(value.gain, 0, 1);
+    state.moodVersion = moodVersion;
     suppressPublish = false;
     render();
     clearTimeout(evalTimer);
     evalTimer = setTimeout(() => evaluateNow(state.code), 0);
   }));
 
+  if (!isLaidBackState) publishState();
   render();
   evalTimer = setTimeout(() => evaluateNow(state.code), 0);
 
@@ -301,7 +314,8 @@ note("<c3 eb3 g3 bb3>*2")
         code: state.code,
         draftCode: state.draftCode,
         running: state.running,
-        gain: state.gain
+        gain: state.gain,
+        moodVersion: state.moodVersion
       };
     },
     async destroy() {

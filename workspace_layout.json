@@ -1,90 +1,54 @@
 {
   "elem_r9rre4xjv": {
     "id": "elem_r9rre4xjv",
-    "x": 921,
-    "y": -152,
+    "x": 1332,
+    "y": -724,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_r9rre4xjv_seq.js",
     "type": "seq",
     "prompt": "create a drum step sequencer",
     "authored": "codegen",
-    "reloadToken": 1779775334734
+    "reloadToken": 1779935158169
   },
   "elem_d4tb6laez": {
     "id": "elem_d4tb6laez",
-    "x": 1567,
-    "y": -508,
+    "x": 1772,
+    "y": -621,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_d4tb6laez_synth.js",
     "type": "synth",
     "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
   },
-  "elem_crystal_lead": {
-    "id": "elem_crystal_lead",
-    "x": 1278,
-    "y": -503,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_crystal_lead_synth.js",
-    "type": "synth",
-    "prompt": "cool high quality lead synth with rich unison and effects",
-    "authored": "hand",
-    "reloadToken": 1779886995948
-  },
   "elem_house_voice": {
     "id": "elem_house_voice",
-    "x": 1281,
-    "y": -289,
+    "x": 1031,
+    "y": -623,
     "width": 260,
     "height": 200,
     "filePath": "/elements/elem_house_voice_sampler.js",
     "type": "synth",
     "prompt": "microphone voice sampler for house vocal chops",
     "authored": "hand",
-    "reloadToken": 1779870660021
+    "reloadToken": 1779935158154
   },
-  "elem_gtkc2zv0n": {
-    "id": "elem_gtkc2zv0n",
-    "x": 783,
-    "y": 250,
+  "elem_6ombobivs": {
+    "id": "elem_6ombobivs",
+    "x": 779,
+    "y": -385,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
     "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_zefiro_midi": {
-    "id": "elem_zefiro_midi",
-    "x": 260,
-    "y": -480,
-    "width": 320,
-    "height": 280,
-    "filePath": "/elements/elem_zefiro_midi.js",
-    "type": "input",
-    "prompt": "Zefiro USB MIDI source: publishes CCs to global:zefiro:cc<N>",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_zefiro_breath_drone": {
-    "id": "elem_zefiro_breath_drone",
-    "x": 600,
-    "y": -480,
-    "width": 300,
-    "height": 280,
-    "filePath": "/elements/elem_zefiro_breath_drone.js",
-    "type": "synth",
-    "prompt": "Breath-driven detuned-saw drone subscribed to global:zefiro:cc11 + cc1",
-    "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779935158173
   },
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 1383,
-    "y": -233,
+    "x": 581,
+    "y": -441,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",

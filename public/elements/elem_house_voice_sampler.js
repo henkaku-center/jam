@@ -2,7 +2,9 @@
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
   const arrangementLength = 64;
-  const defaultVoicePattern = [1, 0, 0, 0.5, 0, 0, 0.7, 0, 0, 0.45, 0, 0, 1, 0, 0.55, 0];
+  const moodVersion = 'laidback-v1';
+  const isLaidBackState = prevState?.moodVersion === moodVersion;
+  const defaultVoicePattern = [0.72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.48, 0, 0, 0, 0, 0];
   const clipColors = ['#f472b6', '#38bdf8', '#a3e635', '#facc15', '#c084fc', '#fb7185', '#2dd4bf', '#fb923c'];
 
   const cloneArrangement = (arrangement) => {
@@ -20,6 +22,20 @@ export default function setup(ctx, prevState) {
     });
   };
 
+  const mellowArrangement = (arrangement) => {
+    const source = cloneArrangement(arrangement);
+    const next = Array.from({ length: arrangementLength }, () => null);
+    for (let start = 0; start < arrangementLength; start += 8) {
+      const event = source.slice(start, start + 8).find(Boolean);
+      if (!event) continue;
+      next[start] = {
+        clipId: event.clipId,
+        velocity: Math.max(0.12, Math.min(1, event.velocity * 0.72))
+      };
+    }
+    return next;
+  };
+
   const migrateArrangement = () => {
     if (Array.isArray(prevState?.arrangement)) return cloneArrangement(prevState.arrangement);
     const source = Array.isArray(prevState?.pattern) ? prevState.pattern : defaultVoicePattern;
@@ -33,17 +49,26 @@ export default function setup(ctx, prevState) {
   };
 
   const state = {
+    moodVersion,
     enabled: prevState?.enabled ?? true,
     clipMeta: Array.isArray(prevState?.clipMeta) ? prevState.clipMeta.slice(0, 16) : [],
     selectedClipId: prevState?.selectedClipId || null,
-    arrangement: migrateArrangement(),
+    arrangement: isLaidBackState ? migrateArrangement() : mellowArrangement(migrateArrangement()),
     clipSlices: prevState?.clipSlices && typeof prevState.clipSlices === 'object' ? { ...prevState.clipSlices } : {},
-    rate: Number.isFinite(prevState?.rate) ? prevState.rate : 0.92,
-    tone: Number.isFinite(prevState?.tone) ? prevState.tone : 0.38,
-    drive: Number.isFinite(prevState?.drive) ? prevState.drive : 0.42,
-    echo: Number.isFinite(prevState?.echo) ? prevState.echo : 0.18,
-    space: Number.isFinite(prevState?.space) ? prevState.space : 0.12,
+    rate: isLaidBackState && Number.isFinite(prevState?.rate) ? prevState.rate : 0.84,
+    tone: isLaidBackState && Number.isFinite(prevState?.tone) ? prevState.tone : 0.28,
+    drive: isLaidBackState && Number.isFinite(prevState?.drive) ? prevState.drive : 0.16,
+    echo: isLaidBackState && Number.isFinite(prevState?.echo) ? prevState.echo : 0.28,
+    space: isLaidBackState && Number.isFinite(prevState?.space) ? prevState.space : 0.3,
     launch: prevState?.launch === 'clip' ? 'clip' : 'slice'
+  };
+  const initialRelaxedArrangement = cloneArrangement(state.arrangement);
+  const relaxedFx = {
+    rate: 0.84,
+    tone: 0.28,
+    drive: 0.16,
+    echo: 0.28,
+    space: 0.3
   };
 
   if (!state.selectedClipId && state.clipMeta[0]) state.selectedClipId = state.clipMeta[0].id;
@@ -571,33 +596,33 @@ export default function setup(ctx, prevState) {
     const gain = ctx.audioCtx.createGain();
     const pan = ctx.audioCtx.createStereoPanner();
 
-    const pitchSet = [1, 0.944, 1, 1.122, 0.84, 1];
+    const pitchSet = [0.944, 1, 0.944, 1.059, 0.89, 1];
     const pitch = pitchSet[step % pitchSet.length] * state.rate;
     const boundaries = sliceBoundariesFor(clipId, buffer);
     const sliceCount = Math.max(1, boundaries.length - 1);
-    const sliceIndex = Math.floor((step * 3 + (step % 4 === 2 ? 1 : 0)) % sliceCount);
+    const sliceIndex = Math.floor((step / 8) % sliceCount);
     const sliceStart = boundaries[sliceIndex] || 0;
     const sliceEnd = boundaries[sliceIndex + 1] || buffer.duration;
     const sliceDuration = Math.max(0.02, sliceEnd - sliceStart);
     const offset = state.launch === 'slice'
       ? clamp(sliceStart + randomFor(step, 4) * Math.min(0.025, sliceDuration * 0.12), 0, Math.max(0, buffer.duration - 0.04))
       : 0;
-    const maxDuration = state.launch === 'slice' ? sliceDuration * 0.92 : Math.min(buffer.duration, duration * 3.8);
+    const maxDuration = state.launch === 'slice' ? sliceDuration * 1.15 : Math.min(buffer.duration, duration * 6.2);
     const playDuration = Math.min(maxDuration, buffer.duration - offset);
 
     source.buffer = buffer;
     source.playbackRate.setValueAtTime(pitch, t);
     highpass.type = 'highpass';
-    highpass.frequency.setValueAtTime(120 + state.drive * 260, t);
+    highpass.frequency.setValueAtTime(80 + state.drive * 180, t);
     lowpass.type = 'lowpass';
-    lowpass.frequency.setValueAtTime(1200 + state.tone * 6500, t);
-    lowpass.Q.setValueAtTime(3.4 + state.drive * 5, t);
+    lowpass.frequency.setValueAtTime(900 + state.tone * 4300, t);
+    lowpass.Q.setValueAtTime(2.2 + state.drive * 3.2, t);
     shaper.curve = makeShaper(state.drive);
     shaper.oversample = '4x';
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.58 * velocity, t + 0.012);
-    gain.gain.setTargetAtTime(0.0001, t + playDuration * 0.78, 0.045);
-    pan.pan.setValueAtTime((randomFor(step, 9) - 0.5) * 0.46, t);
+    gain.gain.exponentialRampToValueAtTime(0.42 * velocity, t + 0.04);
+    gain.gain.setTargetAtTime(0.0001, t + playDuration * 0.82, 0.09);
+    pan.pan.setValueAtTime((randomFor(step, 9) - 0.5) * 0.34, t);
 
     source.connect(highpass);
     highpass.connect(lowpass);
@@ -904,7 +929,7 @@ export default function setup(ctx, prevState) {
     });
     drawClipWaveform(canvas);
 
-    ['rate', 'tone', 'drive', 'echo'].forEach((key) => {
+    ['rate', 'tone', 'drive', 'echo', 'space'].forEach((key) => {
       const input = dom.querySelector(`#${key}`);
       input.addEventListener('input', () => {
         const value = Number(input.value);
@@ -1022,7 +1047,7 @@ export default function setup(ctx, prevState) {
       state.launch = launch === 'slice' ? 'slice' : 'clip';
       render();
     }),
-    ...['rate', 'tone', 'drive', 'echo'].map((key) => ctx.bus.subGlobal(`voice_${key}`, (value) => {
+    ...['rate', 'tone', 'drive', 'echo', 'space'].map((key) => ctx.bus.subGlobal(`voice_${key}`, (value) => {
       const number = Number(value);
       if (!Number.isFinite(number)) return;
       state[key] = number;
@@ -1031,6 +1056,15 @@ export default function setup(ctx, prevState) {
       updateFx();
     }))
   ];
+
+  if (!isLaidBackState) {
+    state.arrangement = cloneArrangement(initialRelaxedArrangement);
+    Object.assign(state, relaxedFx);
+    ctx.bus.pubGlobal('voice_arrangement', state.arrangement);
+    Object.entries(relaxedFx).forEach(([key, value]) => ctx.bus.pubGlobal(`voice_${key}`, value));
+    updateFx();
+    render();
+  }
 
   const unsubscribeClock = ctx.clock.onTick(({ step, time, duration }) => {
     currentStep = step % arrangementLength;
@@ -1098,6 +1132,7 @@ export default function setup(ctx, prevState) {
     getState() {
       return {
         enabled: state.enabled,
+        moodVersion: state.moodVersion,
         clipMeta: state.clipMeta.slice(),
         selectedClipId: state.selectedClipId,
         arrangement: cloneArrangement(state.arrangement),

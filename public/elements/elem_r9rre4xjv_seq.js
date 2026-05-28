@@ -8,13 +8,13 @@ export default function setup(ctx, prevState) {
     hat: 'HAT',
     openHat: 'OPN'
   };
-  const grooveStyle = 'lean_on_bounce';
+  const grooveStyle = 'laidback_half_time_v1';
 
   const defaultPattern = {
-    kick: [1, 0, 0, 0.42, 0, 0, 0.88, 0, 0.36, 0, 0, 0, 1, 0, 0.52, 0],
-    snare: [0, 0, 0.14, 0, 0.96, 0, 0, 0, 0, 0, 0.18, 0, 1, 0, 0.22, 0],
-    hat: [0.32, 0.18, 0.56, 0.2, 0.3, 0.18, 0.62, 0.22, 0.34, 0.18, 0.54, 0.2, 0.32, 0.18, 0.68, 0.24],
-    openHat: [0, 0, 0.34, 0, 0, 0, 0.3, 0, 0, 0, 0.36, 0, 0, 0, 0.44, 0]
+    kick: [0.86, 0, 0, 0, 0, 0, 0.22, 0, 0.5, 0, 0, 0, 0, 0, 0.28, 0],
+    snare: [0, 0, 0, 0, 0, 0, 0, 0, 0.82, 0, 0, 0, 0, 0, 0.18, 0],
+    hat: [0, 0, 0.22, 0, 0, 0, 0.28, 0, 0, 0, 0.2, 0, 0, 0, 0.3, 0],
+    openHat: [0, 0, 0, 0, 0, 0, 0.18, 0, 0, 0, 0, 0, 0, 0, 0.24, 0]
   };
 
   const clonePattern = (pattern) => {
@@ -48,8 +48,8 @@ export default function setup(ctx, prevState) {
   let state = {
     grooveStyle,
     pattern: migratePattern(),
-    groove: typeof prevState?.groove === 'number' ? prevState.groove : 0.14,
-    variation: prevState?.variation ?? true
+    groove: typeof prevState?.groove === 'number' && prevState.grooveStyle === grooveStyle ? prevState.groove : 0.21,
+    variation: prevState?.grooveStyle === grooveStyle ? (prevState?.variation ?? false) : false
   };
 
   const noiseBuffer = (() => {
@@ -85,17 +85,17 @@ export default function setup(ctx, prevState) {
 
     osc.frequency.setValueAtTime(150 + velocity * 25, t);
     osc.frequency.exponentialRampToValueAtTime(42, t + 0.22);
-    gain.gain.setValueAtTime(0.95 * velocity, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    gain.gain.setValueAtTime(0.72 * velocity, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
 
     click.frequency.setValueAtTime(1200, t);
     click.frequency.exponentialRampToValueAtTime(90, t + 0.025);
-    clickGain.gain.setValueAtTime(0.14 * velocity, t);
+    clickGain.gain.setValueAtTime(0.07 * velocity, t);
     clickGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
 
     osc.start(t);
     click.start(t);
-    osc.stop(t + 0.34);
+    osc.stop(t + 0.46);
     click.stop(t + 0.04);
   };
 
@@ -109,16 +109,16 @@ export default function setup(ctx, prevState) {
 
     noise.buffer = noiseBuffer;
     noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(1800 + velocity * 1200, t);
+    noiseFilter.frequency.setValueAtTime(1250 + velocity * 850, t);
     noiseFilter.Q.setValueAtTime(0.9, t);
-    noiseGain.gain.setValueAtTime(0.55 * velocity, t);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+    noiseGain.gain.setValueAtTime(0.38 * velocity, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
 
     body.type = 'triangle';
     body.frequency.setValueAtTime(190, t);
     body.frequency.exponentialRampToValueAtTime(145, t + 0.12);
-    bodyGain.gain.setValueAtTime(0.22 * velocity, t);
-    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    bodyGain.gain.setValueAtTime(0.16 * velocity, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
 
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
@@ -128,7 +128,7 @@ export default function setup(ctx, prevState) {
 
     noise.start(t, 0, 0.2);
     body.start(t);
-    body.stop(t + 0.14);
+    body.stop(t + 0.2);
   };
 
   const playHat = (time, velocity, open = false) => {
@@ -136,13 +136,13 @@ export default function setup(ctx, prevState) {
     const noise = ctx.audioCtx.createBufferSource();
     const highpass = ctx.audioCtx.createBiquadFilter();
     const gain = ctx.audioCtx.createGain();
-    const duration = open ? 0.28 : 0.055;
+    const duration = open ? 0.38 : 0.085;
 
     noise.buffer = noiseBuffer;
     highpass.type = 'highpass';
-    highpass.frequency.setValueAtTime(open ? 5600 : 7200, t);
+    highpass.frequency.setValueAtTime(open ? 4300 : 5600, t);
     highpass.Q.setValueAtTime(0.8, t);
-    gain.gain.setValueAtTime((open ? 0.22 : 0.16) * velocity, t);
+    gain.gain.setValueAtTime((open ? 0.14 : 0.1) * velocity, t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
     noise.connect(highpass);
@@ -328,6 +328,16 @@ export default function setup(ctx, prevState) {
     state.variation = Boolean(variation);
     renderUI();
   });
+
+  if (prevState?.grooveStyle !== grooveStyle) {
+    state.pattern = clonePattern(defaultPattern);
+    state.groove = 0.21;
+    state.variation = false;
+    ctx.bus.pubGlobal('drum_pattern', state.pattern);
+    ctx.bus.pubGlobal('drum_groove', state.groove);
+    ctx.bus.pubGlobal('drum_variation', state.variation);
+    renderUI();
+  }
 
   const unsubscribeClock = ctx.clock.onTick(({ step, time, duration }) => {
     const index = step % 16;
