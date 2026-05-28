@@ -166,5 +166,29 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_ska_reggae_offbeats": {
+    "id": "elem_ska_reggae_offbeats",
+    "x": 1184,
+    "y": -640,
+    "width": 340,
+    "height": 260,
+    "filePath": "/elements/elem_ska_reggae_offbeats.js",
+    "type": "synth",
+    "prompt": "hand-authored ska reggae offbeat skank chords bubble organ and rim ticks",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_white_fluffy_clouds": {
+    "id": "elem_white_fluffy_clouds",
+    "x": 1518,
+    "y": -352,
+    "width": 360,
+    "height": 270,
+    "filePath": "/elements/elem_white_fluffy_clouds.js",
+    "type": "synth",
+    "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
