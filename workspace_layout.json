@@ -229,8 +229,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1461,
-    "y": -770,
+    "x": 1300,
+    "y": -832,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
