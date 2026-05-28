@@ -169,8 +169,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": -836,
-    "y": -292,
+    "x": -702,
+    "y": 123,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -181,8 +181,8 @@
   },
   "elem_beautiful_guitar": {
     "id": "elem_beautiful_guitar",
-    "x": 468,
-    "y": -610,
+    "x": 193,
+    "y": -592,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_guitar.js",
@@ -217,8 +217,8 @@
   },
   "elem_kicurqnka": {
     "id": "elem_kicurqnka",
-    "x": 1115,
-    "y": 844,
+    "x": 1132,
+    "y": 790,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -253,8 +253,8 @@
   },
   "elem_dancing_koala": {
     "id": "elem_dancing_koala",
-    "x": 1780,
-    "y": -520,
+    "x": 1750,
+    "y": -601,
     "width": 420,
     "height": 300,
     "filePath": "/elements/elem_dancing_koala_visual.js",
@@ -262,5 +262,17 @@
     "prompt": "hand-authored dancing koala video loop with VHS trails and stage lights",
     "authored": "hand",
     "reloadToken": 1779955994516
+  },
+  "elem_random_volume_rotator": {
+    "id": "elem_random_volume_rotator",
+    "x": 40,
+    "y": 40,
+    "width": 360,
+    "height": 220,
+    "filePath": "/elements/elem_random_volume_rotator.js",
+    "type": "controller",
+    "prompt": "hand-authored random one-bar volume spotlight rotator",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
