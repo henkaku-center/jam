@@ -1,8 +1,8 @@
 {
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 1378,
-    "y": -631,
+    "x": 620,
+    "y": -568,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
@@ -13,8 +13,8 @@
   },
   "elem_psychedelic_kaleidoscope": {
     "id": "elem_psychedelic_kaleidoscope",
-    "x": 1410,
-    "y": -967,
+    "x": 1322,
+    "y": -916,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_psychedelic_kaleidoscope_visual.js",
@@ -25,8 +25,8 @@
   },
   "elem_zefiro_midi": {
     "id": "elem_zefiro_midi",
-    "x": 1439,
-    "y": -1013,
+    "x": 2096,
+    "y": -903,
     "width": 280,
     "height": 260,
     "filePath": "/elements/elem_zefiro_midi.js",
@@ -47,46 +47,10 @@
     "authored": "hand",
     "reloadToken": 1779939020931
   },
-  "elem_5k7p1wqnw": {
-    "id": "elem_5k7p1wqnw",
-    "x": 972,
-    "y": -789,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_modern_classical_chamber": {
-    "id": "elem_modern_classical_chamber",
-    "x": 1744,
-    "y": -557,
-    "width": 380,
-    "height": 280,
-    "filePath": "/elements/elem_modern_classical_chamber.js",
-    "type": "synth",
-    "prompt": "現代的なクラシック: minimal piano pulses, slow string pad, notation visual",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_hiphop_strudel_beat": {
-    "id": "elem_hiphop_strudel_beat",
-    "x": 2100,
-    "y": -910,
-    "width": 380,
-    "height": 280,
-    "filePath": "/elements/elem_hiphop_strudel_beat.js",
-    "type": "strudel",
-    "prompt": "hand-authored hip hop beat using Strudel",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_kalman_music_visual": {
     "id": "elem_kalman_music_visual",
-    "x": 1230,
-    "y": -444,
+    "x": 1162,
+    "y": -276,
     "width": 440,
     "height": 300,
     "filePath": "/elements/elem_kalman_music_visual.js",
