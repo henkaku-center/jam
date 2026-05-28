@@ -193,15 +193,15 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 699,
-    "y": -1160,
-    "width": 360,
-    "height": 280,
+    "x": 760,
+    "y": -760,
+    "width": 380,
+    "height": 290,
     "filePath": "/elements/elem_jazz_saxophone.js",
     "type": "synth",
     "prompt": "hand-authored smoky clocked jazz saxophone line with breath, vibrato, swing, and room controls",
     "authored": "hand",
-    "reloadToken": 1779955475592
+    "reloadToken": 1779955746563
   },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
@@ -229,8 +229,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1640,
-    "y": -720,
+    "x": 1461,
+    "y": -770,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",

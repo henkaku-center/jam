@@ -1,4 +1,4 @@
-const STATE_VERSION = 'jazz-saxophone-v1';
+const STATE_VERSION = 'jazz-saxophone-v2';
 
 export default function setup(ctx, prevState) {
   const audio = ctx.audioCtx;
@@ -6,15 +6,16 @@ export default function setup(ctx, prevState) {
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
+  const isCurrentState = prevState?.stateVersion === STATE_VERSION;
   const state = {
     stateVersion: STATE_VERSION,
     running: prevState?.running ?? true,
-    volume: finite(prevState?.volume, 0.62),
-    tone: finite(prevState?.tone, 0.58),
-    breath: finite(prevState?.breath, 0.34),
-    vibrato: finite(prevState?.vibrato, 0.48),
-    room: finite(prevState?.room, 0.42),
-    swing: finite(prevState?.swing, 0.18)
+    volume: isCurrentState ? finite(prevState?.volume, 0.9) : 0.9,
+    tone: isCurrentState ? finite(prevState?.tone, 0.68) : 0.68,
+    breath: isCurrentState ? finite(prevState?.breath, 0.42) : 0.42,
+    vibrato: isCurrentState ? finite(prevState?.vibrato, 0.48) : 0.48,
+    room: isCurrentState ? finite(prevState?.room, 0.42) : 0.42,
+    swing: isCurrentState ? finite(prevState?.swing, 0.18) : 0.18
   };
 
   const phrase = [
@@ -45,7 +46,7 @@ export default function setup(ctx, prevState) {
   const analyser = audio.createAnalyser();
 
   output.gain.value = state.running ? state.volume : 0;
-  dry.gain.value = 0.86;
+  dry.gain.value = 1.24;
   delay.delayTime.value = 0.23;
   delayFeedback.gain.value = 0.24;
   delayTone.type = 'lowpass';
@@ -176,8 +177,8 @@ export default function setup(ctx, prevState) {
     body.Q.setValueAtTime(1.4 + state.tone * 1.2, t);
 
     amp.gain.setValueAtTime(0.0001, t);
-    amp.gain.exponentialRampToValueAtTime(0.2 * velocity, t + 0.045);
-    amp.gain.linearRampToValueAtTime(0.15 * velocity, t + Math.min(0.22, length * 0.5));
+    amp.gain.exponentialRampToValueAtTime(0.38 * velocity, t + 0.045);
+    amp.gain.linearRampToValueAtTime(0.28 * velocity, t + Math.min(0.22, length * 0.5));
     amp.gain.setTargetAtTime(0.0001, t + length, 0.11);
 
     if (pan) {
@@ -186,7 +187,9 @@ export default function setup(ctx, prevState) {
     }
 
     source.connect(formantA);
+    source.connect(body);
     support.connect(formantA);
+    support.connect(body);
     formantA.connect(formantB);
     formantB.connect(body);
     body.connect(amp);
@@ -319,7 +322,10 @@ export default function setup(ctx, prevState) {
           <h2>Jazz Sax</h2>
           <div class="sub">smoky clocked tenor line</div>
         </div>
-        <button id="run" type="button"></button>
+        <div class="buttons">
+          <button id="blow" type="button">blow</button>
+          <button id="run" type="button"></button>
+        </div>
       </div>
       <div class="controls">
         <label>vol <input id="volume" type="range" min="0" max="1" step="0.01"><span id="volumeVal"></span></label>
@@ -335,6 +341,7 @@ export default function setup(ctx, prevState) {
 
   const $ = (selector) => ctx.domRoot.querySelector(selector);
   const runButton = $('#run');
+  const blowButton = $('#blow');
   const staff = $('#staff');
   const sliders = {
     volume: $('#volume'),
@@ -382,6 +389,13 @@ export default function setup(ctx, prevState) {
     render();
   }
 
+  function onBlow() {
+    const note = { n: 69, v: 1, l: 2.6 };
+    pulse = 1;
+    playNote(note, audio.currentTime + 0.01, 0.22, currentStep + 1);
+    render();
+  }
+
   const sliderHandlers = Object.fromEntries(Object.keys(sliders).map((key) => [key, () => {
     state[key] = Number(sliders[key].value);
     syncAudio();
@@ -389,6 +403,7 @@ export default function setup(ctx, prevState) {
   }]));
 
   runButton.addEventListener('click', onRun);
+  blowButton.addEventListener('click', onBlow);
   Object.entries(sliderHandlers).forEach(([key, handler]) => sliders[key].addEventListener('input', handler));
 
   const unsubscribeClock = ctx.clock.onTick(({ step, time, duration }) => {
@@ -418,6 +433,7 @@ export default function setup(ctx, prevState) {
       destroyed = true;
       unsubscribeClock();
       runButton.removeEventListener('click', onRun);
+      blowButton.removeEventListener('click', onBlow);
       Object.entries(sliderHandlers).forEach(([key, handler]) => sliders[key].removeEventListener('input', handler));
       cleanupTimers.forEach((timer) => clearTimeout(timer));
       cleanupTimers.clear();
