@@ -71,18 +71,6 @@
     "authored": "hand",
     "reloadToken": 1779954544277
   },
-  "elem_xdig1izwu": {
-    "id": "elem_xdig1izwu",
-    "x": 448,
-    "y": -883,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_hiphop_lead_synth": {
     "id": "elem_hiphop_lead_synth",
     "x": 1314,
@@ -191,22 +179,10 @@
     "authored": "hand",
     "reloadToken": 1779955431044
   },
-  "elem_hv1mre4rv": {
-    "id": "elem_hv1mre4rv",
-    "x": 1413,
-    "y": -1294,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_97f4irwx7": {
     "id": "elem_97f4irwx7",
-    "x": 611,
-    "y": 296,
+    "x": 464,
+    "y": 705,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -236,6 +212,18 @@
     "filePath": "/elements/elem_beautiful_guitar.js",
     "type": "synth",
     "prompt": "hand-authored beautiful warm guitar with soft plucked chords, arpeggio motion, room, body, brightness, and shimmer controls",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_jazz_saxophone": {
+    "id": "elem_jazz_saxophone",
+    "x": 900,
+    "y": -1040,
+    "width": 360,
+    "height": 280,
+    "filePath": "/elements/elem_jazz_saxophone.js",
+    "type": "synth",
+    "prompt": "hand-authored smoky clocked jazz saxophone line with breath, vibrato, swing, and room controls",
     "authored": "hand",
     "reloadToken": 0
   }
