@@ -94,5 +94,17 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_acid_drum": {
+    "id": "elem_acid_drum",
+    "x": 1520,
+    "y": -290,
+    "width": 380,
+    "height": 300,
+    "filePath": "/elements/elem_acid_drum_machine.js",
+    "type": "synth",
+    "prompt": "hand-authored acid drum machine with clocked 909 drums and resonant acid pulse",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
