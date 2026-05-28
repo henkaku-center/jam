@@ -59,18 +59,6 @@
     "authored": "hand",
     "reloadToken": 1779959222479
   },
-  "elem_metal_country_music": {
-    "id": "elem_metal_country_music",
-    "x": 1342,
-    "y": -324,
-    "width": 380,
-    "height": 280,
-    "filePath": "/elements/elem_metal_country_music.js",
-    "type": "synth",
-    "prompt": "hand-authored metallic country music loop with banjo rolls, slide steel, walking bass, and anvil hits",
-    "authored": "hand",
-    "reloadToken": 1779959222469
-  },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
     "x": 231,
@@ -277,8 +265,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 1300,
-    "y": 32,
+    "x": 1271,
+    "y": -64,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -297,7 +285,7 @@
     "type": "visual",
     "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
     "authored": "hand",
-    "reloadToken": 1779958006626
+    "reloadToken": 1779959305812
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
@@ -325,15 +313,15 @@
   },
   "elem_ufo_war_declaration": {
     "id": "elem_ufo_war_declaration",
-    "x": 899,
-    "y": -121,
+    "x": 885,
+    "y": -69,
     "width": 560,
     "height": 360,
     "filePath": "/elements/elem_ufo_war_declaration_visual.js",
     "type": "visual",
     "prompt": "hand-authored UFO war declaration transmission video with Japanese warning message",
     "authored": "hand",
-    "reloadToken": 1779958936000
+    "reloadToken": 1779959305813
   },
   "elem_shadow_pulse_bass": {
     "id": "elem_shadow_pulse_bass",
