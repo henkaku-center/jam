@@ -118,5 +118,17 @@
     "prompt": "hand-authored metallic country music loop with banjo rolls, slide steel, walking bass, and anvil hits",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_beautiful_piano": {
+    "id": "elem_beautiful_piano",
+    "x": 500,
+    "y": -120,
+    "width": 390,
+    "height": 270,
+    "filePath": "/elements/elem_beautiful_piano.js",
+    "type": "synth",
+    "prompt": "hand-authored beautiful felt piano with soft chords, arpeggio motion, room, and sparkle controls",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
