@@ -217,8 +217,8 @@
   },
   "elem_kicurqnka": {
     "id": "elem_kicurqnka",
-    "x": 1083,
-    "y": 796,
+    "x": 1115,
+    "y": 844,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -237,6 +237,6 @@
     "type": "visual",
     "prompt": "hand-authored glitchy GIF-like cat footage cut-up visual",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779955730701
   }
 }
