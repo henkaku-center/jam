@@ -21,7 +21,7 @@
     "type": "controller",
     "prompt": "Zefiro MIDI controller source",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779955082542
   },
   "elem_zefiro_drum_beat": {
     "id": "elem_zefiro_drum_beat",
