@@ -358,5 +358,17 @@
     "prompt": "simple synth controlled by an external MIDI controller with automatic input selection",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_madoka_island_birth": {
+    "id": "elem_madoka_island_birth",
+    "x": 900,
+    "y": 40,
+    "width": 560,
+    "height": 380,
+    "filePath": "/elements/elem_madoka_island_birth_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
