@@ -246,12 +246,14 @@ note("<c3 eb3 g3 bb3>*2")
   codeInput.addEventListener('keydown', (event) => {
     if (isSilenceShortcut(event)) {
       event.preventDefault();
+      event.stopPropagation();
       silenceElement();
       return;
     }
 
     if (isIndentShortcut(event)) {
       event.preventDefault();
+      event.stopPropagation();
       updateDraftFromEditor(indentSelection(codeInput, event.shiftKey ? -1 : 1));
       return;
     }
@@ -259,16 +261,19 @@ note("<c3 eb3 g3 bb3>*2")
     if (event.key !== 'Enter') return;
     if (event.altKey) {
       event.preventDefault();
+      event.stopPropagation();
       commitAndEvaluate(state.draftCode);
       return;
     }
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault();
+      event.stopPropagation();
       commitAndEvaluate(getSelectionOrCurrentBlock(codeInput));
       return;
     }
     if (!event.shiftKey) return;
     event.preventDefault();
+    event.stopPropagation();
     commitAndEvaluate(getCurrentLine(codeInput));
   });
 

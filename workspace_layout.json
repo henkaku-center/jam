@@ -83,8 +83,8 @@
   },
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 1131,
-    "y": -970,
+    "x": 1383,
+    "y": -233,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
