@@ -61,7 +61,7 @@
   },
   "elem_yodel_vocal_loop": {
     "id": "elem_yodel_vocal_loop",
-    "x": 1866,
+    "x": 1878,
     "y": -936,
     "width": 340,
     "height": 250,
@@ -121,8 +121,8 @@
   },
   "elem_ska_reggae_offbeats": {
     "id": "elem_ska_reggae_offbeats",
-    "x": 1509,
-    "y": -690,
+    "x": 1586,
+    "y": -817,
     "width": 340,
     "height": 260,
     "filePath": "/elements/elem_ska_reggae_offbeats.js",
@@ -145,8 +145,8 @@
   },
   "elem_chopin_nocturne_riff": {
     "id": "elem_chopin_nocturne_riff",
-    "x": 1136,
-    "y": 145,
+    "x": 1698,
+    "y": 40,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_chopin_nocturne_riff.js",
@@ -157,8 +157,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": 1506,
-    "y": 675,
+    "x": 1151,
+    "y": 400,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -181,8 +181,8 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 561,
-    "y": -895,
+    "x": 562,
+    "y": -894,
     "width": 380,
     "height": 290,
     "filePath": "/elements/elem_jazz_saxophone.js",
@@ -253,8 +253,8 @@
   },
   "elem_9ws8kyrcb": {
     "id": "elem_9ws8kyrcb",
-    "x": 370,
-    "y": 484,
+    "x": 216,
+    "y": 472,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -277,8 +277,8 @@
   },
   "elem_r6cea8d11": {
     "id": "elem_r6cea8d11",
-    "x": 1806,
-    "y": -225,
+    "x": 1066,
+    "y": -821,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -289,8 +289,8 @@
   },
   "elem_tribal_didgeridoo": {
     "id": "elem_tribal_didgeridoo",
-    "x": 1059,
-    "y": -1024,
+    "x": 1676,
+    "y": -1608,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_tribal_didgeridoo.js",
@@ -301,8 +301,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 1075,
-    "y": -33,
+    "x": 494,
+    "y": 456,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
@@ -337,8 +337,8 @@
   },
   "elem_dancing_penguin_ocean": {
     "id": "elem_dancing_penguin_ocean",
-    "x": 1160,
-    "y": -760,
+    "x": 1057,
+    "y": -415,
     "width": 520,
     "height": 330,
     "filePath": "/elements/elem_dancing_penguin_ocean.js",
@@ -346,5 +346,17 @@
     "prompt": "hand-authored dancing penguin canvas visual with ocean waves, bubbles, and sea-like music",
     "authored": "hand",
     "reloadToken": 1779957005594
+  },
+  "elem_midi_controller_synth": {
+    "id": "elem_midi_controller_synth",
+    "x": 420,
+    "y": 120,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/elem_midi_controller_synth.js",
+    "type": "synth",
+    "prompt": "simple synth controlled by an external MIDI controller with automatic input selection",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
