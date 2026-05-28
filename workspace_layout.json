@@ -334,5 +334,17 @@
     "prompt": "hand-authored tribal didgeridoo drone with throat growl, overtone formants, frame-drum pulse, and stick accents",
     "authored": "hand",
     "reloadToken": 1779956660411
+  },
+  "elem_flying_crane_visual": {
+    "id": "elem_flying_crane_visual",
+    "x": 2670,
+    "y": -790,
+    "width": 560,
+    "height": 360,
+    "filePath": "/elements/elem_black_necked_crane_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
