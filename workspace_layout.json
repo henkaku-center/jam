@@ -169,8 +169,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": -702,
-    "y": 123,
+    "x": 118,
+    "y": 832,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -277,8 +277,8 @@
   },
   "elem_9ws8kyrcb": {
     "id": "elem_9ws8kyrcb",
-    "x": 389,
-    "y": 476,
+    "x": 370,
+    "y": 484,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -325,8 +325,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 1100,
-    "y": -326,
+    "x": 840,
+    "y": 620,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
