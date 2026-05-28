@@ -226,5 +226,17 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_glitch_cat_cutup": {
+    "id": "elem_glitch_cat_cutup",
+    "x": 1640,
+    "y": -720,
+    "width": 460,
+    "height": 320,
+    "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored glitchy GIF-like cat footage cut-up visual",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
