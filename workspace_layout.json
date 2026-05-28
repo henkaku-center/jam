@@ -145,8 +145,8 @@
   },
   "elem_zre4uey3n": {
     "id": "elem_zre4uey3n",
-    "x": 1191,
-    "y": 198,
+    "x": 153,
+    "y": 493,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -212,6 +212,18 @@
     "filePath": "/elements/elem_chopin_nocturne_riff.js",
     "type": "synth",
     "prompt": "hand-authored clocked repeating public-domain Chopin nocturne piano riff",
+    "authored": "hand",
+    "reloadToken": 1779955299017
+  },
+  "elem_hv1mre4rv": {
+    "id": "elem_hv1mre4rv",
+    "x": 1573,
+    "y": -1334,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
     "reloadToken": 0
   }
