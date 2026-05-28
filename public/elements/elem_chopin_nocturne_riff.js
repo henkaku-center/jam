@@ -1,4 +1,4 @@
-const STATE_VERSION = 'chopin-nocturne-riff-v1';
+const STATE_VERSION = 'chopin-nocturne-riff-v2';
 
 // Public-domain Chopin-inspired phrase, shaped around the famous Op. 9 No. 2 contour.
 const RIFF = [
@@ -20,24 +20,33 @@ const BASS = [
   { step: 12, notes: [39, 51, 55] }
 ];
 
+const MODULATIONS = [
+  { label: 'Eb nocturne', semitones: 0 },
+  { label: 'Gb shimmer', semitones: 3 },
+  { label: 'Bb turn', semitones: 7 },
+  { label: 'C minor', semitones: 9 }
+];
+
 export default function setup(ctx, prevState) {
   const audio = ctx.audioCtx;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
-  const previousMatches = prevState?.stateVersion === STATE_VERSION;
+  const previousMatches = /^chopin-nocturne-riff-v\d+$/.test(String(prevState?.stateVersion || ''));
   const state = {
     stateVersion: STATE_VERSION,
     enabled: previousMatches ? prevState.enabled !== false : true,
     volume: previousMatches ? finite(prevState.volume, 0.52) : 0.52,
     tone: previousMatches ? finite(prevState.tone, 0.58) : 0.58,
     ornament: previousMatches ? finite(prevState.ornament, 0.48) : 0.48,
+    modRate: previousMatches ? finite(prevState.modRate, 4) : 4,
     room: previousMatches ? finite(prevState.room, 0.34) : 0.34
   };
 
   let currentStep = -1;
   let currentLabel = 'Eb nocturne';
+  let currentTranspose = 0;
   let pulse = 0;
   let stepSeconds = 0.125;
   let raf = 0;
@@ -195,6 +204,7 @@ export default function setup(ctx, prevState) {
         <label>volume <input id="volume" type="range" min="0" max="0.9" step="0.01"><span id="volumeVal"></span></label>
         <label>tone <input id="tone" type="range" min="0" max="1" step="0.01"><span id="toneVal"></span></label>
         <label>ornament <input id="ornament" type="range" min="0" max="1" step="0.01"><span id="ornamentVal"></span></label>
+        <label>modrate <input id="modRate" type="range" min="2" max="8" step="1"><span id="modRateVal"></span></label>
         <label>room <input id="room" type="range" min="0" max="0.8" step="0.01"><span id="roomVal"></span></label>
       </div>
       <div id="stage" class="stage" style="--pulse:0">
@@ -210,12 +220,14 @@ export default function setup(ctx, prevState) {
     volume: $('#volume'),
     tone: $('#tone'),
     ornament: $('#ornament'),
+    modRate: $('#modRate'),
     room: $('#room')
   };
   const values = {
     volume: $('#volumeVal'),
     tone: $('#toneVal'),
     ornament: $('#ornamentVal'),
+    modRate: $('#modRateVal'),
     room: $('#roomVal')
   };
   const stage = $('#stage');
@@ -239,6 +251,12 @@ export default function setup(ctx, prevState) {
       });
     }, Math.max(140, seconds * 1000 + 220));
     cleanupTimers.add(timer);
+  };
+
+  const modulationForStep = (step) => {
+    const repeats = Math.max(1, Math.round(state.modRate));
+    const phraseIndex = Math.floor(Math.max(0, step) / (16 * repeats));
+    return MODULATIONS[phraseIndex % MODULATIONS.length];
   };
 
   const playPianoNote = (time, midi, velocity, length, panValue = 0, sendDelay = true) => {
@@ -309,21 +327,21 @@ export default function setup(ctx, prevState) {
     track(length + 0.08, ...nodes);
   };
 
-  const playRiffEvent = (event, time, tickDuration) => {
+  const playRiffEvent = (event, time, tickDuration, transpose) => {
     const length = clamp(event.length * tickDuration, 0.09, 0.72);
     event.notes.forEach((midi, index) => {
-      playPianoNote(time + index * 0.012, midi, event.velocity * (index ? 0.74 : 1), length, -0.16 + index * 0.16);
+      playPianoNote(time + index * 0.012, midi + transpose, event.velocity * (index ? 0.74 : 1), length, -0.16 + index * 0.16);
     });
     if (state.ornament > 0.35 && event.notes.length === 1 && event.step % 4 !== 0) {
-      playPianoNote(time + tickDuration * 0.46, event.notes[0] + 2, event.velocity * state.ornament * 0.38, tickDuration * 0.72, 0.18, false);
+      playPianoNote(time + tickDuration * 0.46, event.notes[0] + transpose + 2, event.velocity * state.ornament * 0.38, tickDuration * 0.72, 0.18, false);
     }
-    currentLabel = 'Op. 9 echo';
+    currentLabel = `${modulationForStep(currentStep).label} ${transpose >= 0 ? '+' : ''}${transpose}`;
     pulse = 1;
   };
 
-  const playBassEvent = (event, time, tickDuration) => {
+  const playBassEvent = (event, time, tickDuration, transpose) => {
     event.notes.forEach((midi, index) => {
-      playPianoNote(time + index * tickDuration * 0.36, midi, 0.42 - index * 0.06, tickDuration * 1.4, -0.32, index === 2);
+      playPianoNote(time + index * tickDuration * 0.36, midi + transpose, 0.42 - index * 0.06, tickDuration * 1.4, -0.32, index === 2);
     });
   };
 
@@ -342,7 +360,7 @@ export default function setup(ctx, prevState) {
     enabledButton.classList.toggle('off', !state.enabled);
     Object.keys(sliders).forEach((key) => {
       if (sliders[key].value !== String(state[key])) sliders[key].value = String(state[key]);
-      values[key].textContent = Number(state[key]).toFixed(2);
+      values[key].textContent = key === 'modRate' ? `${Math.round(state.modRate)}x` : Number(state[key]).toFixed(2);
     });
     labelEl.textContent = currentLabel;
     stepEls.forEach((el, index) => el.classList.toggle('on', index === currentStep));
@@ -359,10 +377,13 @@ export default function setup(ctx, prevState) {
       render();
       return;
     }
+    const modulation = modulationForStep(step);
+    currentTranspose = modulation.semitones;
+    currentLabel = `${modulation.label} ${currentTranspose >= 0 ? '+' : ''}${currentTranspose}`;
     const riff = RIFF.find((event) => event.step === currentStep);
     const bass = BASS.find((event) => event.step === currentStep);
-    if (bass) playBassEvent(bass, time, tickDuration);
-    if (riff) playRiffEvent(riff, time, tickDuration);
+    if (bass) playBassEvent(bass, time, tickDuration, currentTranspose);
+    if (riff) playRiffEvent(riff, time, tickDuration, currentTranspose);
     render();
   };
 
@@ -384,6 +405,7 @@ export default function setup(ctx, prevState) {
     volume: onSlider('volume'),
     tone: onSlider('tone'),
     ornament: onSlider('ornament'),
+    modRate: onSlider('modRate'),
     room: onSlider('room')
   };
 
