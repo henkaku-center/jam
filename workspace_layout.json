@@ -33,7 +33,7 @@
     "type": "synth",
     "prompt": "Beat-aligned Zefiro orb synth loop",
     "authored": "hand",
-    "reloadToken": 1779954547223
+    "reloadToken": 1779954890707
   },
   "elem_hydra_pop": {
     "id": "elem_hydra_pop",
@@ -61,8 +61,8 @@
   },
   "elem_xdig1izwu": {
     "id": "elem_xdig1izwu",
-    "x": 1087,
-    "y": -1340,
+    "x": 405,
+    "y": -885,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -73,8 +73,8 @@
   },
   "elem_hiphop_lead_synth": {
     "id": "elem_hiphop_lead_synth",
-    "x": 1216,
-    "y": -238,
+    "x": 825,
+    "y": -937,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_hiphop_lead_synth.js",
@@ -85,8 +85,8 @@
   },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
-    "x": 892,
-    "y": -658,
+    "x": 773,
+    "y": -674,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_acid_drum_machine.js",
@@ -109,8 +109,8 @@
   },
   "elem_metal_country_music": {
     "id": "elem_metal_country_music",
-    "x": 1310,
-    "y": -600,
+    "x": 1322,
+    "y": -277,
     "width": 380,
     "height": 280,
     "filePath": "/elements/elem_metal_country_music.js",

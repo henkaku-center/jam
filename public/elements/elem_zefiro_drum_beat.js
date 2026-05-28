@@ -267,6 +267,108 @@ export default function setup(ctx, prevState) {
     track(0.34, osc, filter, gain);
   };
 
+  const playShamisenPluck = (time, midi, velocity, length, pan = 0, bend = 0) => {
+    const { tone, shimmer } = values();
+    const t = Math.max(time, audio.currentTime + 0.001);
+    const freq = midiToFreq(midi);
+    const stringA = audio.createOscillator();
+    const stringB = audio.createOscillator();
+    const pick = audio.createBufferSource();
+    const body = audio.createBiquadFilter();
+    const nasal = audio.createBiquadFilter();
+    const pickFilter = audio.createBiquadFilter();
+    const drive = audio.createWaveShaper();
+    const stringGain = audio.createGain();
+    const pickGain = audio.createGain();
+    const finalGain = audio.createGain();
+    const panner = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
+    const decay = clamp(length, 0.08, 0.42);
+
+    stringA.type = 'sawtooth';
+    stringB.type = 'square';
+    stringA.frequency.setValueAtTime(freq * (1 + bend * 0.012), t);
+    stringA.frequency.exponentialRampToValueAtTime(freq * 0.992, t + decay * 0.7);
+    stringB.frequency.setValueAtTime(freq * 2.01, t);
+    stringB.frequency.exponentialRampToValueAtTime(freq * 1.98, t + decay * 0.48);
+    stringA.detune.setValueAtTime(-5 - shimmer * 9, t);
+    stringB.detune.setValueAtTime(7 + tone * 12, t);
+
+    pick.buffer = noiseBuffer;
+    pickFilter.type = 'highpass';
+    pickFilter.frequency.setValueAtTime(2600 + tone * 1800, t);
+    pickFilter.Q.setValueAtTime(0.7, t);
+    pickGain.gain.setValueAtTime(0.11 * velocity, t);
+    pickGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.026);
+
+    body.type = 'bandpass';
+    body.frequency.setValueAtTime(760 + tone * 520, t);
+    body.Q.setValueAtTime(4.6 + shimmer * 3.4, t);
+    nasal.type = 'peaking';
+    nasal.frequency.setValueAtTime(1650 + tone * 900, t);
+    nasal.Q.setValueAtTime(6.5, t);
+    nasal.gain.setValueAtTime(7 + shimmer * 4, t);
+    drive.curve = makeDriveCurve(2.4 + tone * 4.2);
+    drive.oversample = '2x';
+
+    stringGain.gain.setValueAtTime(0.0001, t);
+    stringGain.gain.exponentialRampToValueAtTime(0.12 * velocity, t + 0.004);
+    stringGain.gain.exponentialRampToValueAtTime(0.018 * velocity, t + 0.04);
+    stringGain.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    finalGain.gain.setValueAtTime(0.88, t);
+
+    stringA.connect(stringGain);
+    stringB.connect(stringGain);
+    stringGain.connect(body);
+    body.connect(nasal);
+    nasal.connect(drive);
+    pick.connect(pickFilter);
+    pickFilter.connect(pickGain);
+    pickGain.connect(drive);
+    drive.connect(finalGain);
+    if (panner) {
+      finalGain.connect(panner);
+      panner.pan.setValueAtTime(pan, t);
+      panner.connect(output);
+      panner.connect(delay);
+    } else {
+      finalGain.connect(output);
+      finalGain.connect(delay);
+    }
+
+    stringA.start(t);
+    stringB.start(t);
+    pick.start(t, 0, 0.04);
+    stringA.stop(t + decay + 0.04);
+    stringB.stop(t + decay + 0.04);
+    track(decay + 0.1, stringA, stringB, pick, body, nasal, pickFilter, drive, stringGain, pickGain, finalGain, ...(panner ? [panner] : []));
+  };
+
+  const playShamisenStep = (step, time, stepSeconds, root, expression) => {
+    const { orbit, shimmer } = values();
+    const phraseStep = step % 32;
+    const barStep = step % 16;
+    const phrase = [0, 3, 5, 7, 10, 12, 10, 7, 5, 3, 0, -2, 0, 5, 7, 10];
+    const altPhrase = [0, 5, 7, 10, 12, 15, 12, 10, 7, 5, 3, 0, -2, 0, 3, 5];
+    const hits = shimmer > 0.55
+      ? [0, 2, 3, 6, 8, 10, 11, 14, 15]
+      : [0, 3, 6, 8, 11, 14];
+    if (!hits.includes(barStep)) return;
+
+    const selected = shimmer > 0.66 ? altPhrase : phrase;
+    const note = root + 12 + selected[barStep] + (phraseStep >= 16 ? 12 : 0);
+    const accent = barStep === 0 || barStep === 8 ? 1 : barStep % 3 === 0 ? 0.78 : 0.58;
+    const swing = barStep % 2 ? stepSeconds * (0.04 + orbit * 0.08) : 0;
+    const length = stepSeconds * (0.7 + shimmer * 0.75);
+    const pan = 0.28 - (barStep % 4) * 0.16;
+    const velocity = clamp(expression * accent * (0.62 + shimmer * 0.22), 0.08, 0.76);
+    const micro = (randomFor(step, 41) - 0.5) * 0.008;
+
+    playShamisenPluck(time + swing + micro, note, velocity, length, pan, orbit - 0.5);
+    if (shimmer > 0.72 && [3, 11, 15].includes(barStep)) {
+      playShamisenPluck(time + swing + stepSeconds * 0.34, note + 12, velocity * 0.48, stepSeconds * 0.42, -pan, 0.4);
+    }
+  };
+
   const playDrumStep = (step, time, stepSeconds, expression) => {
     const { tone, orbit, shimmer } = values();
     const swing = step % 2 ? stepSeconds * (0.02 + orbit * 0.1) : 0;
@@ -434,6 +536,7 @@ export default function setup(ctx, prevState) {
     if (shimmer > 0.66 && currentStep % 4 === 2) {
       playOrbNote(time + swing + stepSeconds * 0.48, note + 12, clamp(expression * 0.38, 0.08, 0.7), stepSeconds * 0.7, -pan, true);
     }
+    playShamisenStep(step, time, stepSeconds, root, expression);
     playDrumStep(step, time, stepSeconds, expression);
 
     pulse = Math.max(pulse, 0.5 + accent * 0.45);
@@ -539,7 +642,7 @@ export default function setup(ctx, prevState) {
     </style>
     <div class="root">
       <div class="top">
-        <h1>ZEFIRO ORB DRUMS</h1>
+        <h1>ZEFIRO SHAMI DRUMS</h1>
         <div class="buttons">
           <button id="start" type="button">start</button>
           <button id="enabled" type="button" class="${state.enabled ? 'on' : ''}">${state.enabled ? 'on' : 'off'}</button>
