@@ -71,6 +71,18 @@
     "authored": "hand",
     "reloadToken": 1779954544277
   },
+  "elem_xdig1izwu": {
+    "id": "elem_xdig1izwu",
+    "x": 405,
+    "y": -885,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/elem_xdig1izwu_acoustic_guitar.js",
+    "type": "synth",
+    "prompt": "hand-authored acoustic guitar with warm strums and fingerpicked motion",
+    "authored": "hand",
+    "reloadToken": 0
+  },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
     "x": 2469,
@@ -157,8 +169,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": -473,
-    "y": -296,
+    "x": -836,
+    "y": -292,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -181,8 +193,8 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 788,
-    "y": -1040,
+    "x": 690,
+    "y": -910,
     "width": 360,
     "height": 280,
     "filePath": "/elements/elem_jazz_saxophone.js",
@@ -193,8 +205,8 @@
   },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
-    "x": 1180,
-    "y": -640,
+    "x": 1314,
+    "y": -1038,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_psytrance_synth.js",
@@ -203,10 +215,10 @@
     "authored": "hand",
     "reloadToken": 1779955602007
   },
-  "elem_w56sfs9ii": {
-    "id": "elem_w56sfs9ii",
-    "x": 1561,
-    "y": -1332,
+  "elem_kicurqnka": {
+    "id": "elem_kicurqnka",
+    "x": 1083,
+    "y": 796,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
