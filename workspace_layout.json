@@ -83,18 +83,6 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_acid_drum": {
-    "id": "elem_acid_drum",
-    "x": 2553,
-    "y": -1668,
-    "width": 380,
-    "height": 300,
-    "filePath": "/elements/elem_acid_drum_machine.js",
-    "type": "synth",
-    "prompt": "hand-authored acid drum machine with clocked 909 drums and resonant acid pulse",
-    "authored": "hand",
-    "reloadToken": 1779955161173
-  },
   "elem_metal_country_music": {
     "id": "elem_metal_country_music",
     "x": 1231,
@@ -133,8 +121,8 @@
   },
   "elem_ska_reggae_offbeats": {
     "id": "elem_ska_reggae_offbeats",
-    "x": 1446,
-    "y": -634,
+    "x": 1431,
+    "y": -636,
     "width": 340,
     "height": 260,
     "filePath": "/elements/elem_ska_reggae_offbeats.js",
@@ -169,8 +157,8 @@
   },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": 118,
-    "y": 832,
+    "x": 1133,
+    "y": 710,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -239,22 +227,10 @@
     "authored": "hand",
     "reloadToken": 1779955730701
   },
-  "elem_z8wrqa85i": {
-    "id": "elem_z8wrqa85i",
-    "x": 1059,
-    "y": -610,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_dancing_koala": {
     "id": "elem_dancing_koala",
-    "x": 1750,
-    "y": -601,
+    "x": 1746,
+    "y": -586,
     "width": 420,
     "height": 300,
     "filePath": "/elements/elem_dancing_koala_visual.js",
@@ -325,20 +301,20 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 840,
-    "y": 620,
+    "x": 820,
+    "y": 70,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
     "type": "visual",
     "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
     "authored": "hand",
-    "reloadToken": 1779956785036
+    "reloadToken": 1779956934494
   },
   "elem_iyjg23cpw": {
     "id": "elem_iyjg23cpw",
-    "x": 1330,
-    "y": -1538,
+    "x": 1173,
+    "y": -1542,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -346,18 +322,6 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
-  },
-  "elem_japanese_culture_music": {
-    "id": "elem_japanese_culture_music",
-    "x": 720,
-    "y": -1040,
-    "width": 390,
-    "height": 280,
-    "filePath": "/elements/elem_japanese_culture_music.js",
-    "type": "synth",
-    "prompt": "hand-authored Japanese culture inspired music with koto, shakuhachi, taiko, and sho-like ambience",
-    "authored": "hand",
-    "reloadToken": 1779956835959
   },
   "elem_jazzy_trumpet_riff": {
     "id": "elem_jazzy_trumpet_riff",
