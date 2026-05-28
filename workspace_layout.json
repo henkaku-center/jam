@@ -73,8 +73,8 @@
   },
   "elem_xdig1izwu": {
     "id": "elem_xdig1izwu",
-    "x": 405,
-    "y": -885,
+    "x": 448,
+    "y": -883,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -97,8 +97,8 @@
   },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
-    "x": 773,
-    "y": -674,
+    "x": 793,
+    "y": -619,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_acid_drum_machine.js",
@@ -145,8 +145,8 @@
   },
   "elem_zre4uey3n": {
     "id": "elem_zre4uey3n",
-    "x": 1308,
-    "y": 165,
+    "x": 1191,
+    "y": 198,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -157,8 +157,8 @@
   },
   "elem_oyudq5xkf": {
     "id": "elem_oyudq5xkf",
-    "x": 1194,
-    "y": -1467,
+    "x": 1238,
+    "y": -1250,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -190,5 +190,29 @@
     "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
     "authored": "hand",
     "reloadToken": 1779955072217
+  },
+  "elem_c99y5ogpk": {
+    "id": "elem_c99y5ogpk",
+    "x": 872,
+    "y": -1250,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_chopin_nocturne_riff": {
+    "id": "elem_chopin_nocturne_riff",
+    "x": 1130,
+    "y": -320,
+    "width": 360,
+    "height": 270,
+    "filePath": "/elements/elem_chopin_nocturne_riff.js",
+    "type": "synth",
+    "prompt": "hand-authored clocked repeating public-domain Chopin nocturne piano riff",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
