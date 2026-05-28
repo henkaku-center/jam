@@ -49,15 +49,15 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 1300,
-    "y": 32,
+    "x": 624,
+    "y": -358,
     "width": 390,
     "height": 280,
     "filePath": "/elements/elem_midi_controller_synth.js",
     "type": "synth",
     "prompt": "simple synth controlled simultaneously by nanoKEY notes and nanoKONTROL CC sliders/modifiers",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779959581899
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
