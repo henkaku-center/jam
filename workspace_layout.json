@@ -1,8 +1,8 @@
 {
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 620,
-    "y": -568,
+    "x": 712,
+    "y": -525,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
@@ -47,15 +47,39 @@
     "authored": "hand",
     "reloadToken": 1779939020931
   },
-  "elem_kalman_music_visual": {
-    "id": "elem_kalman_music_visual",
-    "x": 1162,
-    "y": -276,
-    "width": 440,
-    "height": 300,
-    "filePath": "/elements/elem_kalman_music_visual.js",
+  "elem_5gtzweydf": {
+    "id": "elem_5gtzweydf",
+    "x": 1097,
+    "y": -631,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_5ztafjqaj": {
+    "id": "elem_5ztafjqaj",
+    "x": 1348,
+    "y": -569,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_hydra_pop": {
+    "id": "elem_hydra_pop",
+    "x": 1900,
+    "y": -1240,
+    "width": 520,
+    "height": 340,
+    "filePath": "/elements/elem_hydra_pop_visual.js",
     "type": "visual",
-    "prompt": "hand-authored music-reactive Kalman filter visualization",
+    "prompt": "hand-authored Hydra-style pop WebGL visual",
     "authored": "hand",
     "reloadToken": 0
   }
