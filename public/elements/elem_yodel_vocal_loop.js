@@ -1,4 +1,4 @@
-const STATE_VERSION = 'yodel-vocal-loop-v2';
+const STATE_VERSION = 'yodel-vocal-loop-v3';
 
 const FORMANTS = {
   oh: [
@@ -53,6 +53,7 @@ export default function setup(ctx, prevState) {
     pitch: previousMatches ? finite(prevState.pitch, 0.5) : 0.5,
     brightness: previousMatches ? finite(prevState.brightness, 0.58) : 0.58,
     yodel: previousMatches ? finite(prevState.yodel, 0.78) : 0.78,
+    shepard: previousMatches ? finite(prevState.shepard, 0.32) : 0.32,
     echo: previousMatches ? finite(prevState.echo, 0.28) : 0.28
   };
 
@@ -61,6 +62,9 @@ export default function setup(ctx, prevState) {
   let currentSyllable = 'ready';
   let pulse = 0;
   let stepSeconds = 0.125;
+  let shepardRise = 0;
+  let shepardLoudSince = null;
+  let shepardCrashed = false;
   let raf = 0;
   let audioStateKey = '';
   const pitchNorm = () => clamp(zefiroPitch ?? state.pitch, 0, 1);
@@ -229,6 +233,7 @@ export default function setup(ctx, prevState) {
         <div id="pitchSource" class="source"></div>
         <label>bright <input id="brightness" type="range" min="0" max="1" step="0.01"><span id="brightnessVal"></span></label>
         <label>jump <input id="yodel" type="range" min="0" max="1" step="0.01"><span id="yodelVal"></span></label>
+        <label>shepard <input id="shepard" type="range" min="0" max="0.8" step="0.01"><span id="shepardVal"></span></label>
         <label>echo <input id="echo" type="range" min="0" max="0.7" step="0.01"><span id="echoVal"></span></label>
       </div>
       <div id="stage" class="stage" style="--pulse:0;--pan:0">
@@ -245,6 +250,7 @@ export default function setup(ctx, prevState) {
     pitch: $('#pitch'),
     brightness: $('#brightness'),
     yodel: $('#yodel'),
+    shepard: $('#shepard'),
     echo: $('#echo')
   };
   const values = {
@@ -252,6 +258,7 @@ export default function setup(ctx, prevState) {
     pitch: $('#pitchVal'),
     brightness: $('#brightnessVal'),
     yodel: $('#yodelVal'),
+    shepard: $('#shepardVal'),
     echo: $('#echoVal')
   };
   const pitchSource = $('#pitchSource');
@@ -389,6 +396,133 @@ export default function setup(ctx, prevState) {
     stage.style.setProperty('--pan', String(event.pan));
   };
 
+  const playShepard = (time, tickDuration, step) => {
+    if (!state.enabled || state.shepard <= 0 || shepardCrashed) return;
+    const t = Math.max(time, audio.currentTime + 0.004);
+    const phase = (((step % 64) + 64) % 64) / 64;
+    const length = clamp(tickDuration * 2.6, 0.18, 0.9);
+    const base = midiToFreq(33 + pitchSemitones());
+    const stackGain = audio.createGain();
+    const toneFilter = audio.createBiquadFilter();
+    const pan = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
+    const maxGain = state.shepard * (0.04 + shepardRise * 0.28);
+
+    stackGain.gain.setValueAtTime(0.0001, t);
+    stackGain.gain.exponentialRampToValueAtTime(Math.max(0.0002, maxGain), t + 0.04);
+    stackGain.gain.setTargetAtTime(Math.max(0.0001, maxGain * 0.72), t + length * 0.42, 0.08);
+    stackGain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    toneFilter.type = 'bandpass';
+    toneFilter.frequency.setValueAtTime(880 + state.brightness * 1400, t);
+    toneFilter.Q.setValueAtTime(0.72, t);
+    if (pan) pan.pan.setValueAtTime(Math.sin(step * 0.37) * 0.28, t);
+
+    const nodes = [stackGain, toneFilter];
+    for (let octave = 0; octave < 7; octave += 1) {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      const octavePosition = octave + phase;
+      const freq = base * Math.pow(2, octavePosition);
+      if (freq > 40 && freq < audio.sampleRate * 0.42) {
+        const distance = (octavePosition - 3.25) / 1.65;
+        const weight = Math.exp(-0.5 * distance * distance);
+        osc.type = octave % 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(freq * Math.pow(2, 1 / 64), t + length);
+        gain.gain.setValueAtTime(weight, t);
+        osc.connect(gain);
+        gain.connect(stackGain);
+        osc.start(t);
+        osc.stop(t + length + 0.03);
+        nodes.push(osc, gain);
+      }
+    }
+
+    stackGain.connect(toneFilter);
+    if (pan) {
+      toneFilter.connect(pan);
+      pan.connect(output);
+      pan.connect(delay);
+      nodes.push(pan);
+    } else {
+      toneFilter.connect(output);
+      toneFilter.connect(delay);
+    }
+    track(length + 0.06, ...nodes);
+  };
+
+  const playShepardCrash = (time, tickDuration) => {
+    const t = Math.max(time, audio.currentTime + 0.004);
+    const length = clamp(tickDuration * 7, 0.7, 1.8);
+    const noise = audio.createBufferSource();
+    const noiseFilter = audio.createBiquadFilter();
+    const noiseGain = audio.createGain();
+    const dropOsc = audio.createOscillator();
+    const dropGain = audio.createGain();
+    const impact = audio.createOscillator();
+    const impactGain = audio.createGain();
+    const crashBus = audio.createGain();
+    const maxGain = clamp(0.38 + state.shepard * 0.72, 0.35, 0.95);
+
+    noise.buffer = makeNoiseBuffer(length);
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.setValueAtTime(7600, t);
+    noiseFilter.frequency.exponentialRampToValueAtTime(170, t + length * 0.78);
+    noiseFilter.Q.setValueAtTime(1.4, t);
+    noiseGain.gain.setValueAtTime(0.0001, t);
+    noiseGain.gain.exponentialRampToValueAtTime(maxGain, t + 0.018);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+    dropOsc.type = 'sawtooth';
+    dropOsc.frequency.setValueAtTime(midiToFreq(67 + pitchSemitones()), t);
+    dropOsc.frequency.exponentialRampToValueAtTime(42, t + length * 0.9);
+    dropGain.gain.setValueAtTime(0.0001, t);
+    dropGain.gain.exponentialRampToValueAtTime(maxGain * 0.28, t + 0.025);
+    dropGain.gain.exponentialRampToValueAtTime(0.0001, t + length * 0.86);
+
+    impact.type = 'sine';
+    impact.frequency.setValueAtTime(54, t);
+    impact.frequency.exponentialRampToValueAtTime(28, t + 0.28);
+    impactGain.gain.setValueAtTime(0.0001, t);
+    impactGain.gain.exponentialRampToValueAtTime(maxGain * 0.6, t + 0.01);
+    impactGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+
+    crashBus.gain.setValueAtTime(1, t);
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(crashBus);
+    dropOsc.connect(dropGain);
+    dropGain.connect(crashBus);
+    impact.connect(impactGain);
+    impactGain.connect(crashBus);
+    crashBus.connect(output);
+    crashBus.connect(delay);
+
+    noise.start(t);
+    dropOsc.start(t);
+    impact.start(t);
+    noise.stop(t + length + 0.02);
+    dropOsc.stop(t + length + 0.03);
+    impact.stop(t + 0.48);
+    track(length + 0.08, noise, noiseFilter, noiseGain, dropOsc, dropGain, impact, impactGain, crashBus);
+
+    shepardCrashed = true;
+    shepardRise = 0;
+    shepardLoudSince = null;
+    currentSyllable = 'crash';
+    pulse = 1.25;
+  };
+
+  const updateShepardBuild = (time, tickDuration) => {
+    if (!state.enabled || state.shepard <= 0 || shepardCrashed) return;
+    shepardRise = clamp(shepardRise + 1 / 128, 0, 1);
+    if (shepardRise >= 0.86) {
+      if (shepardLoudSince === null) shepardLoudSince = time;
+      if (time - shepardLoudSince >= 5) playShepardCrash(time, tickDuration);
+    } else {
+      shepardLoudSince = null;
+    }
+  };
+
   const applyAudioState = () => {
     const nextKey = [state.enabled, state.volume, state.echo, state.brightness].join('|');
     if (nextKey === audioStateKey) return;
@@ -404,7 +538,9 @@ export default function setup(ctx, prevState) {
     enabledButton.classList.toggle('off', !state.enabled);
     Object.keys(sliders).forEach((key) => {
       if (sliders[key].value !== String(state[key])) sliders[key].value = String(state[key]);
-      values[key].textContent = key === 'pitch' ? `${pitchSemitones() >= 0 ? '+' : ''}${pitchSemitones()}` : Number(state[key]).toFixed(2);
+      if (key === 'pitch') values[key].textContent = `${pitchSemitones() >= 0 ? '+' : ''}${pitchSemitones()}`;
+      else if (key === 'shepard') values[key].textContent = shepardCrashed ? 'crash' : `${Math.round(shepardRise * 100)}%`;
+      else values[key].textContent = Number(state[key]).toFixed(2);
     });
     pitchSource.textContent = zefiroPitch === null ? 'pitch source: manual slider' : 'pitch source: Zefiro CC1 lip/mod';
     applyAudioState();
@@ -418,6 +554,8 @@ export default function setup(ctx, prevState) {
     if (Number.isFinite(duration) && duration > 0) stepSeconds = duration;
     const tickDuration = clamp(duration || stepSeconds, 0.07, 0.34);
     delay.delayTime.setTargetAtTime(tickDuration * (1.45 + state.echo * 1.4), audio.currentTime, 0.04);
+    updateShepardBuild(time, tickDuration);
+    playShepard(time, tickDuration, step);
     const event = PHRASE.find((item) => item.step === currentStep);
     if (event) playSyllable(event, time, tickDuration);
     render();
@@ -435,6 +573,11 @@ export default function setup(ctx, prevState) {
   };
   const onSlider = (key) => () => {
     state[key] = Number(sliders[key].value);
+    if (key === 'shepard') {
+      shepardRise = 0;
+      shepardLoudSince = null;
+      shepardCrashed = false;
+    }
     render();
   };
   const sliderHandlers = {
@@ -442,6 +585,7 @@ export default function setup(ctx, prevState) {
     pitch: onSlider('pitch'),
     brightness: onSlider('brightness'),
     yodel: onSlider('yodel'),
+    shepard: onSlider('shepard'),
     echo: onSlider('echo')
   };
 

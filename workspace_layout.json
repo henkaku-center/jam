@@ -1,20 +1,8 @@
 {
-  "elem_shader_cube": {
-    "id": "elem_shader_cube",
-    "x": 722,
-    "y": 274,
-    "width": 360,
-    "height": 320,
-    "filePath": "/elements/elem_shader_cube_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored WebGL rotating shader cube visual",
-    "authored": "hand",
-    "reloadToken": 1779888744270
-  },
   "elem_psychedelic_kaleidoscope": {
     "id": "elem_psychedelic_kaleidoscope",
-    "x": 1317,
-    "y": -1030,
+    "x": 1424,
+    "y": -929,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_psychedelic_kaleidoscope_visual.js",
@@ -25,8 +13,8 @@
   },
   "elem_zefiro_midi": {
     "id": "elem_zefiro_midi",
-    "x": 2138,
-    "y": -895,
+    "x": 2063,
+    "y": -942,
     "width": 280,
     "height": 260,
     "filePath": "/elements/elem_zefiro_midi.js",
@@ -37,8 +25,8 @@
   },
   "elem_zefiro_drum_beat": {
     "id": "elem_zefiro_drum_beat",
-    "x": 1864,
-    "y": -705,
+    "x": 1836,
+    "y": -702,
     "width": 340,
     "height": 300,
     "filePath": "/elements/elem_zefiro_drum_beat.js",
@@ -49,8 +37,8 @@
   },
   "elem_hydra_pop": {
     "id": "elem_hydra_pop",
-    "x": 1701,
-    "y": -1142,
+    "x": 1751,
+    "y": -1029,
     "width": 520,
     "height": 340,
     "filePath": "/elements/elem_hydra_pop_visual.js",
@@ -59,65 +47,17 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_k89uq1795": {
-    "id": "elem_k89uq1795",
-    "x": 575,
-    "y": -537,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_zka8z3kzy": {
-    "id": "elem_zka8z3kzy",
-    "x": 1362,
-    "y": -331,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_xo3ob64xe": {
-    "id": "elem_xo3ob64xe",
-    "x": 965,
-    "y": -354,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_c6wdaaaaz": {
-    "id": "elem_c6wdaaaaz",
-    "x": 1016,
-    "y": -633,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_yodel_vocal_loop": {
     "id": "elem_yodel_vocal_loop",
-    "x": 1545,
-    "y": -636,
+    "x": 1522,
+    "y": -638,
     "width": 340,
     "height": 250,
     "filePath": "/elements/elem_yodel_vocal_loop.js",
     "type": "synth",
     "prompt": "hand-authored beat-clocked vocal yodeling loop",
     "authored": "hand",
-    "reloadToken": 1779954255308
+    "reloadToken": 1779954544277
   },
   "elem_xdig1izwu": {
     "id": "elem_xdig1izwu",
@@ -133,13 +73,25 @@
   },
   "elem_hiphop_lead_synth": {
     "id": "elem_hiphop_lead_synth",
-    "x": 460,
-    "y": 120,
+    "x": 972,
+    "y": -619,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_hiphop_lead_synth.js",
     "type": "synth",
     "prompt": "hand-authored hip hop synth lead with glide, drive, delay, and step editor",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_q2ecr5bek": {
+    "id": "elem_q2ecr5bek",
+    "x": 807,
+    "y": -336,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
     "reloadToken": 0
   }
