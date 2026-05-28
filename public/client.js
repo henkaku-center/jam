@@ -905,11 +905,16 @@ function updateSpatialAudioAndLOD() {
 let isFocusModeActive = false;
 
 window.addEventListener('keydown', (e) => {
+  if (e.defaultPrevented) return;
+
   if (e.key === 'Tab') {
     e.preventDefault();
     if (!isFocusModeActive) {
       activateFocusMode();
     }
+  } else if (e.key === '.' && (e.ctrlKey || e.metaKey || e.altKey)) {
+    e.preventDefault();
+    window.__jamStrudelRuntimeDebug?.panic?.();
   } else if ((e.key === 'Backspace' || e.key === 'Delete') && e.ctrlKey && !isTextEntryOrTerminalFocused()) {
     e.preventDefault();
     deleteSelectedElement();
@@ -1110,8 +1115,8 @@ function setupElementDragging(domWrapper, id) {
   let startY = 0;
 
   domWrapper.addEventListener('mousedown', (e) => {
-    // Bypass if clicking inside inputs/sliders on Shadow Root
-    if (e.composedPath()[0].tagName === 'INPUT' || e.composedPath()[0].tagName === 'SELECT' || e.composedPath()[0].tagName === 'BUTTON') {
+    const target = e.composedPath()[0];
+    if (isInteractiveElementDragTarget(target)) {
       return;
     }
     e.stopPropagation();
@@ -1152,6 +1157,17 @@ function setupElementDragging(domWrapper, id) {
       agentTerminalTerm.paste(`modify element ${id}: `);
     }
   });
+}
+
+function isInteractiveElementDragTarget(target) {
+  if (!target || target.nodeType !== Node.ELEMENT_NODE) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    tag === 'BUTTON' ||
+    target.isContentEditable ||
+    Boolean(target.closest?.('[contenteditable="true"], [data-no-drag], textarea, input, select, button'));
 }
 
 // Update local active elements lists when synced Yjs map updates

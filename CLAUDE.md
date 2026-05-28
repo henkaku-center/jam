@@ -16,6 +16,8 @@ Guidance for Claude Code and other coding agents working in this repository.
 
 There is no build step. This is pure ESM JavaScript served from `public/`.
 
+Do not scaffold a separate Vite/React/Next app for creative requests. A request for a shader, cube, visualizer, synth, sampler, Strudel window, sequencer, or UI tool means “create or edit a hot-reloaded jam element under `public/elements/`,” then add/reload it through `npm run jam -- ...`.
+
 ## Read First
 
 `DESIGN.md` is the product and architecture spec. The key runtime idea is a shared spatial canvas where elements are hot-reloadable micro-apps. A single server hosts the UI, Yjs sync, and browser-visible Codex/Claude PTY terminals.
@@ -89,5 +91,6 @@ Do not bump `prompt` as a generic reload trick. Use `/api/workspace/elements/:id
 - Hot reload is bar-aligned and crossfaded. State transfers through `runtime.getState()`.
 - Element code must connect audio to `ctx.audioOut`, render into `ctx.domRoot`, and publish controller/user state through `ctx.bus.pubGlobal(...)` unless the signal is purely local and high-frequency.
 - Strudel-style code belongs inside normal jam elements. Do not add a floating Strudel REPL or app-level generator; use `/elements/strudel_clocked_element.js` or another element that schedules from `ctx.clock.onTick`.
+- WebGL/shader code belongs inside normal jam elements. Create a canvas in `ctx.domRoot`, compile shaders in `setup`, draw from `update`, and release buffers/programs/textures in `destroy`. Do not launch a separate shader app or server.
 
 See `public/elements/element-contract.d.ts` and `public/elements/_template_element.js` for the machine-readable contract and a minimal reference element.

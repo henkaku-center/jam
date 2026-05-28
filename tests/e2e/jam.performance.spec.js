@@ -99,7 +99,8 @@ function collectBrowserFailures(page) {
     const isKnownNoise =
       /Yjs was already imported/.test(text) ||
       /favicon\.ico/.test(text) ||
-      /Failed to load resource: the server responded with a status of 404 \(Not Found\)/.test(text);
+      /Failed to load resource: the server responded with a status of 404 \(Not Found\)/.test(text) ||
+      /GL Driver Message.*GPU stall due to ReadPixels/.test(text);
 
     if ((message.type() === 'error' || message.type() === 'warning') && !isKnownNoise) {
       failures.push(`${message.type()}: ${text}`);
@@ -732,12 +733,20 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
       .toEqual(expect.arrayContaining(ids));
 
     await page.evaluate((elementId) => {
-      window.activeElements
+      const input = window.activeElements
         .get(elementId)
         ?.domWrapper.querySelector('.element-shadow-container')
         ?.shadowRoot
-        ?.querySelector('#run')
-        ?.click();
+        ?.querySelector('#code');
+      if (!input) throw new Error(`missing Strudel editor for ${elementId}`);
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        key: '.',
+        code: 'Period',
+        ctrlKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
     }, ids[1]);
 
     await expect
@@ -746,21 +755,182 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
           .filter(id => createdIds.includes(id)),
         firstSource: window.__jamStrudelRuntimeDebug?.sources?.[createdIds[0]] || '',
         secondSource: window.__jamStrudelRuntimeDebug?.sources?.[createdIds[1]] || '',
-        running: window.__jamStrudelRuntimeDebug?.running || {}
+        running: window.__jamStrudelRuntimeDebug?.running || {},
+        hardResetCount: window.__jamStrudelRuntimeDebug?.hardResetCount || 0
       }), ids), {
-        message: 'stopping one Strudel element should remove only that element pattern',
+        message: 'Modifier+period in one Strudel editor should remove only that element pattern',
         timeout: 8_000
       })
       .toMatchObject({
         createdActiveElementIds: [ids[0]],
         firstSource,
         secondSource: '',
-        running: { [ids[0]]: true, [ids[1]]: false }
+        running: { [ids[0]]: true, [ids[1]]: false },
+        hardResetCount: expect.any(Number)
       });
+
+    const hardResetCount = await page.evaluate(() => window.__jamStrudelRuntimeDebug?.hardResetCount || 0);
+    expect(hardResetCount).toBeGreaterThan(0);
 
     expect(browserFailures).toEqual([]);
   } finally {
     await Promise.all(ids.map(id => request.delete(`/api/workspace/elements/${id}`)));
+  }
+});
+
+test('Strudel runtime registers the Dirt drum sample bank for lazy loading', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+  await page.locator('#open-strudel-btn').click();
+
+  const id = await expect
+    .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds), {
+      message: 'Strudel element should be added',
+      timeout: 5_000
+    })
+    .not.toBe('');
+
+  const createdId = await page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => window.activeElements.has(elementId), createdId), {
+        message: 'Strudel element should hydrate',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    await page.evaluate((elementId) => {
+      const input = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      const source = 's("bd sd cp hh").gain(0.15)';
+      input.value = source;
+      input.selectionStart = source.length;
+      input.selectionEnd = source.length;
+      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        altKey: true,
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      }));
+    }, createdId);
+
+    await expect
+      .poll(() => page.evaluate(async (elementId) => ({
+        source: window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '',
+        lastError: window.__jamStrudelRuntimeDebug?.lastError || '',
+        types: await window.__jamStrudelRuntimeDebug?.getRegisteredSoundTypes?.(['bd', 'sd', 'cp', 'hh'])
+      }), createdId), {
+        message: 'Dirt drum sample aliases should be loaded for Strudel',
+        timeout: 15_000
+      })
+      .toMatchObject({
+        source: 's("bd sd cp hh").gain(0.15)',
+        lastError: '',
+        types: {
+          bd: 'sample',
+          sd: 'sample',
+          cp: 'sample',
+          hh: 'sample'
+        }
+      });
+
+    expect(browserFailures).toEqual([]);
+  } finally {
+    if (createdId) await request.delete(`/api/workspace/elements/${createdId}`);
+  }
+});
+
+test('Dragging inside a Strudel editor selects text instead of moving the element', async ({ page, request }) => {
+  await joinWorkspace(page, 'controller');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+  await page.locator('#open-strudel-btn').click();
+
+  const id = await expect
+    .poll(() => page.evaluate((knownIds) => {
+      for (const [elementId, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+      }
+      return '';
+    }, beforeIds), {
+      message: 'Strudel element should be added',
+      timeout: 5_000
+    })
+    .not.toBe('');
+
+  const createdId = await page.evaluate((knownIds) => {
+    for (const [elementId, layout] of window.elementsMap.entries()) {
+      if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+    }
+    return '';
+  }, beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => window.activeElements.has(elementId), createdId), {
+        message: 'Strudel element should hydrate',
+        timeout: 5_000
+      })
+      .toBe(true);
+
+    const before = await page.evaluate((elementId) => {
+      const layout = window.elementsMap.get(elementId);
+      const input = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      input.focus();
+      input.setSelectionRange(0, 0);
+      return { x: layout.x, y: layout.y };
+    }, createdId);
+
+    const textareaBox = await page.evaluate((elementId) => {
+      const input = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      const rect = input.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    }, createdId);
+
+    await page.mouse.move(textareaBox.left + 20, textareaBox.top + 24);
+    await page.mouse.down();
+    await page.mouse.move(textareaBox.left + Math.min(textareaBox.width - 20, 180), textareaBox.top + 24, { steps: 8 });
+    await page.mouse.up();
+
+    const after = await page.evaluate((elementId) => {
+      const layout = window.elementsMap.get(elementId);
+      const input = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      return {
+        x: layout.x,
+        y: layout.y,
+        selectionLength: Math.abs(input.selectionEnd - input.selectionStart)
+      };
+    }, createdId);
+
+    expect(after.x).toBe(before.x);
+    expect(after.y).toBe(before.y);
+    expect(after.selectionLength).toBeGreaterThan(0);
+  } finally {
+    if (createdId) await request.delete(`/api/workspace/elements/${createdId}`);
   }
 });
 

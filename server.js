@@ -728,6 +728,12 @@ ${resolvedPath}
 Do not edit other files unless explicitly asked. Do not run the dev server. Do not install packages.
 After editing the target file, your final answer should be brief; the server will read the edited file back from disk.
 
+This is not a standalone app-generation task. Requests for shaders, visualizers, Strudel windows, synths,
+samplers, sequencers, or controls must be implemented inside the target jam element file. Do not create
+a Vite/React/Next app, do not edit public/index.html for element-specific work, and do not start a new
+server on another port. WebGL shader work should create a canvas inside ctx.domRoot, draw from update(),
+and release WebGL resources in destroy().
+
 You are working inside this live jam environment:
 ${environmentSummary}
 
@@ -816,6 +822,8 @@ function buildRepoStructureSummary() {
   const entries = [];
   const include = [
     'DESIGN.md',
+    'AGENTS.md',
+    'CLAUDE.md',
     'server.js',
     'workspace_layout.json',
     'package.json',

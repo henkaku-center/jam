@@ -1,6 +1,7 @@
 import {
   getSuperdoughAudioController,
   initStrudel,
+  samples,
   silence,
   stack
 } from '/vendor/strudel-web/index.mjs';
@@ -20,7 +21,8 @@ const runtimeState = {
   started: false,
   commitPromise: Promise.resolve(),
   operationId: 0,
-  elementOperations: new Map()
+  elementOperations: new Map(),
+  hardResetCount: 0
 };
 
 window.__jamStrudelRuntimeDebug = {
@@ -34,8 +36,17 @@ window.__jamStrudelRuntimeDebug = {
   get sources() {
     return Object.fromEntries(runtimeState.sources.entries());
   },
+  async getRegisteredSoundTypes(names = []) {
+    await ensureRuntime();
+    const info = await import('/vendor/strudel-web/index.mjs');
+    const sounds = info.soundMap?.get?.() || {};
+    return Object.fromEntries(names.map(name => [name, sounds[name]?.data?.type || '']));
+  },
   get running() {
     return Object.fromEntries(runtimeState.running.entries());
+  },
+  get hardResetCount() {
+    return runtimeState.hardResetCount;
   },
   get lastError() {
     return runtimeState.lastError;
@@ -64,6 +75,7 @@ async function ensureRuntime() {
   if (!runtimeState.initPromise) {
     runtimeState.initPromise = initStrudel({
       audioContext: runtimeState.audioCtx,
+      prebake: () => samples('github:tidalcycles/dirt-samples'),
       onEvalError(error) {
         runtimeState.lastError = error?.message || String(error);
       }
@@ -99,14 +111,14 @@ async function evaluateElement(elementId, code, options = {}) {
     runtimeState.sources.delete(elementId);
     runtimeState.running.set(elementId, false);
     runtimeState.errors.delete(elementId);
-    await queueCommit();
+    await queueCommit({ resetScheduler: true });
     return getStatus(elementId);
   }
 
   runtimeState.lastError = '';
   const pattern = await repl.evaluate(source, false, false);
   if (runtimeState.elementOperations.get(elementId) !== operationId) {
-    await queueCommit();
+    await queueCommit({ resetScheduler: true });
     return getStatus(elementId);
   }
   if (!pattern) {
@@ -137,7 +149,7 @@ async function removeElement(elementId) {
   runtimeState.running.delete(elementId);
   runtimeState.elementOperations.delete(elementId);
   runtimeState.errors.delete(elementId);
-  await queueCommit();
+  await queueCommit({ resetScheduler: true });
 }
 
 async function setAudioEnabled(enabled) {
@@ -174,17 +186,22 @@ function beginElementOperation(elementId) {
   return runtimeState.operationId;
 }
 
-function queueCommit() {
+function queueCommit(options = {}) {
   runtimeState.commitPromise = runtimeState.commitPromise
     .catch(() => {})
-    .then(() => commitPattern());
+    .then(() => commitPattern(options));
   return runtimeState.commitPromise;
 }
 
-async function commitPattern() {
+async function commitPattern(options = {}) {
   const repl = await ensureRuntime();
   const patterns = [...runtimeState.patterns.values()];
   const pattern = patterns.length ? stack(...patterns) : silence;
+  if (options.resetScheduler) {
+    repl.stop();
+    runtimeState.started = false;
+    runtimeState.hardResetCount += 1;
+  }
   await repl.setPattern(pattern, true);
 
   if (runtimeState.audioEnabled && patterns.length) {
