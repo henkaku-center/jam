@@ -3,17 +3,28 @@ export default function setup(ctx, prevState) {
   const MAX_VOICES = 8;
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const ccLanes = [
-    { key: 'bass', label: 'Bass', defaultCc: 16 },
-    { key: 'pluck', label: 'Pluck', defaultCc: 17 },
-    { key: 'pad', label: 'Pad', defaultCc: 18 },
-    { key: 'bell', label: 'Bell', defaultCc: 19 },
-    { key: 'drums', label: 'Drums', defaultCc: 20 }
+    { key: 'bass', label: 'Bass', defaultCc: 0 },
+    { key: 'pluck', label: 'Pluck', defaultCc: 1 },
+    { key: 'pad', label: 'Pad', defaultCc: 2 },
+    { key: 'bell', label: 'Bell', defaultCc: 3 },
+    { key: 'drums', label: 'Drums', defaultCc: 4 }
   ];
+  const nanoKontrolSliders = new Map(ccLanes.map((lane, index) => [index, lane]));
+  const nanoKontrolModifiers = {
+    16: 'cutoff',
+    17: 'resonance',
+    18: 'mod',
+    19: 'volume',
+    20: 'cutoff'
+  };
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const now = () => ctx.audioCtx.currentTime;
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
   const noteName = (midi) => `${noteNames[midi % 12]}${Math.floor(midi / 12) - 1}`;
+  const inputName = (input) => `${input?.name || ''} ${input?.manufacturer || ''}`.trim();
+  const isNanoKey = (input) => /nanokey|nano key/i.test(inputName(input));
+  const isNanoKontrol = (input) => /nanokontrol|nano kontrol/i.test(inputName(input));
 
   const savedAssignments = prevState?.ccAssignments && typeof prevState.ccAssignments === 'object' ? prevState.ccAssignments : {};
   const defaultAssignments = Object.fromEntries(ccLanes.map((lane) => [lane.key, Number.isInteger(savedAssignments[lane.key]) ? savedAssignments[lane.key] : lane.defaultCc]));
@@ -260,7 +271,7 @@ export default function setup(ctx, prevState) {
         </div>
       </div>
 
-      <div class="foot" id="foot">CC mode maps live knobs to synced Bass, Pluck, Pad, Bell and Drums; notes still play the lead synth.</div>
+      <div class="foot" id="foot">nanoKEY plays notes. nanoKONTROL sliders CC0-4 map Bass, Pluck, Pad, Bell, Drums; knobs CC16-20 shape the synth.</div>
     </div>
   `;
 
@@ -305,7 +316,7 @@ export default function setup(ctx, prevState) {
   analyser.connect(ctx.audioOut);
 
   let midiAccess = null;
-  let currentInput = null;
+  const activeInputs = new Map();
   let uiTimer = null;
   const voices = new Map();
   const retiredVoices = new Set();
@@ -613,7 +624,15 @@ export default function setup(ctx, prevState) {
 
   const reservedCc = new Set([1, 7, 64, 71, 74, 120, 123]);
 
-  const laneForCc = (cc) => {
+  const laneForCc = (cc, sourceType) => {
+    if (sourceType === 'nanokontrol') {
+      const sliderLane = nanoKontrolSliders.get(cc);
+      if (sliderLane) {
+        state.ccAssignments[sliderLane.key] = cc;
+        return sliderLane;
+      }
+      return null;
+    }
     const assigned = ccLanes.find((lane) => state.ccAssignments[lane.key] === cc);
     if (assigned) return assigned;
     const defaultLane = ccLanes.find((lane) => lane.defaultCc === cc);
@@ -628,20 +647,32 @@ export default function setup(ctx, prevState) {
     return lane;
   };
 
-  const handleControlChange = (cc, raw) => {
+  const applyNanoKontrolModifier = (cc, value) => {
+    const target = nanoKontrolModifiers[cc];
+    if (target === 'cutoff') state.cutoff = value;
+    if (target === 'resonance') state.resonance = value;
+    if (target === 'mod') state.mod = value;
+    if (target === 'volume') state.volume = value * 1.25;
+  };
+
+  const handleControlChange = (cc, raw, sourceType = 'generic', sourceName = '') => {
     const value = clamp(raw / 127, 0, 1);
-    const lane = laneForCc(cc);
+    const lane = laneForCc(cc, sourceType);
     state.lastCc = cc;
     state.lastCcValue = value;
     if (lane) state.ccLevels[lane.key] = value;
-    if (cc === 1) state.mod = value;
-    if (cc === 7) state.volume = value * 1.25;
-    if (cc === 64) setSustain(raw >= 64);
-    if (cc === 71) state.resonance = value;
-    if (cc === 74) state.cutoff = value;
+    if (sourceType === 'nanokontrol') {
+      applyNanoKontrolModifier(cc, value);
+    } else {
+      if (cc === 1) state.mod = value;
+      if (cc === 7) state.volume = value * 1.25;
+      if (cc === 64) setSustain(raw >= 64);
+      if (cc === 71) state.resonance = value;
+      if (cc === 74) state.cutoff = value;
+    }
     ctx.bus.pubGlobal(`global:midiController:cc${cc}`, value);
     ctx.bus.pubGlobal(`global:midiController:cc${cc}_raw`, raw);
-    ctx.bus.pubGlobal('global:midiController:lastCc', { cc, value, raw, lane: lane?.key || null });
+    ctx.bus.pubGlobal('global:midiController:lastCc', { cc, value, raw, lane: lane?.key || null, sourceType, sourceName });
     ctx.bus.pubGlobal(`global:zefiro:cc${cc}`, value);
     ctx.bus.pubGlobal(`global:zefiro:cc${cc}_raw`, raw);
     volumeEl.value = String(state.volume);
@@ -650,19 +681,29 @@ export default function setup(ctx, prevState) {
     applyGlobalParams();
   };
 
-  const handleMidiMessage = (event) => {
+  const sourceTypeForInput = (input) => {
+    if (isNanoKontrol(input)) return 'nanokontrol';
+    if (isNanoKey(input)) return 'nanokey';
+    return 'generic';
+  };
+
+  const handleMidiMessage = (event, input) => {
     const data = event.data;
     if (!data || data.length < 2) return;
     const command = data[0] & 0xf0;
     const d1 = data[1] ?? 0;
     const d2 = data[2] ?? 0;
+    const sourceType = sourceTypeForInput(input);
+    const sourceName = inputName(input);
 
     if (command === 0x90) {
+      if (sourceType === 'nanokontrol') return;
       if (d2 === 0) noteOff(d1);
       else noteOn(d1, d2);
       return;
     }
     if (command === 0x80) {
+      if (sourceType === 'nanokontrol') return;
       noteOff(d1);
       return;
     }
@@ -671,34 +712,54 @@ export default function setup(ctx, prevState) {
         allNotesOff();
         return;
       }
-      handleControlChange(d1, d2);
+      if (sourceType === 'nanokey' && activeInputs.size > 1) return;
+      handleControlChange(d1, d2, sourceType, sourceName);
       return;
     }
     if (command === 0xe0) {
+      if (sourceType === 'nanokontrol') return;
       const bend14 = d1 + (d2 << 7);
       state.pitchBend = clamp((bend14 - 8192) / 8192, -1, 1);
       applyGlobalParams();
     }
   };
 
-  const detachCurrentInput = () => {
-    if (currentInput && inputHandlers.has(currentInput)) {
-      currentInput.removeEventListener('midimessage', inputHandlers.get(currentInput));
-      inputHandlers.delete(currentInput);
-    }
-    currentInput = null;
+  const describeActiveInputs = () => {
+    const inputs = [...activeInputs.values()];
+    const names = inputs.map((input) => input.name || input.manufacturer || input.id);
+    const hasKey = inputs.some(isNanoKey);
+    const hasKontrol = inputs.some(isNanoKontrol);
+    if (hasKey && hasKontrol) return `connected: nanoKEY + nanoKONTROL`;
+    if (names.length) return `connected: ${names.join(' + ')}`;
+    return 'no MIDI inputs connected';
+  };
+
+  const syncActiveInputState = () => {
+    const inputs = [...activeInputs.values()];
+    state.deviceId = inputs.map((input) => input.id).join(',');
+    state.deviceName = inputs.map((input) => input.name || input.id).join(' + ') || 'none';
+    setStatus(describeActiveInputs(), inputs.length ? 'ok' : 'warn');
+  };
+
+  const detachInput = (input) => {
+    if (!input || !inputHandlers.has(input)) return;
+    input.removeEventListener('midimessage', inputHandlers.get(input));
+    inputHandlers.delete(input);
+    activeInputs.delete(input.id);
+    syncActiveInputState();
+  };
+
+  const detachAllInputs = () => {
+    for (const input of [...activeInputs.values()]) detachInput(input);
   };
 
   const attachInput = (input) => {
-    detachCurrentInput();
-    allNotesOff();
-    currentInput = input;
-    state.deviceId = input.id;
-    state.deviceName = input.name || input.id;
-    input.addEventListener('midimessage', handleMidiMessage);
-    inputHandlers.set(input, handleMidiMessage);
-    pickerEl.value = input.id;
-    setStatus(`connected: ${state.deviceName}`, 'ok');
+    if (!input || activeInputs.has(input.id)) return;
+    const handler = (event) => handleMidiMessage(event, input);
+    input.addEventListener('midimessage', handler);
+    inputHandlers.set(input, handler);
+    activeInputs.set(input.id, input);
+    syncActiveInputState();
   };
 
   const refreshPicker = () => {
@@ -706,6 +767,10 @@ export default function setup(ctx, prevState) {
     const inputs = [...midiAccess.inputs.values()];
     pickerEl.replaceChildren();
     if (inputs.length) {
+      const autoOption = document.createElement('option');
+      autoOption.value = '';
+      autoOption.textContent = 'Auto: nanoKEY + nanoKONTROL';
+      pickerEl.append(autoOption);
       for (const input of inputs) {
         const option = document.createElement('option');
         option.value = input.id;
@@ -719,43 +784,43 @@ export default function setup(ctx, prevState) {
       pickerEl.append(option);
     }
     pickerEl.disabled = inputs.length === 0;
-    if (state.deviceId && inputs.some((input) => input.id === state.deviceId)) {
-      pickerEl.value = state.deviceId;
-    }
+    pickerEl.value = '';
     return inputs;
   };
 
-  const pickInput = (inputs) => {
-    if (state.deviceId) {
-      const saved = inputs.find((input) => input.id === state.deviceId);
-      if (saved) return saved;
-    }
-    const keyboard = inputs.find((input) => /key|midi|controller|launch|oxygen|mpk|minilab|keystation|arturia|akai|novation|komplete|yamaha|roland|korg/i.test(input.name || ''));
-    return keyboard || inputs[0] || null;
+  const targetInputs = (inputs) => {
+    const nanoTargets = inputs.filter((input) => isNanoKey(input) || isNanoKontrol(input));
+    return nanoTargets.length ? nanoTargets : inputs;
   };
 
   const onStateChange = () => {
     const inputs = refreshPicker();
     if (inputs.length === 0) {
-      detachCurrentInput();
+      detachAllInputs();
       allNotesOff();
-      setStatus('no MIDI inputs connected', 'warn');
+      syncActiveInputState();
       return;
     }
-    if (currentInput && !inputs.some((input) => input.id === currentInput.id)) {
-      detachCurrentInput();
-      allNotesOff();
+    const targets = targetInputs(inputs);
+    for (const input of [...activeInputs.values()]) {
+      if (!targets.some((target) => target.id === input.id)) detachInput(input);
     }
-    if (!currentInput) {
-      const input = pickInput(inputs);
-      if (input) attachInput(input);
-    }
+    targets.forEach(attachInput);
+    syncActiveInputState();
   };
 
   const onPickerChange = () => {
-    if (!midiAccess || !pickerEl.value) return;
-    const input = midiAccess.inputs.get(pickerEl.value);
-    if (input) attachInput(input);
+    if (!midiAccess) return;
+    const inputs = [...midiAccess.inputs.values()];
+    detachAllInputs();
+    if (!pickerEl.value) {
+      targetInputs(inputs).forEach(attachInput);
+    } else {
+      const input = midiAccess.inputs.get(pickerEl.value);
+      if (input) attachInput(input);
+    }
+    allNotesOff();
+    syncActiveInputState();
   };
 
   const onVolume = () => {
@@ -827,7 +892,7 @@ export default function setup(ctx, prevState) {
       if (midiAccess) {
         try { midiAccess.removeEventListener('statechange', onStateChange); } catch (_) {}
       }
-      detachCurrentInput();
+      detachAllInputs();
       for (const voice of voices.values()) disposeVoiceNow(voice);
       for (const voice of retiredVoices.values()) disposeVoiceNow(voice);
       for (const node of syncedNodes.values()) {

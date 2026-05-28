@@ -61,8 +61,8 @@
   },
   "elem_metal_country_music": {
     "id": "elem_metal_country_music",
-    "x": 1304,
-    "y": -348,
+    "x": 1342,
+    "y": -324,
     "width": 380,
     "height": 280,
     "filePath": "/elements/elem_metal_country_music.js",
@@ -285,12 +285,12 @@
     "type": "synth",
     "prompt": "simple synth controlled by an external MIDI controller with automatic input selection",
     "authored": "hand",
-    "reloadToken": 1779959222470
+    "reloadToken": 1779959263992
   },
   "elem_madoka_island_birth": {
     "id": "elem_madoka_island_birth",
-    "x": 1067,
-    "y": -413,
+    "x": 1040,
+    "y": -465,
     "width": 560,
     "height": 380,
     "filePath": "/elements/elem_madoka_island_birth_visual.js",
@@ -325,8 +325,8 @@
   },
   "elem_ufo_war_declaration": {
     "id": "elem_ufo_war_declaration",
-    "x": 879,
-    "y": -377,
+    "x": 899,
+    "y": -121,
     "width": 560,
     "height": 360,
     "filePath": "/elements/elem_ufo_war_declaration_visual.js",
