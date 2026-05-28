@@ -8,13 +8,13 @@ export default function setup(ctx, prevState) {
     hat: 'HAT',
     openHat: 'OPN'
   };
-  const grooveStyle = 'laidback_half_time_v1';
+  const grooveStyle = 'house_four_on_floor_v1';
 
   const defaultPattern = {
-    kick: [0.86, 0, 0, 0, 0, 0, 0.22, 0, 0.5, 0, 0, 0, 0, 0, 0.28, 0],
-    snare: [0, 0, 0, 0, 0, 0, 0, 0, 0.82, 0, 0, 0, 0, 0, 0.18, 0],
-    hat: [0, 0, 0.22, 0, 0, 0, 0.28, 0, 0, 0, 0.2, 0, 0, 0, 0.3, 0],
-    openHat: [0, 0, 0, 0, 0, 0, 0.18, 0, 0, 0, 0, 0, 0, 0, 0.24, 0]
+    kick: [0.95, 0, 0, 0, 0.9, 0, 0, 0, 0.95, 0, 0, 0, 0.9, 0, 0, 0],
+    snare: [0, 0, 0, 0, 0.78, 0, 0, 0, 0, 0, 0, 0, 0.78, 0, 0, 0],
+    hat: [0, 0.32, 0, 0.28, 0, 0.34, 0, 0.3, 0, 0.32, 0, 0.28, 0, 0.34, 0, 0.3],
+    openHat: [0, 0, 0.46, 0, 0, 0, 0.5, 0, 0, 0, 0.46, 0, 0, 0, 0.52, 0]
   };
 
   const clonePattern = (pattern) => {
@@ -48,7 +48,7 @@ export default function setup(ctx, prevState) {
   let state = {
     grooveStyle,
     pattern: migratePattern(),
-    groove: typeof prevState?.groove === 'number' && prevState.grooveStyle === grooveStyle ? prevState.groove : 0.21,
+    groove: typeof prevState?.groove === 'number' && prevState.grooveStyle === grooveStyle ? prevState.groove : 0.08,
     variation: prevState?.grooveStyle === grooveStyle ? (prevState?.variation ?? false) : false
   };
 
@@ -265,7 +265,7 @@ export default function setup(ctx, prevState) {
         }
       </style>
       <div class="card">
-        <h3>GROOVE DRUMS</h3>
+        <h3>HOUSE DRUMS</h3>
         <div class="controls">
           <label>Groove <input id="groove" type="range" min="0" max="0.32" step="0.01" value="${state.groove}"></label>
           <label><input id="variation" type="checkbox" ${state.variation ? 'checked' : ''}> Fills</label>
@@ -331,7 +331,7 @@ export default function setup(ctx, prevState) {
 
   if (prevState?.grooveStyle !== grooveStyle) {
     state.pattern = clonePattern(defaultPattern);
-    state.groove = 0.21;
+    state.groove = 0.08;
     state.variation = false;
     ctx.bus.pubGlobal('drum_pattern', state.pattern);
     ctx.bus.pubGlobal('drum_groove', state.groove);

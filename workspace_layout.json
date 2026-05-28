@@ -9,7 +9,7 @@
     "type": "seq",
     "prompt": "create a drum step sequencer",
     "authored": "codegen",
-    "reloadToken": 1779935158169
+    "reloadToken": 1779935463317
   },
   "elem_d4tb6laez": {
     "id": "elem_d4tb6laez",
@@ -21,22 +21,10 @@
     "type": "synth",
     "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
   },
-  "elem_house_voice": {
-    "id": "elem_house_voice",
-    "x": 1031,
-    "y": -623,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_house_voice_sampler.js",
-    "type": "synth",
-    "prompt": "microphone voice sampler for house vocal chops",
-    "authored": "hand",
-    "reloadToken": 1779935158154
-  },
   "elem_6ombobivs": {
     "id": "elem_6ombobivs",
-    "x": 779,
-    "y": -385,
+    "x": 763,
+    "y": -455,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -47,8 +35,8 @@
   },
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 581,
-    "y": -441,
+    "x": 1168,
+    "y": -478,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
@@ -56,5 +44,17 @@
     "prompt": "hand-authored WebGL rotating shader cube visual",
     "authored": "hand",
     "reloadToken": 1779888744270
+  },
+  "elem_bi3bqqgue": {
+    "id": "elem_bi3bqqgue",
+    "x": 878,
+    "y": -692,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
