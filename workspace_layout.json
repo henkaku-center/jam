@@ -1,16 +1,4 @@
 {
-  "elem_psychedelic_kaleidoscope": {
-    "id": "elem_psychedelic_kaleidoscope",
-    "x": 2215,
-    "y": -1245,
-    "width": 460,
-    "height": 320,
-    "filePath": "/elements/elem_psychedelic_kaleidoscope_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored psychedelic kaleidoscope WebGL visual",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_zefiro_midi": {
     "id": "elem_zefiro_midi",
     "x": 2089,
@@ -193,8 +181,8 @@
   },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
-    "x": 1319,
-    "y": -1316,
+    "x": 1359,
+    "y": -1928,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_psytrance_synth.js",
@@ -349,8 +337,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 420,
-    "y": 120,
+    "x": 579,
+    "y": 114,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -361,13 +349,25 @@
   },
   "elem_madoka_island_birth": {
     "id": "elem_madoka_island_birth",
-    "x": 900,
-    "y": 40,
+    "x": 927,
+    "y": -230,
     "width": 560,
     "height": 380,
     "filePath": "/elements/elem_madoka_island_birth_visual.js",
     "type": "visual",
     "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_webcore_os_chimes": {
+    "id": "elem_webcore_os_chimes",
+    "x": -80,
+    "y": 80,
+    "width": 360,
+    "height": 250,
+    "filePath": "/elements/elem_webcore_os_chimes.js",
+    "type": "synth",
+    "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
     "reloadToken": 0
   }
