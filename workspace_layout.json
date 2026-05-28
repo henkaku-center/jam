@@ -369,6 +369,18 @@
     "type": "synth",
     "prompt": "hand-authored original dark minimal pop sub-bass pulse with no sampled or transcribed copyrighted material",
     "authored": "hand",
+    "reloadToken": 1779958969717
+  },
+  "elem_beatbox": {
+    "id": "elem_beatbox",
+    "x": 620,
+    "y": 54,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/elem_beatbox.js",
+    "type": "synth",
+    "prompt": "hand-authored vocal beatbox drum machine",
+    "authored": "hand",
     "reloadToken": 0
   }
 }
