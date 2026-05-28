@@ -1,4 +1,4 @@
-const STATE_VERSION = 'yodel-vocal-loop-v1';
+const STATE_VERSION = 'yodel-vocal-loop-v2';
 
 const FORMANTS = {
   oh: [
@@ -45,22 +45,26 @@ export default function setup(ctx, prevState) {
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
-  const previousMatches = prevState?.stateVersion === STATE_VERSION;
+  const previousMatches = /^yodel-vocal-loop-v\d+$/.test(String(prevState?.stateVersion || ''));
   const state = {
     stateVersion: STATE_VERSION,
     enabled: previousMatches ? prevState.enabled !== false : true,
     volume: previousMatches ? finite(prevState.volume, 0.46) : 0.46,
+    pitch: previousMatches ? finite(prevState.pitch, 0.5) : 0.5,
     brightness: previousMatches ? finite(prevState.brightness, 0.58) : 0.58,
     yodel: previousMatches ? finite(prevState.yodel, 0.78) : 0.78,
     echo: previousMatches ? finite(prevState.echo, 0.28) : 0.28
   };
 
+  let zefiroPitch = null;
   let currentStep = -1;
   let currentSyllable = 'ready';
   let pulse = 0;
   let stepSeconds = 0.125;
   let raf = 0;
   let audioStateKey = '';
+  const pitchNorm = () => clamp(zefiroPitch ?? state.pitch, 0, 1);
+  const pitchSemitones = () => Math.round((pitchNorm() * 2 - 1) * 12);
 
   const liveNodes = new Set();
   const cleanupTimers = new Set();
@@ -202,6 +206,14 @@ export default function setup(ctx, prevState) {
         background: #bef264;
         box-shadow: 0 0 10px rgba(190, 242, 100, 0.72);
       }
+      .source {
+        margin-top: -3px;
+        color: #94a3b8;
+        font-size: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     </style>
     <div class="root">
       <div class="top">
@@ -213,6 +225,8 @@ export default function setup(ctx, prevState) {
       </div>
       <div class="controls">
         <label>volume <input id="volume" type="range" min="0" max="0.9" step="0.01"><span id="volumeVal"></span></label>
+        <label>pitch <input id="pitch" type="range" min="0" max="1" step="0.01"><span id="pitchVal"></span></label>
+        <div id="pitchSource" class="source"></div>
         <label>bright <input id="brightness" type="range" min="0" max="1" step="0.01"><span id="brightnessVal"></span></label>
         <label>jump <input id="yodel" type="range" min="0" max="1" step="0.01"><span id="yodelVal"></span></label>
         <label>echo <input id="echo" type="range" min="0" max="0.7" step="0.01"><span id="echoVal"></span></label>
@@ -228,16 +242,19 @@ export default function setup(ctx, prevState) {
   const enabledButton = $('#enabled');
   const sliders = {
     volume: $('#volume'),
+    pitch: $('#pitch'),
     brightness: $('#brightness'),
     yodel: $('#yodel'),
     echo: $('#echo')
   };
   const values = {
     volume: $('#volumeVal'),
+    pitch: $('#pitchVal'),
     brightness: $('#brightnessVal'),
     yodel: $('#yodelVal'),
     echo: $('#echoVal')
   };
+  const pitchSource = $('#pitchSource');
   const stage = $('#stage');
   const syllable = $('#syllable');
   const steps = $('#steps');
@@ -271,13 +288,14 @@ export default function setup(ctx, prevState) {
 
   const schedulePitch = (osc, points, startTime, duration) => {
     const jump = clamp(state.yodel, 0, 1);
-    const first = midiToFreq(points[0]);
+    const transpose = pitchSemitones();
+    const first = midiToFreq(points[0] + transpose);
     osc.frequency.setValueAtTime(first, startTime);
     points.forEach((midi, index) => {
       if (index === 0) return;
       const position = index / (points.length - 1);
       const targetTime = startTime + duration * (0.18 + position * 0.7);
-      const targetMidi = points[0] + (midi - points[0]) * (0.42 + jump * 0.58);
+      const targetMidi = points[0] + transpose + (midi - points[0]) * (0.42 + jump * 0.58);
       osc.frequency.exponentialRampToValueAtTime(midiToFreq(targetMidi), targetTime);
     });
   };
@@ -386,8 +404,9 @@ export default function setup(ctx, prevState) {
     enabledButton.classList.toggle('off', !state.enabled);
     Object.keys(sliders).forEach((key) => {
       if (sliders[key].value !== String(state[key])) sliders[key].value = String(state[key]);
-      values[key].textContent = Number(state[key]).toFixed(2);
+      values[key].textContent = key === 'pitch' ? `${pitchSemitones() >= 0 ? '+' : ''}${pitchSemitones()}` : Number(state[key]).toFixed(2);
     });
+    pitchSource.textContent = zefiroPitch === null ? 'pitch source: manual slider' : 'pitch source: Zefiro CC1 lip/mod';
     applyAudioState();
     syllable.textContent = currentSyllable;
     stepEls.forEach((el, index) => el.classList.toggle('on', index === currentStep));
@@ -420,6 +439,7 @@ export default function setup(ctx, prevState) {
   };
   const sliderHandlers = {
     volume: onSlider('volume'),
+    pitch: onSlider('pitch'),
     brightness: onSlider('brightness'),
     yodel: onSlider('yodel'),
     echo: onSlider('echo')
@@ -428,6 +448,11 @@ export default function setup(ctx, prevState) {
   enabledButton.addEventListener('click', onEnabled);
   Object.entries(sliderHandlers).forEach(([key, handler]) => sliders[key].addEventListener('input', handler));
   const unsubscribeClock = ctx.clock.onTick(onTick);
+  const unsubscribeZefiroPitch = ctx.bus.subGlobal('global:zefiro:cc1', (value) => {
+    if (!Number.isFinite(value)) return;
+    zefiroPitch = clamp(value, 0, 1);
+    render();
+  });
   render();
   raf = requestAnimationFrame(animate);
 
@@ -439,6 +464,7 @@ export default function setup(ctx, prevState) {
     destroy() {
       cancelAnimationFrame(raf);
       unsubscribeClock();
+      unsubscribeZefiroPitch();
       enabledButton.removeEventListener('click', onEnabled);
       Object.entries(sliderHandlers).forEach(([key, handler]) => sliders[key].removeEventListener('input', handler));
       cleanupTimers.forEach((timer) => clearTimeout(timer));

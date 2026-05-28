@@ -1,8 +1,8 @@
 {
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 837,
-    "y": -54,
+    "x": 722,
+    "y": 274,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
@@ -13,8 +13,8 @@
   },
   "elem_psychedelic_kaleidoscope": {
     "id": "elem_psychedelic_kaleidoscope",
-    "x": 1200,
-    "y": -905,
+    "x": 1317,
+    "y": -1030,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_psychedelic_kaleidoscope_visual.js",
@@ -47,22 +47,10 @@
     "authored": "hand",
     "reloadToken": 1779939020931
   },
-  "elem_5ztafjqaj": {
-    "id": "elem_5ztafjqaj",
-    "x": 825,
-    "y": -468,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_hydra_pop": {
     "id": "elem_hydra_pop",
-    "x": 1714,
-    "y": -1042,
+    "x": 1701,
+    "y": -1142,
     "width": 520,
     "height": 340,
     "filePath": "/elements/elem_hydra_pop_visual.js",
@@ -73,8 +61,8 @@
   },
   "elem_k89uq1795": {
     "id": "elem_k89uq1795",
-    "x": 849,
-    "y": -745,
+    "x": 575,
+    "y": -537,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -85,8 +73,8 @@
   },
   "elem_zka8z3kzy": {
     "id": "elem_zka8z3kzy",
-    "x": 1330,
-    "y": -1139,
+    "x": 1362,
+    "y": -331,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -97,8 +85,8 @@
   },
   "elem_xo3ob64xe": {
     "id": "elem_xo3ob64xe",
-    "x": 1170,
-    "y": -121,
+    "x": 965,
+    "y": -354,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -109,8 +97,8 @@
   },
   "elem_c6wdaaaaz": {
     "id": "elem_c6wdaaaaz",
-    "x": 1215,
-    "y": -602,
+    "x": 1016,
+    "y": -633,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -129,6 +117,18 @@
     "type": "synth",
     "prompt": "hand-authored beat-clocked vocal yodeling loop",
     "authored": "hand",
-    "reloadToken": 1779954019646
+    "reloadToken": 1779954255308
+  },
+  "elem_xdig1izwu": {
+    "id": "elem_xdig1izwu",
+    "x": 1087,
+    "y": -1340,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
