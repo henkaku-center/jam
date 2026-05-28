@@ -85,8 +85,8 @@
   },
   "elem_q2ecr5bek": {
     "id": "elem_q2ecr5bek",
-    "x": 807,
-    "y": -336,
+    "x": 606,
+    "y": -352,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -97,8 +97,8 @@
   },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
-    "x": 113,
-    "y": -310,
+    "x": 1072,
+    "y": -360,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_acid_drum_machine.js",
@@ -106,5 +106,41 @@
     "prompt": "hand-authored acid drum machine with clocked 909 drums and resonant acid pulse",
     "authored": "hand",
     "reloadToken": 1779954571095
+  },
+  "elem_dcudbkpm9": {
+    "id": "elem_dcudbkpm9",
+    "x": 409,
+    "y": -88,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_h4ybp99nz": {
+    "id": "elem_h4ybp99nz",
+    "x": 603,
+    "y": 180,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_roland_909_beat": {
+    "id": "elem_roland_909_beat",
+    "x": 1500,
+    "y": -350,
+    "width": 330,
+    "height": 285,
+    "filePath": "/elements/elem_roland_909_beat.js",
+    "type": "synth",
+    "prompt": "hand-authored simple Roland TR-909 style drum machine",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
