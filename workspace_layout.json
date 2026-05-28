@@ -130,5 +130,17 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
+  },
+  "elem_hiphop_lead_synth": {
+    "id": "elem_hiphop_lead_synth",
+    "x": 460,
+    "y": 120,
+    "width": 360,
+    "height": 250,
+    "filePath": "/elements/elem_hiphop_lead_synth.js",
+    "type": "synth",
+    "prompt": "hand-authored hip hop synth lead with glide, drive, delay, and step editor",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
