@@ -1,23 +1,41 @@
 export default function setup(ctx, prevState) {
+  const STATE_VERSION = 'midi-controller-synth-cc-map-v1';
   const MAX_VOICES = 8;
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const ccLanes = [
+    { key: 'bass', label: 'Bass', defaultCc: 16 },
+    { key: 'pluck', label: 'Pluck', defaultCc: 17 },
+    { key: 'pad', label: 'Pad', defaultCc: 18 },
+    { key: 'bell', label: 'Bell', defaultCc: 19 },
+    { key: 'drums', label: 'Drums', defaultCc: 20 }
+  ];
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const now = () => ctx.audioCtx.currentTime;
   const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
   const noteName = (midi) => `${noteNames[midi % 12]}${Math.floor(midi / 12) - 1}`;
 
+  const savedAssignments = prevState?.ccAssignments && typeof prevState.ccAssignments === 'object' ? prevState.ccAssignments : {};
+  const defaultAssignments = Object.fromEntries(ccLanes.map((lane) => [lane.key, Number.isInteger(savedAssignments[lane.key]) ? savedAssignments[lane.key] : lane.defaultCc]));
+  const defaultCcLevels = Object.fromEntries(ccLanes.map((lane) => [lane.key, 0]));
+
   const state = {
+    stateVersion: STATE_VERSION,
     deviceId: prevState?.deviceId ?? null,
     deviceName: prevState?.deviceName ?? 'none',
-    volume: Number.isFinite(prevState?.volume) ? clamp(prevState.volume, 0, 1) : 0.72,
-    cutoff: Number.isFinite(prevState?.cutoff) ? clamp(prevState.cutoff, 0, 1) : 0.58,
+    volume: prevState?.stateVersion === STATE_VERSION && Number.isFinite(prevState?.volume) ? clamp(prevState.volume, 0, 1.25) : 0.98,
+    cutoff: prevState?.stateVersion === STATE_VERSION && Number.isFinite(prevState?.cutoff) ? clamp(prevState.cutoff, 0, 1) : 0.72,
     resonance: Number.isFinite(prevState?.resonance) ? clamp(prevState.resonance, 0, 1) : 0.22,
     mod: 0,
     pitchBend: 0,
     sustain: false,
     lastNote: null,
-    lastVelocity: 0
+    lastVelocity: 0,
+    lastCc: null,
+    lastCcValue: 0,
+    ccAssignments: defaultAssignments,
+    ccLevels: { ...defaultCcLevels },
+    ccLearnIndex: 0
   };
 
   ctx.domRoot.innerHTML = `
@@ -130,6 +148,25 @@ export default function setup(ctx, prevState) {
         grid-template-columns: 1fr 1fr 1fr;
         gap: 6px;
       }
+      .cc-lanes {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 2px;
+      }
+      .lane {
+        min-width: 0;
+        display: grid;
+        gap: 3px;
+      }
+      .lane-label {
+        overflow: hidden;
+        color: #9ca3af;
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       .meter {
         min-width: 0;
         display: grid;
@@ -152,6 +189,11 @@ export default function setup(ctx, prevState) {
       .bar.mod > span { background: #a78bfa; }
       .bar.bend > span { background: #fb923c; }
       .bar.vel > span { background: #2dd4bf; }
+      .bar.bass > span { background: #60a5fa; }
+      .bar.pluck > span { background: #2dd4bf; }
+      .bar.pad > span { background: #a78bfa; }
+      .bar.bell > span { background: #facc15; }
+      .bar.drums > span { background: #fb7185; }
       .foot {
         min-height: 14px;
         color: #6f7f87;
@@ -179,7 +221,7 @@ export default function setup(ctx, prevState) {
         <label class="control">
           <span class="label">Volume</span>
           <span class="value" id="volumeValue"></span>
-          <input id="volume" type="range" min="0" max="1" step="0.001" value="${state.volume}">
+          <input id="volume" type="range" min="0" max="1.25" step="0.001" value="${state.volume}">
         </label>
         <label class="control">
           <span class="label">Cutoff</span>
@@ -207,10 +249,18 @@ export default function setup(ctx, prevState) {
               <div class="bar bend"><span id="bendBar"></span></div>
             </div>
           </div>
+          <div class="cc-lanes" id="ccLanes">
+            ${ccLanes.map((lane) => `
+              <div class="lane">
+                <div class="lane-label" id="laneLabel-${lane.key}">${lane.label} CC${state.ccAssignments[lane.key]}</div>
+                <div class="bar ${lane.key}"><span id="laneBar-${lane.key}"></span></div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
 
-      <div class="foot" id="foot">Note on/off, pitch bend, mod wheel, sustain, CC7, CC71 and CC74 respond automatically.</div>
+      <div class="foot" id="foot">CC mode maps live knobs to synced Bass, Pluck, Pad, Bell and Drums; notes still play the lead synth.</div>
     </div>
   `;
 
@@ -228,12 +278,30 @@ export default function setup(ctx, prevState) {
   const velocityBarEl = ctx.domRoot.querySelector('#velocityBar');
   const modBarEl = ctx.domRoot.querySelector('#modBar');
   const bendBarEl = ctx.domRoot.querySelector('#bendBar');
+  const laneEls = Object.fromEntries(ccLanes.map((lane) => [lane.key, {
+    label: ctx.domRoot.querySelector(`#laneLabel-${lane.key}`),
+    bar: ctx.domRoot.querySelector(`#laneBar-${lane.key}`)
+  }]));
 
   const master = ctx.audioCtx.createGain();
+  const compressor = ctx.audioCtx.createDynamicsCompressor();
   const analyser = ctx.audioCtx.createAnalyser();
+  const noiseBuffer = (() => {
+    const length = Math.max(1, Math.floor(ctx.audioCtx.sampleRate * 0.6));
+    const buffer = ctx.audioCtx.createBuffer(1, length, ctx.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
+    return buffer;
+  })();
   master.gain.value = 0.0001;
+  compressor.threshold.value = -18;
+  compressor.knee.value = 18;
+  compressor.ratio.value = 3.8;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.16;
   analyser.fftSize = 128;
-  master.connect(analyser);
+  master.connect(compressor);
+  compressor.connect(analyser);
   analyser.connect(ctx.audioOut);
 
   let midiAccess = null;
@@ -241,6 +309,7 @@ export default function setup(ctx, prevState) {
   let uiTimer = null;
   const voices = new Map();
   const retiredVoices = new Set();
+  const syncedNodes = new Set();
   const cleanupTimers = new Set();
   const inputHandlers = new WeakMap();
 
@@ -267,11 +336,17 @@ export default function setup(ctx, prevState) {
     modBarEl.style.width = `${Math.round(state.mod * 100)}%`;
     bendBarEl.style.width = `${Math.round((state.pitchBend * 0.5 + 0.5) * 100)}%`;
     voiceCountEl.textContent = `${voices.size} voice${voices.size === 1 ? '' : 's'}`;
+    for (const lane of ccLanes) {
+      const refs = laneEls[lane.key];
+      if (!refs) continue;
+      refs.label.textContent = `${lane.label} CC${state.ccAssignments[lane.key]}`;
+      refs.bar.style.width = `${Math.round((state.ccLevels[lane.key] || 0) * 100)}%`;
+    }
   };
 
   const applyGlobalParams = () => {
     const t = now();
-    setParam(master.gain, state.volume * 0.36, t, 0.025);
+    setParam(master.gain, state.volume * 0.82, t, 0.025);
     for (const voice of voices.values()) {
       setParam(voice.filter.frequency, cutoffHz(), t, 0.025);
       setParam(voice.filter.Q, 0.7 + state.resonance * 13, t, 0.025);
@@ -293,6 +368,18 @@ export default function setup(ctx, prevState) {
         try { node.disconnect(); } catch (_) {}
       }
     }, delayMs);
+    cleanupTimers.add(timer);
+  };
+
+  const trackSyncedNodes = (seconds, ...nodes) => {
+    nodes.forEach((node) => syncedNodes.add(node));
+    const timer = setTimeout(() => {
+      cleanupTimers.delete(timer);
+      nodes.forEach((node) => {
+        try { if (typeof node.disconnect === 'function') node.disconnect(); } catch (_) {}
+        syncedNodes.delete(node);
+      });
+    }, Math.max(80, seconds * 1000 + 160));
     cleanupTimers.add(timer);
   };
 
@@ -328,6 +415,90 @@ export default function setup(ctx, prevState) {
     for (const midi of [...voices.keys()]) releaseVoice(midi, true);
   };
 
+  const playSyncedTone = (time, midi, velocity, length, type, filterBase = 1800) => {
+    const t = Math.max(time, now() + 0.002);
+    const freq = midiToFreq(midi);
+    const oscA = ctx.audioCtx.createOscillator();
+    const oscB = ctx.audioCtx.createOscillator();
+    const gain = ctx.audioCtx.createGain();
+    const filter = ctx.audioCtx.createBiquadFilter();
+    const pan = ctx.audioCtx.createStereoPanner();
+
+    const ratio = bendRatio();
+    oscA.type = type;
+    oscB.type = type === 'sine' ? 'triangle' : 'sine';
+    oscA.frequency.setValueAtTime(freq * ratio, t);
+    oscB.frequency.setValueAtTime(freq * 1.505 * ratio, t);
+    oscB.detune.setValueAtTime(type === 'sawtooth' ? -9 : 4, t);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(filterBase + state.cutoff * 5200 + velocity * 1100, t);
+    filter.Q.setValueAtTime(0.8 + state.resonance * 8, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(velocity, t + 0.012);
+    gain.gain.setTargetAtTime(0.0001, t + length, 0.055);
+    pan.pan.setValueAtTime((midi % 9 - 4) * 0.055, t);
+
+    oscA.connect(filter);
+    oscB.connect(filter);
+    filter.connect(gain);
+    gain.connect(pan);
+    pan.connect(master);
+    oscA.start(t);
+    oscB.start(t);
+    oscA.stop(t + length + 0.16);
+    oscB.stop(t + length + 0.16);
+    trackSyncedNodes(length + 0.3, oscA, oscB, filter, gain, pan);
+  };
+
+  const playSyncedDrum = (time, level, step) => {
+    const t = Math.max(time, now() + 0.002);
+    const source = ctx.audioCtx.createBufferSource();
+    const filter = ctx.audioCtx.createBiquadFilter();
+    const gain = ctx.audioCtx.createGain();
+    source.buffer = noiseBuffer;
+    filter.type = step % 4 === 0 ? 'lowpass' : 'highpass';
+    filter.frequency.setValueAtTime(step % 4 === 0 ? 240 : 5200, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime((step % 4 === 0 ? 0.32 : 0.12) * level, t + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + (step % 4 === 0 ? 0.18 : 0.055));
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    source.start(t);
+    source.stop(t + 0.22);
+    trackSyncedNodes(0.32, source, filter, gain);
+  };
+
+  const triggerSyncedLanes = (step, time, duration) => {
+    const index = ((step % 16) + 16) % 16;
+    const bass = state.ccLevels.bass || 0;
+    const pluck = state.ccLevels.pluck || 0;
+    const pad = state.ccLevels.pad || 0;
+    const bell = state.ccLevels.bell || 0;
+    const drums = state.ccLevels.drums || 0;
+    const root = [45, 48, 43, 50][Math.floor((step % 64) / 16)] || 45;
+
+    if (bass > 0.03 && [0, 6, 8, 14].includes(index)) {
+      playSyncedTone(time, root + (index === 14 ? 7 : 0), 0.08 + bass * 0.26, duration * 1.45, 'sawtooth', 520);
+    }
+    if (pluck > 0.03 && [0, 3, 5, 7, 10, 12, 15].includes(index)) {
+      const offsets = [12, 19, 22, 24, 19, 15, 17, 12, 24, 22, 19, 17, 15, 12, 19, 22];
+      playSyncedTone(time, root + offsets[index], 0.045 + pluck * 0.15, duration * 0.65, 'triangle', 1800);
+    }
+    if (pad > 0.03 && index % 8 === 0) {
+      [0, 7, 12, 16].forEach((offset, voiceIndex) => {
+        playSyncedTone(time + voiceIndex * 0.012, root + offset + 12, 0.025 + pad * 0.06, duration * 5.8, 'sine', 1300);
+      });
+    }
+    if (bell > 0.03 && [2, 6, 9, 13].includes(index)) {
+      const offsets = [31, 34, 36, 38, 36, 34, 31, 29, 31, 36, 38, 41, 38, 36, 34, 31];
+      playSyncedTone(time + duration * 0.08, root + offsets[index], 0.035 + bell * 0.13, duration * 1.1, 'sine', 4200);
+    }
+    if (drums > 0.03 && (index % 4 === 0 || index % 2 === 1)) {
+      playSyncedDrum(time, drums, index);
+    }
+  };
+
   const stealOldestVoice = () => {
     let oldest = null;
     let oldestTime = Infinity;
@@ -350,7 +521,7 @@ export default function setup(ctx, prevState) {
     const t = now();
     const freq = midiToFreq(midi);
     const velocity = clamp(velocityRaw / 127, 0.01, 1);
-    const ampLevel = 0.08 + velocity * 0.32;
+    const ampLevel = 0.14 + velocity * 0.5;
 
     const oscA = ctx.audioCtx.createOscillator();
     const oscB = ctx.audioCtx.createOscillator();
@@ -378,8 +549,8 @@ export default function setup(ctx, prevState) {
     filter.frequency.setValueAtTime(cutoffHz() * (0.75 + velocity * 0.5), t);
     filter.frequency.setTargetAtTime(cutoffHz(), t + 0.04, 0.08);
     filter.Q.setValueAtTime(0.7 + state.resonance * 13, t);
-    mix.gain.setValueAtTime(0.62, t);
-    subGain.gain.setValueAtTime(0.22, t);
+    mix.gain.setValueAtTime(0.78, t);
+    subGain.gain.setValueAtTime(0.32, t);
     amp.gain.setValueAtTime(0.0001, t);
     amp.gain.exponentialRampToValueAtTime(ampLevel, t + 0.012);
     amp.gain.setTargetAtTime(ampLevel * 0.72, t + 0.08, 0.18);
@@ -440,13 +611,39 @@ export default function setup(ctx, prevState) {
     updateStaticUi();
   };
 
+  const reservedCc = new Set([1, 7, 64, 71, 74, 120, 123]);
+
+  const laneForCc = (cc) => {
+    const assigned = ccLanes.find((lane) => state.ccAssignments[lane.key] === cc);
+    if (assigned) return assigned;
+    const defaultLane = ccLanes.find((lane) => lane.defaultCc === cc);
+    if (defaultLane) {
+      state.ccAssignments[defaultLane.key] = cc;
+      return defaultLane;
+    }
+    if (reservedCc.has(cc)) return null;
+    const lane = ccLanes[state.ccLearnIndex % ccLanes.length];
+    state.ccAssignments[lane.key] = cc;
+    state.ccLearnIndex += 1;
+    return lane;
+  };
+
   const handleControlChange = (cc, raw) => {
     const value = clamp(raw / 127, 0, 1);
+    const lane = laneForCc(cc);
+    state.lastCc = cc;
+    state.lastCcValue = value;
+    if (lane) state.ccLevels[lane.key] = value;
     if (cc === 1) state.mod = value;
-    if (cc === 7) state.volume = value;
+    if (cc === 7) state.volume = value * 1.25;
     if (cc === 64) setSustain(raw >= 64);
     if (cc === 71) state.resonance = value;
     if (cc === 74) state.cutoff = value;
+    ctx.bus.pubGlobal(`global:midiController:cc${cc}`, value);
+    ctx.bus.pubGlobal(`global:midiController:cc${cc}_raw`, raw);
+    ctx.bus.pubGlobal('global:midiController:lastCc', { cc, value, raw, lane: lane?.key || null });
+    ctx.bus.pubGlobal(`global:zefiro:cc${cc}`, value);
+    ctx.bus.pubGlobal(`global:zefiro:cc${cc}_raw`, raw);
     volumeEl.value = String(state.volume);
     cutoffEl.value = String(state.cutoff);
     resonanceEl.value = String(state.resonance);
@@ -579,6 +776,10 @@ export default function setup(ctx, prevState) {
   cutoffEl.addEventListener('input', onCutoff);
   resonanceEl.addEventListener('input', onResonance);
 
+  const unsubscribeClock = ctx.clock.onTick(({ step, time, duration }) => {
+    triggerSyncedLanes(step, time, duration);
+  });
+
   const init = async () => {
     if (!navigator.requestMIDIAccess) {
       setStatus('Web MIDI not supported in this browser; use Chrome or Edge', 'err');
@@ -605,15 +806,18 @@ export default function setup(ctx, prevState) {
     update() {},
     getState() {
       return {
+        stateVersion: state.stateVersion,
         deviceId: state.deviceId,
         deviceName: state.deviceName,
         volume: state.volume,
         cutoff: state.cutoff,
-        resonance: state.resonance
+        resonance: state.resonance,
+        ccAssignments: { ...state.ccAssignments }
       };
     },
     destroy() {
       if (uiTimer) clearInterval(uiTimer);
+      unsubscribeClock();
       for (const timer of cleanupTimers) clearTimeout(timer);
       cleanupTimers.clear();
       pickerEl.removeEventListener('change', onPickerChange);
@@ -626,9 +830,15 @@ export default function setup(ctx, prevState) {
       detachCurrentInput();
       for (const voice of voices.values()) disposeVoiceNow(voice);
       for (const voice of retiredVoices.values()) disposeVoiceNow(voice);
+      for (const node of syncedNodes.values()) {
+        try { if (typeof node.stop === 'function') node.stop(); } catch (_) {}
+        try { node.disconnect(); } catch (_) {}
+      }
       voices.clear();
       retiredVoices.clear();
+      syncedNodes.clear();
       try { master.disconnect(); } catch (_) {}
+      try { compressor.disconnect(); } catch (_) {}
       try { analyser.disconnect(); } catch (_) {}
     }
   };
