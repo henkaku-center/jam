@@ -25,8 +25,8 @@
   },
   "elem_hydra_pop": {
     "id": "elem_hydra_pop",
-    "x": 2155,
-    "y": -940,
+    "x": 2218,
+    "y": -750,
     "width": 520,
     "height": 340,
     "filePath": "/elements/elem_hydra_pop_visual.js",
@@ -85,8 +85,8 @@
   },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
-    "x": 488,
-    "y": -255,
+    "x": 611,
+    "y": -349,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_piano.js",
@@ -133,8 +133,8 @@
   },
   "elem_chopin_nocturne_riff": {
     "id": "elem_chopin_nocturne_riff",
-    "x": 1698,
-    "y": 40,
+    "x": 1964,
+    "y": -146,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_chopin_nocturne_riff.js",
@@ -169,8 +169,8 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 562,
-    "y": -894,
+    "x": 392,
+    "y": -866,
     "width": 380,
     "height": 290,
     "filePath": "/elements/elem_jazz_saxophone.js",
@@ -205,8 +205,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1598,
-    "y": -1057,
+    "x": 2268,
+    "y": -1179,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -236,18 +236,6 @@
     "filePath": "/elements/elem_random_volume_rotator.js",
     "type": "controller",
     "prompt": "hand-authored random one-bar volume spotlight rotator",
-    "authored": "hand",
-    "reloadToken": 0
-  },
-  "elem_9ws8kyrcb": {
-    "id": "elem_9ws8kyrcb",
-    "x": 216,
-    "y": 472,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
     "authored": "hand",
     "reloadToken": 0
   },
@@ -313,8 +301,8 @@
   },
   "elem_ecv8c6s14": {
     "id": "elem_ecv8c6s14",
-    "x": 109,
-    "y": 766,
+    "x": 99,
+    "y": 739,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -337,8 +325,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 544,
-    "y": -272,
+    "x": 1540,
+    "y": 1,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -357,12 +345,12 @@
     "type": "visual",
     "prompt": "hand-authored APS-I madoka-t0-a2 inspired island birth simulation visual",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779957718090
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
-    "x": -80,
-    "y": 80,
+    "x": 107,
+    "y": 186,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_webcore_os_chimes.js",
