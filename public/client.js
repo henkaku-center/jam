@@ -46,7 +46,6 @@ const beatCounter = document.getElementById('beat-counter');
 const statX = document.getElementById('stat-x');
 const statY = document.getElementById('stat-y');
 const statZoom = document.getElementById('stat-zoom');
-const addElementBtn = document.getElementById('add-element-btn');
 const openStrudelBtn = document.getElementById('open-strudel-btn');
 const resetCamBtn = document.getElementById('reset-cam-btn');
 const focusOverlay = document.getElementById('focus-overlay');
@@ -55,8 +54,7 @@ const agentTerminalViewport = document.getElementById('agent-terminal-viewport')
 const agentTerminalFocusZone = document.getElementById('agent-terminal-focus-zone');
 let agentTerminalTerm = null;
 
-const DEFAULT_STRUDEL_CODE = `setcps(1)
-n("<0 2 4 6>*8").scale('G4 minor')
+const DEFAULT_STRUDEL_CODE = `n("<0 2 4 6>*8").scale('G4 minor')
   .s("gm_lead_6_voice")
   .clip(sine.range(.25, .8).slow(8))
   .jux(rev)
@@ -1235,10 +1233,6 @@ function setupUIActions() {
     camera.y = 0;
     camera.zoom = 1.0;
     applyViewportTransform();
-  });
-
-  addElementBtn.addEventListener('click', () => {
-    createNewElementOnCanvas();
   });
 
   openStrudelBtn?.addEventListener('click', () => {

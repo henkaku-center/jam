@@ -8,13 +8,13 @@ export default function setup(ctx, prevState) {
     hat: 'HAT',
     openHat: 'OPN'
   };
-  const grooveStyle = 'house_four_on_floor_v1';
+  const grooveStyle = 'house_four_on_floor_v2';
 
   const defaultPattern = {
-    kick: [0.95, 0, 0, 0, 0.9, 0, 0, 0, 0.95, 0, 0, 0, 0.9, 0, 0, 0],
-    snare: [0, 0, 0, 0, 0.78, 0, 0, 0, 0, 0, 0, 0, 0.78, 0, 0, 0],
-    hat: [0, 0.32, 0, 0.28, 0, 0.34, 0, 0.3, 0, 0.32, 0, 0.28, 0, 0.34, 0, 0.3],
-    openHat: [0, 0, 0.46, 0, 0, 0, 0.5, 0, 0, 0, 0.46, 0, 0, 0, 0.52, 0]
+    kick: [1, 0, 0, 0, 0.94, 0, 0, 0, 1, 0, 0, 0, 0.94, 0, 0, 0.24],
+    snare: [0, 0, 0, 0, 0.92, 0, 0, 0, 0, 0, 0, 0, 0.92, 0, 0, 0],
+    hat: [0, 0.22, 0, 0.3, 0, 0.24, 0, 0.32, 0, 0.22, 0, 0.3, 0, 0.24, 0, 0.36],
+    openHat: [0, 0, 0.64, 0, 0, 0, 0.58, 0, 0, 0, 0.64, 0, 0, 0, 0.62, 0]
   };
 
   const clonePattern = (pattern) => {
@@ -83,14 +83,14 @@ export default function setup(ctx, prevState) {
     gain.connect(ctx.audioOut);
     clickGain.connect(ctx.audioOut);
 
-    osc.frequency.setValueAtTime(150 + velocity * 25, t);
-    osc.frequency.exponentialRampToValueAtTime(42, t + 0.22);
-    gain.gain.setValueAtTime(0.72 * velocity, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    osc.frequency.setValueAtTime(142 + velocity * 18, t);
+    osc.frequency.exponentialRampToValueAtTime(47, t + 0.18);
+    gain.gain.setValueAtTime(0.82 * velocity, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
 
     click.frequency.setValueAtTime(1200, t);
     click.frequency.exponentialRampToValueAtTime(90, t + 0.025);
-    clickGain.gain.setValueAtTime(0.07 * velocity, t);
+    clickGain.gain.setValueAtTime(0.09 * velocity, t);
     clickGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
 
     osc.start(t);
@@ -109,16 +109,16 @@ export default function setup(ctx, prevState) {
 
     noise.buffer = noiseBuffer;
     noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(1250 + velocity * 850, t);
-    noiseFilter.Q.setValueAtTime(0.9, t);
-    noiseGain.gain.setValueAtTime(0.38 * velocity, t);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    noiseFilter.frequency.setValueAtTime(1850 + velocity * 950, t);
+    noiseFilter.Q.setValueAtTime(0.74, t);
+    noiseGain.gain.setValueAtTime(0.44 * velocity, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
 
     body.type = 'triangle';
-    body.frequency.setValueAtTime(190, t);
-    body.frequency.exponentialRampToValueAtTime(145, t + 0.12);
-    bodyGain.gain.setValueAtTime(0.16 * velocity, t);
-    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    body.frequency.setValueAtTime(205, t);
+    body.frequency.exponentialRampToValueAtTime(155, t + 0.08);
+    bodyGain.gain.setValueAtTime(0.08 * velocity, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
 
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
@@ -129,6 +129,25 @@ export default function setup(ctx, prevState) {
     noise.start(t, 0, 0.2);
     body.start(t);
     body.stop(t + 0.2);
+
+    [0.011, 0.023].forEach((offset, index) => {
+      const clap = ctx.audioCtx.createBufferSource();
+      const clapFilter = ctx.audioCtx.createBiquadFilter();
+      const clapGain = ctx.audioCtx.createGain();
+      const clapTime = safeTime(t + offset);
+
+      clap.buffer = noiseBuffer;
+      clapFilter.type = 'highpass';
+      clapFilter.frequency.setValueAtTime(1450 + index * 500, clapTime);
+      clapFilter.Q.setValueAtTime(0.5, clapTime);
+      clapGain.gain.setValueAtTime((0.22 - index * 0.04) * velocity, clapTime);
+      clapGain.gain.exponentialRampToValueAtTime(0.0001, clapTime + 0.11);
+
+      clap.connect(clapFilter);
+      clapFilter.connect(clapGain);
+      clapGain.connect(ctx.audioOut);
+      clap.start(clapTime, 0, 0.12);
+    });
   };
 
   const playHat = (time, velocity, open = false) => {
@@ -136,13 +155,13 @@ export default function setup(ctx, prevState) {
     const noise = ctx.audioCtx.createBufferSource();
     const highpass = ctx.audioCtx.createBiquadFilter();
     const gain = ctx.audioCtx.createGain();
-    const duration = open ? 0.38 : 0.085;
+    const duration = open ? 0.46 : 0.075;
 
     noise.buffer = noiseBuffer;
     highpass.type = 'highpass';
-    highpass.frequency.setValueAtTime(open ? 4300 : 5600, t);
-    highpass.Q.setValueAtTime(0.8, t);
-    gain.gain.setValueAtTime((open ? 0.14 : 0.1) * velocity, t);
+    highpass.frequency.setValueAtTime(open ? 4700 : 6200, t);
+    highpass.Q.setValueAtTime(open ? 0.65 : 0.9, t);
+    gain.gain.setValueAtTime((open ? 0.18 : 0.085) * velocity, t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
     noise.connect(highpass);
@@ -163,14 +182,16 @@ export default function setup(ctx, prevState) {
 
     if (state.variation) {
       const phraseStep = absoluteStep % 64;
-      if (voice === 'kick' && (phraseStep === 57 || phraseStep === 63)) velocity = Math.max(velocity, 0.46);
-      if (voice === 'snare' && [58, 60, 62, 63].includes(phraseStep)) velocity = Math.max(velocity, phraseStep === 63 ? 0.46 : 0.28);
-      if (voice === 'hat' && phraseStep >= 56) velocity = Math.max(velocity, phraseStep % 2 ? 0.42 : 0.62);
+      if (voice === 'kick' && [55, 57, 63].includes(phraseStep)) velocity = Math.max(velocity, phraseStep === 63 ? 0.48 : 0.3);
+      if (voice === 'snare' && [58, 60, 62, 63].includes(phraseStep)) velocity = Math.max(velocity, phraseStep === 63 ? 0.58 : 0.34);
+      if (voice === 'hat' && phraseStep >= 56) velocity = Math.max(velocity, phraseStep % 2 ? 0.46 : 0.62);
+      if (voice === 'openHat' && phraseStep >= 56 && phraseStep % 4 === 2) velocity = Math.max(velocity, 0.72);
     }
 
     if (!velocity) return 0;
-    if (velocity < 0.35 && randomFor(absoluteStep, voices.indexOf(voice) + 1) < 0.22) return 0;
-    if (voice === 'hat') velocity *= index % 4 === 0 ? 1.16 : index % 2 === 0 ? 0.96 : 0.72;
+    if (velocity < 0.3 && randomFor(absoluteStep, voices.indexOf(voice) + 1) < 0.12) return 0;
+    if (voice === 'hat') velocity *= index % 4 === 3 ? 1.18 : index % 2 === 1 ? 0.9 : 0.72;
+    if (voice === 'openHat') velocity *= index === 6 ? 0.92 : 1;
     return clamp(velocity * (0.92 + randomFor(absoluteStep, voices.indexOf(voice) + 8) * 0.16), 0.04, 1);
   };
 
@@ -333,9 +354,6 @@ export default function setup(ctx, prevState) {
     state.pattern = clonePattern(defaultPattern);
     state.groove = 0.08;
     state.variation = false;
-    ctx.bus.pubGlobal('drum_pattern', state.pattern);
-    ctx.bus.pubGlobal('drum_groove', state.groove);
-    ctx.bus.pubGlobal('drum_variation', state.variation);
     renderUI();
   }
 

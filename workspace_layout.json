@@ -1,42 +1,8 @@
 {
-  "elem_r9rre4xjv": {
-    "id": "elem_r9rre4xjv",
-    "x": 1332,
-    "y": -724,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_r9rre4xjv_seq.js",
-    "type": "seq",
-    "prompt": "create a drum step sequencer",
-    "authored": "codegen",
-    "reloadToken": 1779935463317
-  },
-  "elem_d4tb6laez": {
-    "id": "elem_d4tb6laez",
-    "x": 1772,
-    "y": -621,
-    "width": 260,
-    "height": 200,
-    "filePath": "/elements/elem_d4tb6laez_synth.js",
-    "type": "synth",
-    "prompt": "let the ouput of the lfo control the frequency cutoff on one of the synths"
-  },
-  "elem_6ombobivs": {
-    "id": "elem_6ombobivs",
-    "x": 763,
-    "y": -455,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 1779935158173
-  },
   "elem_shader_cube": {
     "id": "elem_shader_cube",
-    "x": 1168,
-    "y": -478,
+    "x": 1378,
+    "y": -631,
     "width": 360,
     "height": 320,
     "filePath": "/elements/elem_shader_cube_visual.js",
@@ -45,15 +11,87 @@
     "authored": "hand",
     "reloadToken": 1779888744270
   },
-  "elem_bi3bqqgue": {
-    "id": "elem_bi3bqqgue",
-    "x": 878,
-    "y": -692,
+  "elem_psychedelic_kaleidoscope": {
+    "id": "elem_psychedelic_kaleidoscope",
+    "x": 1410,
+    "y": -967,
+    "width": 460,
+    "height": 320,
+    "filePath": "/elements/elem_psychedelic_kaleidoscope_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored psychedelic kaleidoscope WebGL visual",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zefiro_midi": {
+    "id": "elem_zefiro_midi",
+    "x": 1439,
+    "y": -1013,
+    "width": 280,
+    "height": 260,
+    "filePath": "/elements/elem_zefiro_midi.js",
+    "type": "controller",
+    "prompt": "Zefiro MIDI controller source",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_zefiro_drum_beat": {
+    "id": "elem_zefiro_drum_beat",
+    "x": 1727,
+    "y": -969,
+    "width": 340,
+    "height": 300,
+    "filePath": "/elements/elem_zefiro_drum_beat.js",
+    "type": "synth",
+    "prompt": "Beat-aligned Zefiro orb synth loop",
+    "authored": "hand",
+    "reloadToken": 1779939020931
+  },
+  "elem_5k7p1wqnw": {
+    "id": "elem_5k7p1wqnw",
+    "x": 972,
+    "y": -789,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
-    "prompt": "setcps(1)\nn(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_modern_classical_chamber": {
+    "id": "elem_modern_classical_chamber",
+    "x": 1744,
+    "y": -557,
+    "width": 380,
+    "height": 280,
+    "filePath": "/elements/elem_modern_classical_chamber.js",
+    "type": "synth",
+    "prompt": "現代的なクラシック: minimal piano pulses, slow string pad, notation visual",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_hiphop_strudel_beat": {
+    "id": "elem_hiphop_strudel_beat",
+    "x": 2100,
+    "y": -910,
+    "width": 380,
+    "height": 280,
+    "filePath": "/elements/elem_hiphop_strudel_beat.js",
+    "type": "strudel",
+    "prompt": "hand-authored hip hop beat using Strudel",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_kalman_music_visual": {
+    "id": "elem_kalman_music_visual",
+    "x": 1230,
+    "y": -444,
+    "width": 440,
+    "height": 300,
+    "filePath": "/elements/elem_kalman_music_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored music-reactive Kalman filter visualization",
     "authored": "hand",
     "reloadToken": 0
   }

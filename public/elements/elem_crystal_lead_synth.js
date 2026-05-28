@@ -1,7 +1,9 @@
 // Crystal Lead Synth Element
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
-  const defaultSequence = [12, null, 19, 17, null, 15, 12, null, 10, null, 12, 15, null, 17, 15, null];
+  const moodVersion = 'laidback-v1';
+  const isLaidBackState = prevState?.moodVersion === moodVersion;
+  const defaultSequence = [12, null, null, null, 10, null, null, 7, null, null, 10, null, 12, null, null, null];
   const scaleChoices = [null, 7, 10, 12, 15, 17, 19, 22, 24, 27];
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const cloneSequence = (sequence) => {
@@ -13,15 +15,16 @@ export default function setup(ctx, prevState) {
   };
 
   const state = {
+    moodVersion,
     enabled: prevState?.enabled ?? true,
-    rootMidi: Number.isFinite(prevState?.rootMidi) ? prevState.rootMidi : 57,
-    sequence: cloneSequence(prevState?.sequence),
-    tone: Number.isFinite(prevState?.tone) ? prevState.tone : 0.62,
-    drive: Number.isFinite(prevState?.drive) ? prevState.drive : 0.38,
-    echo: Number.isFinite(prevState?.echo) ? prevState.echo : 0.34,
-    space: Number.isFinite(prevState?.space) ? prevState.space : 0.22,
-    width: Number.isFinite(prevState?.width) ? prevState.width : 0.72,
-    density: Number.isFinite(prevState?.density) ? prevState.density : 0.8
+    rootMidi: isLaidBackState && Number.isFinite(prevState?.rootMidi) ? prevState.rootMidi : 57,
+    sequence: cloneSequence(isLaidBackState ? prevState?.sequence : defaultSequence),
+    tone: isLaidBackState && Number.isFinite(prevState?.tone) ? prevState.tone : 0.42,
+    drive: isLaidBackState && Number.isFinite(prevState?.drive) ? prevState.drive : 0.16,
+    echo: isLaidBackState && Number.isFinite(prevState?.echo) ? prevState.echo : 0.46,
+    space: isLaidBackState && Number.isFinite(prevState?.space) ? prevState.space : 0.42,
+    width: isLaidBackState && Number.isFinite(prevState?.width) ? prevState.width : 0.58,
+    density: isLaidBackState && Number.isFinite(prevState?.density) ? prevState.density : 0.48
   };
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -51,8 +54,8 @@ export default function setup(ctx, prevState) {
 
   output.gain.setValueAtTime(0.48, now());
   dry.gain.setValueAtTime(0.9, now());
-  delay.delayTime.setValueAtTime(60 / 120 * 0.375, now());
-  delayFeedback.gain.setValueAtTime(0.34, now());
+  delay.delayTime.setValueAtTime(60 / 90 * 0.5, now());
+  delayFeedback.gain.setValueAtTime(0.28, now());
   delayFilter.type = 'lowpass';
   delayFilter.frequency.setValueAtTime(4200, now());
   analyser.fftSize = 128;
@@ -146,8 +149,8 @@ export default function setup(ctx, prevState) {
   const triggerNote = (midi, velocity, time, duration, step) => {
     const t = Math.max(time, now() + 0.003);
     const freq = midiToFreq(midi);
-    const releaseAt = t + duration * (0.9 + state.density * 0.45);
-    const stopAt = releaseAt + 0.28;
+    const releaseAt = t + duration * (1.45 + state.density * 0.8);
+    const stopAt = releaseAt + 0.55;
 
     const voiceGain = ctx.audioCtx.createGain();
     const amp = ctx.audioCtx.createGain();
@@ -165,17 +168,17 @@ export default function setup(ctx, prevState) {
     highpass.frequency.setValueAtTime(140, t);
     pan.pan.setValueAtTime((randomFor(step, 5) - 0.5) * state.width, t);
 
-    filter.frequency.setValueAtTime(700 + state.tone * 900, t);
-    filter.frequency.exponentialRampToValueAtTime(1700 + state.tone * 5200 + velocity * 1400, t + 0.045);
-    filter.frequency.exponentialRampToValueAtTime(900 + state.tone * 2600, releaseAt);
-    filter.Q.setValueAtTime(6 + state.drive * 5, t);
+    filter.frequency.setValueAtTime(420 + state.tone * 650, t);
+    filter.frequency.exponentialRampToValueAtTime(1150 + state.tone * 3000 + velocity * 700, t + 0.09);
+    filter.frequency.exponentialRampToValueAtTime(620 + state.tone * 1700, releaseAt);
+    filter.Q.setValueAtTime(3.8 + state.drive * 3.5, t);
 
     amp.gain.setValueAtTime(0.0001, t);
-    amp.gain.exponentialRampToValueAtTime(0.18 * velocity, t + 0.018);
-    amp.gain.exponentialRampToValueAtTime(0.09 * velocity, t + 0.11);
-    amp.gain.setTargetAtTime(0.0001, releaseAt, 0.07);
+    amp.gain.exponentialRampToValueAtTime(0.13 * velocity, t + 0.04);
+    amp.gain.exponentialRampToValueAtTime(0.08 * velocity, t + 0.18);
+    amp.gain.setTargetAtTime(0.0001, releaseAt, 0.13);
 
-    voiceGain.gain.setValueAtTime(0.72, t);
+    voiceGain.gain.setValueAtTime(0.56, t);
     voiceGain.connect(shaper);
     shaper.connect(highpass);
     highpass.connect(filter);
@@ -190,7 +193,7 @@ export default function setup(ctx, prevState) {
     fmDepth.gain.setValueAtTime(freq * (0.008 + state.drive * 0.028), t);
     fmDepth.gain.exponentialRampToValueAtTime(freq * 0.004, t + 0.12);
 
-    const detunes = [-9, -3, 4, 11];
+    const detunes = [-5, -2, 3, 7];
     const oscillators = detunes.map((detune, index) => {
       const osc = ctx.audioCtx.createOscillator();
       osc.setPeriodicWave(leadWave);
@@ -208,7 +211,7 @@ export default function setup(ctx, prevState) {
     const subGain = ctx.audioCtx.createGain();
     sub.type = 'triangle';
     sub.frequency.setValueAtTime(freq * 0.5, t);
-    subGain.gain.setValueAtTime(0.035 * velocity, t);
+    subGain.gain.setValueAtTime(0.045 * velocity, t);
     sub.connect(subGain);
     subGain.connect(voiceGain);
     sub.start(t);
@@ -247,20 +250,20 @@ export default function setup(ctx, prevState) {
   const unsubscribeClock = ctx.clock.onTick(({ step, time, duration, bpm }) => {
     currentStep = step % 16;
     lastBpm = bpm || lastBpm;
-    delay.delayTime.setTargetAtTime((60 / lastBpm) * 0.375, Math.max(time, now()), 0.03);
+    delay.delayTime.setTargetAtTime((60 / lastBpm) * 0.5, Math.max(time, now()), 0.03);
     if (!state.enabled) return;
 
     const note = state.sequence[currentStep];
     if (note === null) return;
     if (randomFor(step, 11) > state.density) return;
 
-    const phraseOctave = step % 64 >= 48 ? 12 : 0;
-    const accent = step % 16 === 0 || step % 16 === 14 ? 1.18 : 1;
+    const phraseOctave = 0;
+    const accent = step % 16 === 0 ? 1.08 : 1;
     const velocity = clamp(velocities[currentStep] * accent, 0.1, 1);
     triggerNote(state.rootMidi + note + phraseOctave, velocity, time, duration, step);
     spawnPrismBurst(state.rootMidi + note + phraseOctave, velocity, step);
 
-    if (currentStep === 14 && state.density > 0.62) {
+    if (currentStep === 14 && state.density > 0.72) {
       triggerNote(state.rootMidi + 24, 0.32, time + duration * 0.48, duration * 0.42, step + 1000);
       spawnPrismBurst(state.rootMidi + 24, 0.32, step + 1000);
     }
@@ -439,6 +442,19 @@ export default function setup(ctx, prevState) {
       updateFx();
     }))
   ];
+
+  if (!isLaidBackState) {
+    state.rootMidi = 57;
+    state.sequence = cloneSequence(defaultSequence);
+    state.tone = 0.42;
+    state.drive = 0.16;
+    state.echo = 0.46;
+    state.space = 0.42;
+    state.width = 0.58;
+    state.density = 0.48;
+    updateFx();
+    render();
+  }
 
   // --- Zefiro wind controller: breath -> master expression, lip -> tone bias ---
   // Base output gain is preserved; breath multiplies it. When no breath has
