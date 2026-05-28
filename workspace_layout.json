@@ -337,8 +337,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 579,
-    "y": 114,
+    "x": 544,
+    "y": -272,
     "width": 360,
     "height": 260,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -369,6 +369,6 @@
     "type": "synth",
     "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1779957551656
   }
 }
