@@ -85,8 +85,8 @@
   },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
-    "x": 2469,
-    "y": -1642,
+    "x": 2534,
+    "y": -1289,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_acid_drum_machine.js",
@@ -133,8 +133,8 @@
   },
   "elem_ska_reggae_offbeats": {
     "id": "elem_ska_reggae_offbeats",
-    "x": 1184,
-    "y": -640,
+    "x": 1446,
+    "y": -634,
     "width": 340,
     "height": 260,
     "filePath": "/elements/elem_ska_reggae_offbeats.js",
@@ -193,8 +193,8 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 760,
-    "y": -760,
+    "x": 561,
+    "y": -895,
     "width": 380,
     "height": 290,
     "filePath": "/elements/elem_jazz_saxophone.js",
@@ -205,8 +205,8 @@
   },
   "elem_psytrance_synth": {
     "id": "elem_psytrance_synth",
-    "x": 1314,
-    "y": -1038,
+    "x": 1338,
+    "y": -1096,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_psytrance_synth.js",
@@ -238,5 +238,29 @@
     "prompt": "hand-authored glitchy GIF-like cat footage cut-up visual",
     "authored": "hand",
     "reloadToken": 1779955730701
+  },
+  "elem_z8wrqa85i": {
+    "id": "elem_z8wrqa85i",
+    "x": 1059,
+    "y": -610,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_dancing_koala": {
+    "id": "elem_dancing_koala",
+    "x": 1780,
+    "y": -520,
+    "width": 420,
+    "height": 300,
+    "filePath": "/elements/elem_dancing_koala_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored dancing koala video loop with VHS trails and stage lights",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
