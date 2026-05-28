@@ -71,22 +71,10 @@
     "authored": "hand",
     "reloadToken": 1779954544277
   },
-  "elem_hiphop_lead_synth": {
-    "id": "elem_hiphop_lead_synth",
-    "x": 1314,
-    "y": -938,
-    "width": 360,
-    "height": 250,
-    "filePath": "/elements/elem_hiphop_lead_synth.js",
-    "type": "synth",
-    "prompt": "hand-authored hip hop synth lead with glide, drive, delay, and step editor",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_acid_drum": {
     "id": "elem_acid_drum",
     "x": 2469,
-    "y": -1275,
+    "y": -1642,
     "width": 380,
     "height": 300,
     "filePath": "/elements/elem_acid_drum_machine.js",
@@ -119,22 +107,10 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_zre4uey3n": {
-    "id": "elem_zre4uey3n",
-    "x": 153,
-    "y": 493,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "n(\"<0 2 4 6>*8\").scale('G4 minor')\n  .s(\"gm_lead_6_voice\")\n  .clip(sine.range(.25, .8).slow(8))\n  .jux(rev)\n  .room(.8)\n  .lpf(perlin.range(500, 8000).slow(4))",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_oyudq5xkf": {
     "id": "elem_oyudq5xkf",
-    "x": 1034,
-    "y": -1244,
+    "x": 985,
+    "y": -1394,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
@@ -169,7 +145,7 @@
   },
   "elem_chopin_nocturne_riff": {
     "id": "elem_chopin_nocturne_riff",
-    "x": 1138,
+    "x": 1136,
     "y": 145,
     "width": 360,
     "height": 270,
@@ -179,22 +155,10 @@
     "authored": "hand",
     "reloadToken": 1779955431044
   },
-  "elem_97f4irwx7": {
-    "id": "elem_97f4irwx7",
-    "x": 464,
-    "y": 705,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 0
-  },
   "elem_punjabi_dj_bhangra": {
     "id": "elem_punjabi_dj_bhangra",
-    "x": -765,
-    "y": -949,
+    "x": -473,
+    "y": -296,
     "width": 400,
     "height": 285,
     "filePath": "/elements/elem_punjabi_dj_bhangra.js",
@@ -205,8 +169,8 @@
   },
   "elem_beautiful_guitar": {
     "id": "elem_beautiful_guitar",
-    "x": 920,
-    "y": -120,
+    "x": 468,
+    "y": -610,
     "width": 390,
     "height": 270,
     "filePath": "/elements/elem_beautiful_guitar.js",
@@ -217,7 +181,7 @@
   },
   "elem_jazz_saxophone": {
     "id": "elem_jazz_saxophone",
-    "x": 900,
+    "x": 788,
     "y": -1040,
     "width": 360,
     "height": 280,
@@ -226,5 +190,17 @@
     "prompt": "hand-authored smoky clocked jazz saxophone line with breath, vibrato, swing, and room controls",
     "authored": "hand",
     "reloadToken": 1779955475592
+  },
+  "elem_psytrance_synth": {
+    "id": "elem_psytrance_synth",
+    "x": 1180,
+    "y": -640,
+    "width": 380,
+    "height": 300,
+    "filePath": "/elements/elem_psytrance_synth.js",
+    "type": "synth",
+    "prompt": "hand-authored psytrance synth with rolling bassline acid lead and gated blips",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
