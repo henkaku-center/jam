@@ -9,7 +9,7 @@ export default function setup(ctx, prevState) {
   };
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
   const now = () => ctx.audioCtx.currentTime;
   const pattern = [0, null, 0, -2, null, 0, 3, null, -5, null, 0, null, 3, 2, null, -2];
   const accents = [1, 0, 0.58, 0.72, 0, 0.86, 0.52, 0, 0.92, 0, 0.64, 0, 0.78, 0.48, 0, 0.58];

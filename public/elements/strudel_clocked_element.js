@@ -1,33 +1,6 @@
 export default async function setup(ctx, prevState) {
-  const moodVersion = 'jangle-pop-guitar-slower-v1';
-  const defaultCode = `stack(
-  note("<a2 e2 f#2 d2>*4")
-    .s("sawtooth")
-    .lpf(820)
-    .gain(0.18)
-    .room(0.22),
-  note("<[a3,c#4,e4] [e3,g#3,b3] [f#3,a3,c#4] [d3,f#3,a3]>*2")
-    .s("gm_acoustic_guitar_steel")
-    .gain(0.24)
-    .room(0.28)
-    .delay(0.08),
-  note("a3 c#4 e4 c#4 e4 a4 b3 e4 g#4 e4 g#4 b4 f#3 a3 c#4 a3 c#4 f#4 d3 f#3 a3 f#3 a3 d4")
-    .s("gm_electric_guitar_clean")
-    .lpf(sine.range(2300, 4200).slow(8))
-    .gain(0.3)
-    .delay(0.14)
-    .room(0.32)
-    .jux(rev),
-  note("~ e5 c#5 b4 ~ c#5 e5 a4 ~ a4 c#5 e5 ~ b4 a4 f#4")
-    .s("sine")
-    .lpf(3600)
-    .gain(0.13)
-    .delay(0.24)
-    .room(0.42),
-  s("bd ~ hh ~ sd ~ hh ~ bd ~ hh ~ sd oh ~ ~")
-    .gain(0.5)
-    .room(0.18)
-)`;
+  const moodVersion = 'blank-v1';
+  const defaultCode = '';
   const isCurrentMoodState = prevState?.moodVersion === moodVersion;
   const initialCode = isCurrentMoodState && typeof prevState?.code === 'string' ? prevState.code : defaultCode;
   const initialDraftCode = isCurrentMoodState && typeof prevState?.draftCode === 'string' ? prevState.draftCode : initialCode;
@@ -36,7 +9,7 @@ export default async function setup(ctx, prevState) {
     moodVersion,
     code: initialCode,
     draftCode: initialDraftCode,
-    running: typeof prevState?.running === 'boolean' ? prevState.running : true,
+    running: isCurrentMoodState && typeof prevState?.running === 'boolean' ? prevState.running : false,
     gain: isCurrentMoodState && Number.isFinite(prevState?.gain) ? prevState.gain : 0.58,
     error: '',
     status: 'loading'
@@ -227,6 +200,7 @@ export default async function setup(ctx, prevState) {
   const commitAndEvaluate = (source = state.draftCode) => {
     clearTimeout(evalTimer);
     state.code = source;
+    state.running = true;
     publishState();
     evalTimer = setTimeout(() => evaluateNow(source), 0);
   };
@@ -311,12 +285,14 @@ export default async function setup(ctx, prevState) {
       state.code = defaultCode;
       state.draftCode = defaultCode;
       state.moodVersion = moodVersion;
+      state.running = false;
+      state.gain = 0.58;
     } else if (typeof value.code === 'string') {
       state.code = value.code;
       state.draftCode = typeof value.draftCode === 'string' ? value.draftCode : value.code;
+      if (typeof value.running === 'boolean') state.running = value.running;
+      if (Number.isFinite(value.gain)) state.gain = clamp(value.gain, 0, 1);
     }
-    if (typeof value.running === 'boolean') state.running = value.running;
-    if (incomingIsCurrentMood && Number.isFinite(value.gain)) state.gain = clamp(value.gain, 0, 1);
     state.moodVersion = moodVersion;
     suppressPublish = false;
     render();

@@ -19,6 +19,7 @@ const runtimeState = {
   errors: new Map(),
   lastError: '',
   started: false,
+  operationPromise: Promise.resolve(),
   commitPromise: Promise.resolve(),
   operationId: 0,
   elementOperations: new Map(),
@@ -100,6 +101,10 @@ function configureOutputNode() {
 }
 
 async function evaluateElement(elementId, code, options = {}) {
+  return queueRuntimeOperation(() => evaluateElementNow(elementId, code, options));
+}
+
+async function evaluateElementNow(elementId, code, options = {}) {
   const repl = await ensureRuntime();
   const source = String(code || '').trim() || 'silence';
   const running = options.running !== false;
@@ -116,7 +121,7 @@ async function evaluateElement(elementId, code, options = {}) {
   }
 
   runtimeState.lastError = '';
-  const pattern = await repl.evaluate(source, false, false);
+  const pattern = await repl.evaluate(source, false, true);
   if (runtimeState.elementOperations.get(elementId) !== operationId) {
     await queueCommit({ resetScheduler: true });
     return getStatus(elementId);
@@ -143,6 +148,10 @@ async function evaluateElement(elementId, code, options = {}) {
 }
 
 async function removeElement(elementId) {
+  return queueRuntimeOperation(() => removeElementNow(elementId));
+}
+
+async function removeElementNow(elementId) {
   beginElementOperation(elementId);
   runtimeState.patterns.delete(elementId);
   runtimeState.sources.delete(elementId);
@@ -153,22 +162,26 @@ async function removeElement(elementId) {
 }
 
 async function setAudioEnabled(enabled) {
-  runtimeState.audioEnabled = Boolean(enabled);
-  await queueCommit();
+  return queueRuntimeOperation(async () => {
+    runtimeState.audioEnabled = Boolean(enabled);
+    await queueCommit();
+  });
 }
 
 async function panic() {
-  runtimeState.patterns.clear();
-  runtimeState.sources.clear();
-  runtimeState.running.clear();
-  runtimeState.elementOperations.clear();
-  runtimeState.errors.clear();
-  runtimeState.lastError = '';
-  if (runtimeState.repl) {
-    await runtimeState.repl.setPattern(silence, true);
-    runtimeState.repl.stop();
-  }
-  runtimeState.started = false;
+  return queueRuntimeOperation(async () => {
+    runtimeState.patterns.clear();
+    runtimeState.sources.clear();
+    runtimeState.running.clear();
+    runtimeState.elementOperations.clear();
+    runtimeState.errors.clear();
+    runtimeState.lastError = '';
+    if (runtimeState.repl) {
+      await runtimeState.repl.setPattern(silence, true);
+      runtimeState.repl.stop();
+    }
+    runtimeState.started = false;
+  });
 }
 
 function getStatus(elementId) {
@@ -184,6 +197,14 @@ function beginElementOperation(elementId) {
   runtimeState.operationId += 1;
   runtimeState.elementOperations.set(elementId, runtimeState.operationId);
   return runtimeState.operationId;
+}
+
+function queueRuntimeOperation(operation) {
+  const nextOperation = runtimeState.operationPromise
+    .catch(() => {})
+    .then(operation);
+  runtimeState.operationPromise = nextOperation;
+  return nextOperation;
 }
 
 function queueCommit(options = {}) {

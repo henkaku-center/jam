@@ -4,7 +4,7 @@ export default function setup(ctx, prevState) {
   const audio = ctx.audioCtx;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
 
   const isCurrentState = prevState?.stateVersion === STATE_VERSION;
   const state = {

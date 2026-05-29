@@ -2,6 +2,7 @@ export default function setup(ctx, prevState) {
   const audio = ctx.audioCtx;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
+  const pitchHz = (value) => Math.min(20000, value * 4);
 
   const messages = [
     '地球文明へ通告する',
@@ -19,7 +20,7 @@ export default function setup(ctx, prevState) {
     speaking: prevState?.speaking ?? true,
     volume: clamp(finite(prevState?.volume, 0.38), 0, 1),
     rate: clamp(finite(prevState?.rate, 0.72), 0.55, 1.15),
-    pitch: clamp(finite(prevState?.pitch, 0.58), 0.2, 1.4)
+    pitch: 2
   };
 
   ctx.domRoot.innerHTML = `
@@ -241,11 +242,11 @@ export default function setup(ctx, prevState) {
 
   output.gain.value = state.volume;
   filter.type = 'bandpass';
-  filter.frequency.value = 1560;
+  filter.frequency.value = pitchHz(1560);
   filter.Q.value = 0.9;
   staticGain.gain.value = 0.014 + state.interference * 0.016;
   carrier.type = 'sine';
-  carrier.frequency.value = 180;
+  carrier.frequency.value = pitchHz(180);
   carrierGain.gain.value = 0.0001;
   noiseSource.buffer = noiseBuffer;
   noiseSource.loop = true;
@@ -288,8 +289,8 @@ export default function setup(ctx, prevState) {
     const level = Math.max(0.0002, 0.025 * state.volume * strength);
     carrier.frequency.cancelScheduledValues(t);
     carrierGain.gain.cancelScheduledValues(t);
-    carrier.frequency.setValueAtTime(150 + state.messageIndex * 38, t);
-    carrier.frequency.exponentialRampToValueAtTime(620 + state.messageIndex * 44, t + 0.1);
+    carrier.frequency.setValueAtTime(pitchHz(150 + state.messageIndex * 38), t);
+    carrier.frequency.exponentialRampToValueAtTime(pitchHz(620 + state.messageIndex * 44), t + 0.1);
     carrierGain.gain.setValueAtTime(0.0001, t);
     carrierGain.gain.exponentialRampToValueAtTime(level, t + 0.012);
     carrierGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
@@ -310,7 +311,7 @@ export default function setup(ctx, prevState) {
       }
       const t = audio.currentTime + 0.01;
       const code = chars[index].charCodeAt(0);
-      carrier.frequency.setValueAtTime(180 + (code % 30) * 16, t);
+      carrier.frequency.setValueAtTime(pitchHz(180 + (code % 30) * 16), t);
       carrierGain.gain.setValueAtTime(0.0001, t);
       carrierGain.gain.exponentialRampToValueAtTime(Math.max(0.0002, 0.042 * state.volume), t + 0.012);
       carrierGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.105);

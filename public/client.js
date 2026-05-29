@@ -54,12 +54,7 @@ const agentTerminalViewport = document.getElementById('agent-terminal-viewport')
 const agentTerminalFocusZone = document.getElementById('agent-terminal-focus-zone');
 let agentTerminalTerm = null;
 
-const DEFAULT_STRUDEL_CODE = `n("<0 2 4 6>*8").scale('G4 minor')
-  .s("gm_lead_6_voice")
-  .clip(sine.range(.25, .8).slow(8))
-  .jux(rev)
-  .room(.8)
-  .lpf(perlin.range(500, 8000).slow(4))`;
+const DEFAULT_STRUDEL_CODE = '';
 
 // Ensure correct room ID
 const roomName = window.location.hash.slice(1) || 'default-jam';

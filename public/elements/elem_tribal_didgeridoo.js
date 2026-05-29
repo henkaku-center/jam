@@ -45,7 +45,7 @@ export default function setup(ctx, prevState) {
   const liveNodes = new Set();
   const cleanupTimers = new Set();
 
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
 
   const makeDriveCurve = () => {
     const curve = new Float32Array(512);

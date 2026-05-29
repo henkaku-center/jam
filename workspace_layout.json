@@ -37,8 +37,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 725,
-    "y": 1155,
+    "x": 566,
+    "y": 1178,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
@@ -49,8 +49,8 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 624,
-    "y": -358,
+    "x": 589,
+    "y": -160,
     "width": 390,
     "height": 280,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -80,6 +80,18 @@
     "filePath": "/elements/elem_sparkling_buddha_thai_temple.js",
     "type": "synth",
     "prompt": "hand-authored sparkling Buddha visual with Thai temple bells, gong, chimes, and drone",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_puh3bqvig": {
+    "id": "elem_puh3bqvig",
+    "x": 4269,
+    "y": -3863,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
     "reloadToken": 0
   }

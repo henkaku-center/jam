@@ -62,7 +62,7 @@ export default function setup(ctx, prevState) {
     cleanupTimers.add(timer);
   };
 
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
 
   const noiseBuffer = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
   const noise = noiseBuffer.getChannelData(0);

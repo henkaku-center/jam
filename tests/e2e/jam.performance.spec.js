@@ -480,7 +480,8 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       const element = window.activeElements.get(id);
       return element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.querySelector('#run')?.textContent || '';
     }, created.id);
-    expect(runLabel).toBe('stop');
+    expect(runLabel).toBe('play');
+    expect(created.layout.prompt).toBe('');
     const hasEvalButton = await page.evaluate((id) => {
       const element = window.activeElements.get(id);
       return Boolean(element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.querySelector('#eval'));
@@ -775,6 +776,81 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
     expect(browserFailures).toEqual([]);
   } finally {
     await Promise.all(ids.map(id => request.delete(`/api/workspace/elements/${id}`)));
+  }
+});
+
+test('Strudel replacement clears deleted dollar-pattern lines from the runtime feed', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+
+  await page.locator('#open-strudel-btn').click();
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds), {
+      message: 'Strudel element should be added',
+      timeout: 8_000
+    })
+    .not.toBe('');
+  const id = await page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => window.activeElements.has(elementId), id), {
+        message: 'Strudel element should hydrate',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    const evalStrudel = async (source) => {
+      await page.evaluate(({ elementId, source }) => {
+        const input = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#code');
+        if (!input) throw new Error(`missing Strudel editor for ${elementId}`);
+        input.value = source;
+        input.selectionStart = source.length;
+        input.selectionEnd = source.length;
+        input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'Enter',
+          code: 'Enter',
+          altKey: true,
+          bubbles: true,
+          composed: true,
+          cancelable: true
+        }));
+      }, { elementId: id, source });
+    };
+
+    const elementSounds = () => page.evaluate((elementId) => {
+      const pattern = window.__jamStrudelRuntimeDebug?.state?.patterns?.get(elementId);
+      return (pattern?.firstCycleValues || [])
+        .map(value => value?.s || value?.sound || JSON.stringify(value))
+        .filter(Boolean);
+    }, id);
+
+    await evalStrudel('$: s("bd").gain(0.1)');
+    await expect
+      .poll(elementSounds, {
+        message: 'initial dollar-pattern should evaluate',
+        timeout: 8_000
+      })
+      .toContain('bd');
+
+    await evalStrudel('$: s("hh").gain(0.1)');
+    await expect
+      .poll(elementSounds, {
+        message: 'replacement should not retain deleted dollar-pattern sound',
+        timeout: 8_000
+      })
+      .toEqual(expect.arrayContaining(['hh']));
+    expect(await elementSounds()).not.toContain('bd');
+    expect(browserFailures).toEqual([]);
+  } finally {
+    if (id) await request.delete(`/api/workspace/elements/${id}`);
   }
 });
 

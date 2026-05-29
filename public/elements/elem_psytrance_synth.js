@@ -4,7 +4,7 @@ export default function setup(ctx, prevState) {
   const audio = ctx.audioCtx;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
 
   const state = {
     stateVersion: STATE_VERSION,
@@ -297,7 +297,7 @@ export default function setup(ctx, prevState) {
     const pan = typeof audio.createStereoPanner === 'function' ? audio.createStereoPanner() : null;
 
     source.buffer = noiseBuffer;
-    source.playbackRate.setValueAtTime(0.8 + state.motion * 1.2 + velocity * 0.55, t);
+    source.playbackRate.setValueAtTime((0.8 + state.motion * 1.2 + velocity * 0.55) * 4, t);
     filter.type = 'bandpass';
     filter.Q.setValueAtTime(0.9 + state.resonance * 7, t);
     filter.frequency.setValueAtTime(900 + state.cutoff * 5200 + velocity * 2400, t);

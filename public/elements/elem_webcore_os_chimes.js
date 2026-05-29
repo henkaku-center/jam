@@ -49,6 +49,8 @@ const PRESETS = [
   }
 ];
 
+const PITCH_RATIO = 4;
+
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
   const audio = ctx.audioCtx;
@@ -289,10 +291,11 @@ export default function setup(ctx, prevState) {
     const gain = audio.createGain();
     const filter = audio.createBiquadFilter();
     const panner = audio.createStereoPanner ? audio.createStereoPanner() : null;
+    const pitchedFrequency = Math.min(20000, frequency * PITCH_RATIO);
 
     osc.type = type;
-    osc.frequency.setValueAtTime(frequency, start);
-    osc.frequency.exponentialRampToValueAtTime(frequency * 1.006, start + duration);
+    osc.frequency.setValueAtTime(pitchedFrequency, start);
+    osc.frequency.exponentialRampToValueAtTime(Math.min(20000, pitchedFrequency * 1.006), start + duration);
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(5600, start);
     filter.Q.value = 0.7;

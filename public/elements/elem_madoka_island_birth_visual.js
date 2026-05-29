@@ -5,6 +5,7 @@ const INITIAL_ERUPTION_START = 100 / FPS;
 const INITIAL_ERUPTION_DURATION = 188 / FPS;
 
 export default function setup(ctx, prevState) {
+  const pitchHz = (value) => Math.min(20000, value * 4);
   const state = {
     stateVersion: STATE_VERSION,
     loadedAt: prevState?.loadedAt || Date.now(),
@@ -170,8 +171,8 @@ export default function setup(ctx, prevState) {
     ]);
 
     sub.type = 'sine';
-    sub.frequency.setValueAtTime(34, start);
-    sub.frequency.exponentialRampToValueAtTime(24, start + duration);
+    sub.frequency.setValueAtTime(pitchHz(34), start);
+    sub.frequency.exponentialRampToValueAtTime(pitchHz(24), start + duration);
     wobble.type = 'sine';
     wobble.frequency.setValueAtTime(5.4, start);
     wobbleGain.gain.setValueAtTime(9, start);
@@ -179,13 +180,13 @@ export default function setup(ctx, prevState) {
     wobbleGain.connect(sub.frequency);
 
     low.type = 'lowpass';
-    low.frequency.setValueAtTime(90, start);
+    low.frequency.setValueAtTime(pitchHz(90), start);
     low.Q.setValueAtTime(0.6, start);
 
     noise.buffer = makeNoiseBuffer();
     noise.loop = true;
     noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(115, start);
+    noiseFilter.frequency.setValueAtTime(pitchHz(115), start);
     noiseFilter.Q.setValueAtTime(0.85, start);
     noiseGain.gain.setValueAtTime(0.22 * intensity, start);
     noiseGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
@@ -233,15 +234,15 @@ export default function setup(ctx, prevState) {
     bus.gain.exponentialRampToValueAtTime(0.0001, start + 1.45);
 
     boom.type = 'triangle';
-    boom.frequency.setValueAtTime(78, start);
-    boom.frequency.exponentialRampToValueAtTime(32, start + 0.52);
+    boom.frequency.setValueAtTime(pitchHz(78), start);
+    boom.frequency.exponentialRampToValueAtTime(pitchHz(32), start + 0.52);
     boomGain.gain.setValueAtTime(0.34 * intensity, start);
     boomGain.gain.exponentialRampToValueAtTime(0.0001, start + 1.1);
 
     crack.buffer = makeNoiseBuffer();
     crackFilter.type = 'highpass';
-    crackFilter.frequency.setValueAtTime(520, start);
-    crackFilter.frequency.exponentialRampToValueAtTime(150, start + 0.42);
+    crackFilter.frequency.setValueAtTime(pitchHz(520), start);
+    crackFilter.frequency.exponentialRampToValueAtTime(pitchHz(150), start + 0.42);
     crackGain.gain.setValueAtTime(0.42 * intensity, start);
     crackGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.72);
 
@@ -281,8 +282,8 @@ export default function setup(ctx, prevState) {
     source.buffer = makeNoiseBuffer();
     source.loop = true;
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1400, start);
-    filter.frequency.exponentialRampToValueAtTime(620, start + duration);
+    filter.frequency.setValueAtTime(pitchHz(1400), start);
+    filter.frequency.exponentialRampToValueAtTime(pitchHz(620), start + duration);
     filter.Q.setValueAtTime(0.9, start);
     scheduleEnvelope(gain.gain, start, [
       [0.04, 0.16 * intensity],

@@ -6,7 +6,7 @@ export default function setup(ctx, prevState) {
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const now = () => audio.currentTime;
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
   const randomFor = (step, salt) => {
     const raw = Math.sin((step + 1) * 151.91 + salt * 389.17) * 43758.5453;
     return raw - Math.floor(raw);

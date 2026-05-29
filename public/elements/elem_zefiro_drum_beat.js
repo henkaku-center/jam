@@ -78,7 +78,7 @@ export default function setup(ctx, prevState) {
     shimmer: clamp(midiShimmer ?? state.manualShimmer, 0, 1)
   });
 
-  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi + 24 - 69) / 12);
 
   const makeDriveCurve = (amount) => {
     const curve = new Float32Array(256);
