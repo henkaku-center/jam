@@ -717,6 +717,157 @@ app.post('/api/agent-command', async (req, res) => {
   });
 });
 
+// Sessions API
+const sessionsDir = path.resolve(REPO_ROOT, 'sessions');
+
+app.get('/api/sessions', (req, res) => {
+  if (!fs.existsSync(sessionsDir)) return res.json([]);
+  const dates = fs.readdirSync(sessionsDir)
+    .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort().reverse();
+  const sessions = dates.map(date => {
+    const dir = path.join(sessionsDir, date);
+    const readmePath = path.join(dir, 'README.md');
+    const manifestPath = path.join(dir, 'manifest.tsv');
+    let description = '';
+    if (fs.existsSync(readmePath)) {
+      description = fs.readFileSync(readmePath, 'utf8').split('\n').filter(l => l.trim() && !l.startsWith('#')).slice(0, 2).join(' ');
+    }
+    let rolloutCount = 0;
+    let sources = [];
+    if (fs.existsSync(manifestPath)) {
+      const rows = fs.readFileSync(manifestPath, 'utf8').split('\n').filter(Boolean).slice(1);
+      rolloutCount = rows.length;
+      sources = [...new Set(rows.map(r => r.split('\t')[0]).filter(Boolean))];
+    }
+    return { date, description, rolloutCount, sources };
+  });
+  res.json(sessions);
+});
+
+app.get('/api/sessions/:date', (req, res) => {
+  const { date } = req.params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'invalid date' });
+  const dir = path.join(sessionsDir, date);
+  if (!fs.existsSync(dir)) return res.status(404).json({ error: 'not found' });
+  const manifestPath = path.join(dir, 'manifest.tsv');
+  const readmePath = path.join(dir, 'README.md');
+  const readme = fs.existsSync(readmePath) ? fs.readFileSync(readmePath, 'utf8') : '';
+  const rollouts = [];
+  if (fs.existsSync(manifestPath)) {
+    const rows = fs.readFileSync(manifestPath, 'utf8').split('\n').filter(Boolean).slice(1);
+    for (const row of rows) {
+      const [source, mtime, sizeBytes, archivedPath] = row.split('\t');
+      const filename = path.basename(archivedPath || '');
+      rollouts.push({ source, mtime, sizeBytes: Number(sizeBytes), filename, archivedPath });
+    }
+  }
+  res.json({ date, readme, rollouts });
+});
+
+app.get('/api/sessions/:date/rollouts/:filename', (req, res) => {
+  const { date, filename } = req.params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'invalid date' });
+  if (!/^[\w\-.]+\.jsonl$/.test(filename)) return res.status(400).json({ error: 'invalid filename' });
+  // search all source subdirs
+  const dateDir = path.join(sessionsDir, date);
+  let filePath = null;
+  if (fs.existsSync(dateDir)) {
+    for (const sub of fs.readdirSync(dateDir)) {
+      const candidate = path.join(dateDir, sub, filename);
+      if (fs.existsSync(candidate)) { filePath = candidate; break; }
+    }
+  }
+  if (!filePath) return res.status(404).json({ error: 'not found' });
+  const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(Boolean);
+  const events = [];
+  let meta = null;
+  // Codex format: function_call and function_call_output are role-less response_items
+  const pendingCalls = new Map(); // call_id → {name, input, output}
+  const callOrder = [];           // ordered list of call_ids seen so far
+  let totalTokenUsage = null;
+
+  const flushCalls = () => {
+    const calls = callOrder.map(id => pendingCalls.get(id)).filter(Boolean);
+    callOrder.length = 0;
+    pendingCalls.clear();
+    return calls;
+  };
+
+  for (const line of lines) {
+    try {
+      const ev = JSON.parse(line);
+      if (ev.type === 'session_meta') {
+        meta = {
+          id: ev.payload.id,
+          startedAt: ev.payload.timestamp,
+          cwd: ev.payload.cwd,
+          model: ev.payload.turn_context?.model || '',
+          modelProvider: ev.payload.model_provider,
+          originator: ev.payload.originator,
+          gitBranch: ev.payload.git?.branch || '',
+        };
+      } else if (ev.type === 'turn_context') {
+        if (meta && ev.payload.model) meta.model = ev.payload.model;
+      } else if (ev.type === 'event_msg') {
+        if (ev.payload?.type === 'token_count') {
+          totalTokenUsage = ev.payload.info?.total_token_usage || null;
+        }
+      } else if (ev.type === 'response_item') {
+        const p = ev.payload;
+        const role = p.role;
+
+        if (!role) {
+          // Codex role-less items: function_call, function_call_output, reasoning
+          if (p.type === 'function_call') {
+            let input = p.arguments;
+            try { input = JSON.parse(p.arguments); } catch {}
+            pendingCalls.set(p.call_id, { name: p.name, input, output: null, callId: p.call_id });
+            callOrder.push(p.call_id);
+          } else if (p.type === 'function_call_output') {
+            const tc = pendingCalls.get(p.call_id);
+            if (tc) tc.output = p.output;
+          }
+          continue;
+        }
+
+        if (role === 'developer') { flushCalls(); continue; }
+
+        const contentParts = (p.content || [])
+          .filter(c => (c.type === 'input_text' || c.type === 'output_text') && c.text
+            && !c.text.startsWith('<')
+            && !c.text.startsWith('# AGENTS.md instructions')
+            && !c.text.startsWith('# CLAUDE.md'))
+          .map(c => c.text.trim())
+          .filter(Boolean);
+
+        // Claude format: tool_use items in content array
+        const contentToolCalls = (p.content || [])
+          .filter(c => c.type === 'tool_use')
+          .map(c => ({ name: c.name, input: c.input, output: null, callId: c.id }));
+
+        // Claude format: tool_result items paired with previous tool_use
+        (p.content || [])
+          .filter(c => c.type === 'tool_result')
+          .forEach(c => {
+            const tc = events.flatMap(e => e.toolCalls || []).find(t => t.callId === c.tool_use_id);
+            if (tc) tc.output = Array.isArray(c.content) ? c.content.map(x => x.text).join('\n') : String(c.content || '');
+          });
+
+        const codexCalls = flushCalls();
+        const allToolCalls = [...codexCalls, ...contentToolCalls];
+
+        if (contentParts.length === 0 && allToolCalls.length === 0) continue;
+
+        events.push({ timestamp: ev.timestamp, role, content: contentParts.join('\n\n'), toolCalls: allToolCalls });
+      }
+    } catch {}
+  }
+
+  if (meta) meta.totalTokenUsage = totalTokenUsage;
+  res.json({ meta, events });
+});
+
 function buildCompilerPrompt({ prompt, elementId, filePath, resolvedPath, existingCode, prevState, environmentSummary }) {
   const systemInstruction = `
 You are the live code-generation agent inside "jam", a local collaborative spatial music/canvas server.
