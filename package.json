@@ -12,7 +12,8 @@
     "smoke:live": "node scripts/live-smoke.mjs",
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "sessions:manifest": "node scripts/generate-sessions-manifest.js"
   },
   "dependencies": {
     "@strudel/core": "^1.2.6",
