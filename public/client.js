@@ -765,7 +765,7 @@ let isFocusModeActive = false;
 window.addEventListener('keydown', (e) => {
   if (e.defaultPrevented) return;
 
-  if (e.key === 'Tab') {
+  if (isFocusModeKey(e)) {
     e.preventDefault();
     if (!isFocusModeActive) {
       activateFocusMode();
@@ -780,12 +780,16 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.key === 'Tab') {
+  if (isFocusModeKey(e)) {
     if (isFocusModeActive) {
       deactivateFocusMode();
     }
   }
 });
+
+function isFocusModeKey(event) {
+  return event.key === 'CapsLock' || event.code === 'CapsLock';
+}
 
 function activateFocusMode() {
   isFocusModeActive = true;

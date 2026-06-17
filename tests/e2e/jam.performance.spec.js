@@ -482,6 +482,21 @@ test('Arrow keys do not pan the workspace camera', async ({ page }) => {
   expect(after).toEqual(before);
 });
 
+test('Caps Lock controls focus mode and Tab remains available to editors', async ({ page }) => {
+  await joinWorkspace(page, 'controller');
+
+  const focusOverlay = page.locator('#focus-overlay');
+  await expect(focusOverlay).toHaveClass(/hidden/);
+
+  await page.keyboard.press('Tab');
+  await expect(focusOverlay).toHaveClass(/hidden/);
+
+  await page.keyboard.down('CapsLock');
+  await expect(focusOverlay).not.toHaveClass(/hidden/);
+  await page.keyboard.up('CapsLock');
+  await expect(focusOverlay).toHaveClass(/hidden/);
+});
+
 test('Ctrl+Backspace deletes only the selected element when terminal is not focused', async ({ page, request }) => {
   const id = `elem_delete_${Date.now()}`;
   const publicPath = `/elements/${id}_visual.js`;
