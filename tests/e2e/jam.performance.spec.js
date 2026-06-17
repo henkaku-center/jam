@@ -689,15 +689,29 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       });
       element.domWrapper.classList.add('active-focus');
       view.contentDOM.blur();
+      const cursor = root.querySelector('.cm-cursor');
+      const cursorStyle = getComputedStyle(cursor);
       return {
         wrapperOutlineDisplay: getComputedStyle(element.domWrapper, '::after').display,
         editorOutline: getComputedStyle(root.querySelector('.cm-editor')).outlineStyle,
-        activeLineBackground: getComputedStyle(root.querySelector('.cm-activeLine')).backgroundColor
+        activeLineBackground: getComputedStyle(root.querySelector('.cm-activeLine')).backgroundColor,
+        cursorDisplay: cursorStyle.display,
+        cursorBorderWidth: cursorStyle.borderLeftWidth,
+        cursorBorderColor: cursorStyle.borderLeftColor,
+        cursorBackground: cursorStyle.backgroundColor,
+        cursorBackdropFilter: cursorStyle.backdropFilter || cursorStyle.webkitBackdropFilter,
+        cursorAnimationName: cursorStyle.animationName
       };
     }, created.id);
     expect(inactiveEditorStyle.wrapperOutlineDisplay).toBe('none');
     expect(inactiveEditorStyle.editorOutline).toBe('none');
     expect(inactiveEditorStyle.activeLineBackground).toBe('rgba(0, 0, 0, 0)');
+    expect(inactiveEditorStyle.cursorDisplay).toBe('block');
+    expect(inactiveEditorStyle.cursorBorderWidth).toBe('1px');
+    expect(inactiveEditorStyle.cursorBorderColor).toBe('rgb(103, 232, 249)');
+    expect(inactiveEditorStyle.cursorBackground).toBe('rgba(0, 0, 0, 0)');
+    expect(inactiveEditorStyle.cursorBackdropFilter).toBe('none');
+    expect(inactiveEditorStyle.cursorAnimationName).toBe('none');
 
     await page.evaluate((id) => {
       const root = window.activeElements

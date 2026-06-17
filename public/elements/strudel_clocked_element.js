@@ -93,15 +93,22 @@ export default async function setup(ctx, prevState) {
       }
       .cm-cursor {
         display: block !important;
-        border-left: 0 !important;
-        border-right: 0 !important;
+        box-sizing: border-box;
+        border: 1px solid #67e8f9 !important;
         width: var(--strudel-cursor-cell-width) !important;
         min-width: var(--strudel-cursor-cell-width);
         margin-left: 0;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        mix-blend-mode: normal;
+        animation: none;
+      }
+      .cm-editor.cm-focused .cm-cursor {
+        border: 0 !important;
         background: rgba(255, 255, 255, 0.01);
         backdrop-filter: invert(1);
         -webkit-backdrop-filter: invert(1);
-        mix-blend-mode: normal;
         animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
       }
       .cm-editor .cm-activeLine {
@@ -297,15 +304,22 @@ export default async function setup(ctx, prevState) {
     },
     '.cm-cursor': {
       display: 'block !important',
-      borderLeft: '0 !important',
-      borderRight: '0 !important',
+      boxSizing: 'border-box',
+      border: '1px solid #67e8f9 !important',
       width: 'var(--strudel-cursor-cell-width) !important',
       minWidth: 'var(--strudel-cursor-cell-width)',
       marginLeft: '0',
+      background: 'transparent',
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
+      mixBlendMode: 'normal',
+      animation: 'none'
+    },
+    '&.cm-focused .cm-cursor': {
+      border: '0 !important',
       background: 'rgba(255, 255, 255, 0.01)',
       backdropFilter: 'invert(1)',
       WebkitBackdropFilter: 'invert(1)',
-      mixBlendMode: 'normal',
       animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
     },
     '.cm-line': {
