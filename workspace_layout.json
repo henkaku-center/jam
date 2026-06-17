@@ -34,17 +34,5 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 1781718732797
-  },
-  "elem_delete_1781719328694": {
-    "id": "elem_delete_1781719328694",
-    "x": 40,
-    "y": 40,
-    "width": 220,
-    "height": 120,
-    "filePath": "/elements/elem_delete_1781719328694_visual.js",
-    "type": "visual",
-    "prompt": "delete shortcut test",
-    "authored": "hand",
-    "reloadToken": 0
   }
 }
