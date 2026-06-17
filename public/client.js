@@ -544,6 +544,7 @@ function createElementHarnessContext(elementId, audioOutNode) {
     clock: clockProxy,
     bus: busProxy,
     requestLayout: (patch) => requestElementLayout(elementId, patch),
+    deleteSelf: () => deleteElementById(elementId),
     sendControllerData: (data) => sendControllerMessage({ elementId, data })
   };
 
@@ -822,10 +823,13 @@ function selectElement(id, domWrapper) {
 }
 
 function deleteSelectedElement() {
-  if (!selectedElementId || !ydoc || !elementsMap?.has(selectedElementId)) return;
+  if (!selectedElementId) return;
+  deleteElementById(selectedElementId);
+}
 
-  const id = selectedElementId;
-  selectedElementId = null;
+function deleteElementById(id) {
+  if (!id || !ydoc || !elementsMap?.has(id)) return;
+  if (selectedElementId === id) selectedElementId = null;
   document.querySelectorAll('.canvas-element-wrapper').forEach(w => w.classList.remove('active-focus'));
   ydoc.transact(() => {
     elementsMap.delete(id);

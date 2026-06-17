@@ -151,6 +151,13 @@ export default async function setup(ctx, prevState) {
   };
 
   const runEditorShortcut = (event) => {
+    if (isDeleteWindowShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      ctx.deleteSelf?.();
+      return true;
+    }
+
     if (isSilenceShortcut(event)) {
       event.preventDefault();
       event.stopPropagation();
@@ -201,6 +208,11 @@ export default async function setup(ctx, prevState) {
     return true;
   };
 
+  const deleteWindow = () => {
+    ctx.deleteSelf?.();
+    return true;
+  };
+
   const completeOrIndent = (view) => acceptCompletion(view) || startCompletion(view) || indentMore(view);
 
   const jamShortcutKeymap = [
@@ -215,6 +227,7 @@ export default async function setup(ctx, prevState) {
     { key: 'Ctrl-]', run: indentMore, preventDefault: true },
     { key: 'Mod-[', run: indentLess, preventDefault: true },
     { key: 'Mod-]', run: indentMore, preventDefault: true },
+    { key: 'Ctrl-Delete', run: deleteWindow, preventDefault: true },
     { key: 'Tab', run: completeOrIndent, preventDefault: true }
   ];
 
@@ -489,6 +502,10 @@ export default async function setup(ctx, prevState) {
 
 function isSilenceShortcut(event) {
   return event.key === '.' && (event.ctrlKey || event.metaKey || event.altKey);
+}
+
+function isDeleteWindowShortcut(event) {
+  return event.key === 'Delete' && event.ctrlKey && !event.metaKey && !event.altKey;
 }
 
 function isIndentShortcut(event) {
