@@ -692,16 +692,14 @@ export default async function setup(ctx, prevState) {
           animation: jam-strudel-document-cursor-blink 1.05s steps(1, end) infinite;
         }
         .jam-strudel-document-selection {
-          position: fixed;
-          inset: 0;
           display: none;
           pointer-events: none;
-          z-index: 2147483646;
         }
         .jam-strudel-document-selection-rect {
           position: fixed;
           background: #fff;
           mix-blend-mode: difference;
+          z-index: 2147483646;
         }
       `;
       document.head.appendChild(editorOverlayStyle);
