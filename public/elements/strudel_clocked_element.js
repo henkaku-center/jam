@@ -18,11 +18,13 @@ export default async function setup(ctx, prevState) {
   const unsubscribers = [];
   let suppressPublish = false;
   let evalTimer = 0;
+  let cursorBarToggleTimer = 0;
   let resizeFrame = 0;
   let editorOverlayFrame = 0;
   let lastLayoutSize = { width: 0, height: 0 };
   let lastCameraZoom = null;
   let destroyed = false;
+  let cursorBarVisible = false;
   let cursorOverlay = null;
   let selectionOverlay = null;
   let editorOverlayStyle = null;
@@ -89,12 +91,7 @@ export default async function setup(ctx, prevState) {
       }
       .cm-line span,
       .cm-content span {
-        color: #d1fae5 !important;
         text-shadow: none !important;
-      }
-      @keyframes strudel-block-cursor-blink {
-        0%, 49% { opacity: 1; }
-        50%, 100% { opacity: 0; }
       }
       .cm-editor.cm-focused {
         outline: none !important;
@@ -308,8 +305,11 @@ export default async function setup(ctx, prevState) {
     '.cm-scroller': {
       background: 'transparent !important'
     },
-    '.cm-line, .cm-content, .cm-line span, .cm-content span': {
-      color: '#d1fae5 !important',
+    '.cm-line, .cm-content': {
+      color: '#d1fae5',
+      textShadow: 'none !important'
+    },
+    '.cm-line span, .cm-content span': {
       textShadow: 'none !important'
     },
     '.cm-activeLine': {
@@ -506,6 +506,11 @@ export default async function setup(ctx, prevState) {
     evalTimer = setTimeout(() => evaluateNow(state.code), 0);
   }));
 
+  unsubscribers.push(ctx.clock.onTick(tick => {
+    if (!tick || tick.step % 16 !== 0) return;
+    scheduleCursorBarToggle(tick);
+  }));
+
   if (!isCurrentMoodState) publishState();
   render();
   evalTimer = setTimeout(() => evaluateNow(state.code), 0);
@@ -530,6 +535,7 @@ export default async function setup(ctx, prevState) {
     async destroy() {
       destroyed = true;
       clearTimeout(evalTimer);
+      clearTimeout(cursorBarToggleTimer);
       unsubscribers.forEach(unsub => {
         try { unsub(); } catch {}
       });
@@ -572,6 +578,19 @@ export default async function setup(ctx, prevState) {
     if (codeBridge.value !== value) codeBridge.value = value;
   }
 
+  function scheduleCursorBarToggle(tick) {
+    clearTimeout(cursorBarToggleTimer);
+    const audioCtx = ctx.rawAudioCtx || ctx.audioCtx;
+    const delayMs = audioCtx && Number.isFinite(tick.time)
+      ? Math.max(0, (tick.time - audioCtx.currentTime) * 1000)
+      : 0;
+    cursorBarToggleTimer = setTimeout(() => {
+      if (destroyed) return;
+      cursorBarVisible = !cursorBarVisible;
+      scheduleEditorOverlaySync();
+    }, delayMs);
+  }
+
   function scheduleEditorResize() {
     if (destroyed || resizeFrame) return;
     resizeFrame = requestAnimationFrame(measureAndPublishEditorSize);
@@ -606,7 +625,7 @@ export default async function setup(ctx, prevState) {
     }
 
     const overlay = ensureCursorOverlay();
-    overlay.style.display = 'block';
+    overlay.style.display = cursorBarVisible ? 'block' : 'none';
     overlay.style.left = `${coords.left}px`;
     overlay.style.top = `${coords.top}px`;
     overlay.style.width = `${Math.max(1, readCharWidth())}px`;
@@ -678,10 +697,6 @@ export default async function setup(ctx, prevState) {
     if (!editorOverlayStyle) {
       editorOverlayStyle = document.createElement('style');
       editorOverlayStyle.textContent = `
-        @keyframes jam-strudel-document-cursor-blink {
-          0%, 49% { opacity: 1; }
-          50%, 100% { opacity: 0; }
-        }
         .jam-strudel-document-cursor {
           position: fixed;
           display: none;
@@ -689,7 +704,6 @@ export default async function setup(ctx, prevState) {
           background: #fff;
           mix-blend-mode: difference;
           z-index: 2147483647;
-          animation: jam-strudel-document-cursor-blink 1.05s steps(1, end) infinite;
         }
         .jam-strudel-document-selection {
           display: none;
