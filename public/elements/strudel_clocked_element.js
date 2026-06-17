@@ -74,7 +74,7 @@ export default async function setup(ctx, prevState) {
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      button, textarea, input {
+      button, input {
         font: inherit;
       }
       .run {
@@ -91,25 +91,58 @@ export default async function setup(ctx, prevState) {
         color: #cbd5e1;
         background: rgba(15, 23, 42, 0.72);
       }
-      textarea {
+      .code-bridge {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #editor {
         width: 100%;
         min-width: 0;
         height: 100%;
         min-height: 86px;
         box-sizing: border-box;
-        resize: none;
-        user-select: text;
-        -webkit-user-select: text;
-        padding: 8px;
-        color: #d1fae5;
         background: rgba(2, 6, 23, 0.68);
         border: 1px solid rgba(148, 163, 184, 0.3);
         border-radius: 6px;
-        outline: none;
+        overflow: hidden;
       }
-      textarea:focus {
+      #editor:focus-within {
         border-color: #5eead4;
         box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+      }
+      .cm-editor {
+        height: 100%;
+        background: transparent;
+        font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .cm-scroller {
+        height: 100%;
+        min-height: 86px;
+      }
+      .cm-content {
+        padding: 8px 4px;
+        caret-color: #facc15;
+      }
+      .cm-gutters {
+        border-right: 1px solid rgba(148, 163, 184, 0.18);
+      }
+      .cm-tooltip {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 6px;
+        background: #0f172a;
+        color: #e5e7eb;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+      }
+      .cm-tooltip-autocomplete ul {
+        font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .cm-tooltip-autocomplete ul li[aria-selected] {
+        background: rgba(45, 212, 191, 0.25);
+        color: #f8fafc;
       }
       .bottom {
         display: grid;
@@ -147,7 +180,8 @@ export default async function setup(ctx, prevState) {
         </div>
         <button class="run" id="run" type="button"></button>
       </div>
-      <textarea id="code" spellcheck="false"></textarea>
+      <textarea id="code" class="code-bridge" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
+      <div id="editor" data-no-drag></div>
       <div class="bottom">
         <label>gain <input id="gain" type="range" min="0" max="1" step="0.01"></label>
         <div class="status" id="status"></div>
@@ -156,24 +190,171 @@ export default async function setup(ctx, prevState) {
   `;
 
   const runBtn = ctx.domRoot.querySelector('#run');
-  const codeInput = ctx.domRoot.querySelector('#code');
+  const codeBridge = ctx.domRoot.querySelector('#code');
+  const editorRoot = ctx.domRoot.querySelector('#editor');
   const gainInput = ctx.domRoot.querySelector('#gain');
   const statusEl = ctx.domRoot.querySelector('#status');
+  const editorKit = await import('/vendor/strudel-editor.js');
   const { getJamStrudelRuntime } = await import('/strudel-runtime.js');
   const runtime = await getJamStrudelRuntime({
     audioCtx: ctx.rawAudioCtx || ctx.audioCtx,
     outputNode: window.jamMasterGain || ctx.audioOut,
     audioEnabled: Boolean(window.jamAudioOutputEnabled)
   });
+  const {
+    EditorState,
+    EditorView,
+    autocompletion,
+    bracketMatching,
+    closeBrackets,
+    closeBracketsKeymap,
+    completionKeymap,
+    defaultHighlightStyle,
+    defaultKeymap,
+    drawSelection,
+    dropCursor,
+    foldGutter,
+    foldKeymap,
+    highlightActiveLine,
+    highlightActiveLineGutter,
+    highlightSelectionMatches,
+    history,
+    historyKeymap,
+    indentLess,
+    indentMore,
+    indentOnInput,
+    jamStrudelAutocomplete,
+    javascript,
+    keymap,
+    lineNumbers,
+    searchKeymap,
+    strudelTheme,
+    syntaxHighlighting
+  } = editorKit;
+  let applyingEditorChange = false;
+  let editorView = null;
 
   const render = () => {
     runBtn.textContent = state.running ? 'stop' : 'play';
     runBtn.classList.toggle('off', !state.running);
-    if (codeInput.value !== state.draftCode) codeInput.value = state.draftCode;
+    setEditorValue(state.draftCode);
+    syncCodeBridge();
     if (gainInput.value !== String(state.gain)) gainInput.value = String(state.gain);
     statusEl.textContent = state.error || state.status;
     statusEl.classList.toggle('error', Boolean(state.error));
   };
+
+  const updateDraft = (source) => {
+    state.draftCode = source;
+    state.error = '';
+    state.status = state.draftCode === state.code ? 'ready' : 'edited';
+    syncCodeBridge();
+    render();
+  };
+
+  const runEditorShortcut = (event) => {
+    if (isSilenceShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      silenceElement();
+      return true;
+    }
+
+    if (isIndentShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const command = event.shiftKey || event.key === '[' || event.key === '{' ? indentLess : indentMore;
+      command(editorView);
+      return true;
+    }
+
+    if (event.key !== 'Enter') return false;
+    if (event.altKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      commitAndEvaluate(getEditorValue());
+      return true;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      commitAndEvaluate(getSelectionOrCurrentBlock(editorView));
+      return true;
+    }
+    if (!event.shiftKey) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    commitAndEvaluate(getCurrentLine(editorView));
+    return true;
+  };
+
+  const editorTheme = EditorView.theme({
+    '&': {
+      color: '#d1fae5'
+    },
+    '.cm-content': {
+      minHeight: '100%'
+    },
+    '.cm-focused': {
+      outline: 'none'
+    },
+    '.cm-line': {
+      padding: '0 4px'
+    }
+  });
+
+  editorView = new EditorView({
+    parent: editorRoot,
+    state: EditorState.create({
+      doc: state.draftCode,
+      extensions: [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        history(),
+        foldGutter(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        indentOnInput(),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion({
+          override: [jamStrudelAutocomplete],
+          closeOnBlur: false
+        }),
+        javascript(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        highlightActiveLine(),
+        highlightSelectionMatches(),
+        strudelTheme,
+        editorTheme,
+        EditorView.updateListener.of(update => {
+          if (!update.docChanged || applyingEditorChange) return;
+          updateDraft(update.state.doc.toString());
+        }),
+        EditorView.domEventHandlers({
+          keydown: runEditorShortcut,
+          pointerdown(event) {
+            event.stopPropagation();
+            return false;
+          },
+          mousedown(event) {
+            event.stopPropagation();
+            return false;
+          }
+        }),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...completionKeymap
+        ])
+      ]
+    })
+  });
+  editorRoot.cmView = editorView;
 
   const publishState = () => {
     if (suppressPublish) return;
@@ -245,49 +426,15 @@ export default async function setup(ctx, prevState) {
 
   gainInput.addEventListener('change', reapplyActivePattern);
 
-  codeInput.addEventListener('input', () => {
-    state.draftCode = codeInput.value;
-    state.error = '';
-    state.status = state.draftCode === state.code ? 'ready' : 'edited';
-    render();
+  codeBridge.addEventListener('input', () => {
+    setEditorValue(codeBridge.value, codeBridge.selectionStart, codeBridge.selectionEnd);
+    updateDraft(codeBridge.value);
   });
 
-  codeInput.addEventListener('pointerdown', event => event.stopPropagation());
-  codeInput.addEventListener('mousedown', event => event.stopPropagation());
+  codeBridge.addEventListener('pointerdown', event => event.stopPropagation());
+  codeBridge.addEventListener('mousedown', event => event.stopPropagation());
 
-  codeInput.addEventListener('keydown', (event) => {
-    if (isSilenceShortcut(event)) {
-      event.preventDefault();
-      event.stopPropagation();
-      silenceElement();
-      return;
-    }
-
-    if (isIndentShortcut(event)) {
-      event.preventDefault();
-      event.stopPropagation();
-      updateDraftFromEditor(indentSelection(codeInput, event.shiftKey ? -1 : 1));
-      return;
-    }
-
-    if (event.key !== 'Enter') return;
-    if (event.altKey) {
-      event.preventDefault();
-      event.stopPropagation();
-      commitAndEvaluate(state.draftCode);
-      return;
-    }
-    if (event.ctrlKey || event.metaKey) {
-      event.preventDefault();
-      event.stopPropagation();
-      commitAndEvaluate(getSelectionOrCurrentBlock(codeInput));
-      return;
-    }
-    if (!event.shiftKey) return;
-    event.preventDefault();
-    event.stopPropagation();
-    commitAndEvaluate(getCurrentLine(codeInput));
-  });
+  codeBridge.addEventListener('keydown', runEditorShortcut);
 
   unsubscribers.push(ctx.bus.subGlobal('state', value => {
     if (!value || typeof value !== 'object') return;
@@ -332,16 +479,41 @@ export default async function setup(ctx, prevState) {
       unsubscribers.forEach(unsub => {
         try { unsub(); } catch {}
       });
+      try { editorView?.destroy(); } catch {}
       try { await runtime.removeElement(elementId); } catch {}
     }
   };
-}
 
-function updateDraftFromEditor(next) {
-  if (!next) return;
-  next.input.value = next.value;
-  next.input.setSelectionRange(next.selectionStart, next.selectionEnd);
-  next.input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  function getEditorValue() {
+    return editorView?.state.doc.toString() ?? state.draftCode;
+  }
+
+  function setEditorValue(value, selectionStart, selectionEnd = selectionStart) {
+    if (!editorView) {
+      codeBridge.value = value;
+      return;
+    }
+    const current = editorView.state.doc.toString();
+    if (current !== value) {
+      const anchor = Number.isFinite(selectionStart) ? clamp(selectionStart, 0, value.length) : undefined;
+      const head = Number.isFinite(selectionEnd) ? clamp(selectionEnd, 0, value.length) : anchor;
+      applyingEditorChange = true;
+      try {
+        editorView.dispatch({
+          changes: { from: 0, to: current.length, insert: value },
+          selection: anchor === undefined ? undefined : { anchor, head }
+        });
+      } finally {
+        applyingEditorChange = false;
+      }
+    }
+    syncCodeBridge();
+  }
+
+  function syncCodeBridge() {
+    const value = getEditorValue();
+    if (codeBridge.value !== value) codeBridge.value = value;
+  }
 }
 
 function isSilenceShortcut(event) {
@@ -353,53 +525,29 @@ function isIndentShortcut(event) {
   return event.key === '}' || event.key === ']' || event.key === '{' || event.key === '[';
 }
 
-function getCurrentLine(input) {
-  const value = input.value;
-  const start = value.lastIndexOf('\n', Math.max(0, input.selectionStart - 1)) + 1;
-  const endIndex = value.indexOf('\n', input.selectionStart);
-  const end = endIndex === -1 ? value.length : endIndex;
-  return value.slice(start, end).trim() || 'silence';
+function getCurrentLine(view) {
+  const selection = view.state.selection.main;
+  return view.state.doc.lineAt(selection.from).text.trim() || 'silence';
 }
 
-function getSelectionOrCurrentBlock(input) {
-  const value = input.value;
-  if (input.selectionStart !== input.selectionEnd) {
-    return value.slice(input.selectionStart, input.selectionEnd).trim() || 'silence';
+function getSelectionOrCurrentBlock(view) {
+  const selection = view.state.selection.main;
+  if (!selection.empty) {
+    return view.state.sliceDoc(selection.from, selection.to).trim() || 'silence';
   }
 
-  const lines = value.split('\n');
-  const cursorLine = value.slice(0, input.selectionStart).split('\n').length - 1;
+  const doc = view.state.doc;
+  const cursorLine = doc.lineAt(selection.from).number;
   let start = cursorLine;
   let end = cursorLine;
-  while (start > 0 && lines[start - 1].trim()) start -= 1;
-  while (end < lines.length - 1 && lines[end + 1].trim()) end += 1;
-  return lines.slice(start, end + 1).join('\n').trim() || getCurrentLine(input);
-}
+  while (start > 1 && doc.line(start - 1).text.trim()) start -= 1;
+  while (end < doc.lines && doc.line(end + 1).text.trim()) end += 1;
 
-function indentSelection(input, direction) {
-  const value = input.value;
-  const lineStart = value.lastIndexOf('\n', Math.max(0, input.selectionStart - 1)) + 1;
-  const nextLineAfterSelection = value.indexOf('\n', input.selectionEnd);
-  const lineEnd = nextLineAfterSelection === -1 ? value.length : nextLineAfterSelection;
-  const before = value.slice(0, lineStart);
-  const selected = value.slice(lineStart, lineEnd);
-  const after = value.slice(lineEnd);
-  const lines = selected.split('\n');
-  const changed = lines.map(line => {
-    if (direction > 0) return `  ${line}`;
-    if (line.startsWith('  ')) return line.slice(2);
-    if (line.startsWith('\t')) return line.slice(1);
-    return line;
-  });
-  const nextSelected = changed.join('\n');
-  const deltaStart = direction > 0 ? 2 : Math.min(lines[0].length - changed[0].length, 2);
-  const deltaEnd = nextSelected.length - selected.length;
-  return {
-    input,
-    value: `${before}${nextSelected}${after}`,
-    selectionStart: Math.max(lineStart, input.selectionStart + deltaStart),
-    selectionEnd: Math.max(lineStart, input.selectionEnd + deltaEnd)
-  };
+  const lines = [];
+  for (let lineNumber = start; lineNumber <= end; lineNumber += 1) {
+    lines.push(doc.line(lineNumber).text);
+  }
+  return lines.join('\n').trim() || getCurrentLine(view);
 }
 
 function clamp(value, min, max) {

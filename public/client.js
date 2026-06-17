@@ -5,6 +5,10 @@ let isAudioOutputEnabled = shouldEnableAudioFromUrl();
 let audioCtx = null;
 let masterGain = null;
 let camera = { x: 0, y: 0, zoom: 1.0 };
+const MIN_CAMERA_ZOOM = 0.08;
+const MAX_CAMERA_ZOOM = 2.5;
+let hasAutoCenteredInitialWorkspace = false;
+let hasUserMovedCamera = false;
 
 const activeElements = new Map();
 const compilingElements = new Set();
@@ -895,6 +899,7 @@ function setupViewportNavigation() {
 
   viewport.addEventListener('mousedown', (e) => {
     if (e.target === viewport || e.target === gridLayer) {
+      hasUserMovedCamera = true;
       isDragging = true;
       startX = e.clientX - camera.x;
       startY = e.clientY - camera.y;
@@ -914,13 +919,14 @@ function setupViewportNavigation() {
 
   viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
+    hasUserMovedCamera = true;
     const zoomFactor = 1.05;
     const oldZoom = camera.zoom;
     
     if (e.deltaY < 0) {
-      camera.zoom = Math.min(2.5, camera.zoom * zoomFactor);
+      camera.zoom = Math.min(MAX_CAMERA_ZOOM, camera.zoom * zoomFactor);
     } else {
-      camera.zoom = Math.max(0.4, camera.zoom / zoomFactor);
+      camera.zoom = Math.max(MIN_CAMERA_ZOOM, camera.zoom / zoomFactor);
     }
 
     const rect = viewport.getBoundingClientRect();
@@ -945,6 +951,70 @@ function applyViewportTransform() {
   statX.textContent = Math.round(camera.x);
   statY.textContent = Math.round(camera.y);
   statZoom.textContent = camera.zoom.toFixed(2);
+}
+
+function getWorkspaceElementBounds() {
+  if (!elementsMap?.size) return null;
+
+  const bounds = {
+    left: Infinity,
+    top: Infinity,
+    right: -Infinity,
+    bottom: -Infinity
+  };
+
+  elementsMap.forEach((layout) => {
+    const x = Number(layout?.x);
+    const y = Number(layout?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+    const width = Number.isFinite(Number(layout?.width)) ? Number(layout.width) : 260;
+    const height = Number.isFinite(Number(layout?.height)) ? Number(layout.height) : 200;
+    bounds.left = Math.min(bounds.left, x);
+    bounds.top = Math.min(bounds.top, y);
+    bounds.right = Math.max(bounds.right, x + Math.max(1, width));
+    bounds.bottom = Math.max(bounds.bottom, y + Math.max(1, height));
+  });
+
+  if (!Number.isFinite(bounds.left) || !Number.isFinite(bounds.top) ||
+      !Number.isFinite(bounds.right) || !Number.isFinite(bounds.bottom)) {
+    return null;
+  }
+
+  return bounds;
+}
+
+function centerCameraOnWorkspace() {
+  const bounds = getWorkspaceElementBounds();
+  if (!bounds) {
+    camera = { x: 0, y: 0, zoom: 1.0 };
+    applyViewportTransform();
+    return;
+  }
+
+  const viewportWidth = viewport.clientWidth || window.innerWidth;
+  const viewportHeight = viewport.clientHeight || window.innerHeight;
+  const boundsWidth = Math.max(1, bounds.right - bounds.left);
+  const boundsHeight = Math.max(1, bounds.bottom - bounds.top);
+  const padding = 96;
+  const fitWidth = Math.max(1, viewportWidth - padding * 2);
+  const fitHeight = Math.max(1, viewportHeight - padding * 2);
+  const nextZoom = Math.max(MIN_CAMERA_ZOOM, Math.min(MAX_CAMERA_ZOOM, fitWidth / boundsWidth, fitHeight / boundsHeight));
+  const centerX = (bounds.left + bounds.right) / 2;
+  const centerY = (bounds.top + bounds.bottom) / 2;
+
+  camera.zoom = nextZoom;
+  camera.x = viewportWidth / 2 - centerX * nextZoom;
+  camera.y = viewportHeight / 2 - centerY * nextZoom;
+  applyViewportTransform();
+}
+
+function autoCenterInitialWorkspace() {
+  if (hasAutoCenteredInitialWorkspace || hasUserMovedCamera || !elementsMap?.size) return;
+  hasAutoCenteredInitialWorkspace = true;
+  requestAnimationFrame(() => {
+    if (!hasUserMovedCamera) centerCameraOnWorkspace();
+  });
 }
 
 function setupElementDragging(domWrapper, id) {
@@ -1049,6 +1119,7 @@ function syncElementsFromMap() {
     }
   });
 
+  autoCenterInitialWorkspace();
 }
 
 function setupUIActions() {
@@ -1060,10 +1131,8 @@ function setupUIActions() {
   });
 
   resetCamBtn.addEventListener('click', () => {
-    camera.x = 0;
-    camera.y = 0;
-    camera.zoom = 1.0;
-    applyViewportTransform();
+    hasUserMovedCamera = true;
+    centerCameraOnWorkspace();
   });
 
   openStrudelBtn?.addEventListener('click', () => {

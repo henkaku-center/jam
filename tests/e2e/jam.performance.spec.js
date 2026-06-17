@@ -182,6 +182,55 @@ async function joinWorkspace(page, mode, expectedCount = expectedElementCount) {
   return { hydrateMs, metrics };
 }
 
+async function readCenteredCameraState(page) {
+  return page.evaluate(() => {
+    const layouts = [...window.elementsMap.values()];
+    const bounds = layouts.reduce((acc, layout) => {
+      const x = Number(layout.x);
+      const y = Number(layout.y);
+      const width = Number.isFinite(Number(layout.width)) ? Number(layout.width) : 260;
+      const height = Number.isFinite(Number(layout.height)) ? Number(layout.height) : 200;
+      return {
+        left: Math.min(acc.left, x),
+        top: Math.min(acc.top, y),
+        right: Math.max(acc.right, x + Math.max(1, width)),
+        bottom: Math.max(acc.bottom, y + Math.max(1, height))
+      };
+    }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+
+    const viewport = document.querySelector('#canvas-viewport');
+    const viewportWidth = viewport.clientWidth || window.innerWidth;
+    const viewportHeight = viewport.clientHeight || window.innerHeight;
+    const boundsWidth = Math.max(1, bounds.right - bounds.left);
+    const boundsHeight = Math.max(1, bounds.bottom - bounds.top);
+    const padding = 96;
+    const expectedZoom = Math.max(0.08, Math.min(
+      2.5,
+      Math.max(1, viewportWidth - padding * 2) / boundsWidth,
+      Math.max(1, viewportHeight - padding * 2) / boundsHeight
+    ));
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    const expectedX = viewportWidth / 2 - centerX * expectedZoom;
+    const expectedY = viewportHeight / 2 - centerY * expectedZoom;
+
+    return {
+      actualX: Number(document.querySelector('#stat-x')?.textContent),
+      actualY: Number(document.querySelector('#stat-y')?.textContent),
+      actualZoom: Number(document.querySelector('#stat-zoom')?.textContent),
+      expectedX: Math.round(expectedX),
+      expectedY: Math.round(expectedY),
+      expectedZoom: Number(expectedZoom.toFixed(2))
+    };
+  });
+}
+
+function expectCameraCentered(result) {
+  expect(result.actualX).toBeCloseTo(result.expectedX, 0);
+  expect(result.actualY).toBeCloseTo(result.expectedY, 0);
+  expect(result.actualZoom).toBe(result.expectedZoom);
+}
+
 async function setFirstSynthFrequency(page, value) {
   return page.evaluate((nextValue) => {
     for (const host of document.querySelectorAll('.element-shadow-container')) {
@@ -351,6 +400,59 @@ test('Normal mode pan and zoom keep a global audio mix', async ({ page }) => {
   expect(mix.every((element) => element.cutoff === null || element.cutoff > 15_000)).toBe(true);
   expect(mix.some((element) => element.visible)).toBe(true);
   expect(browserFailures).toEqual([]);
+});
+
+test('Initial workspace view starts centered on current element bounds', async ({ page }) => {
+  await joinWorkspace(page, 'controller');
+
+  const result = await readCenteredCameraState(page);
+  expectCameraCentered(result);
+});
+
+test('Center Cam frames the bounding box of current workspace elements', async ({ page, request }) => {
+  await joinWorkspace(page, 'controller');
+  const suffix = Date.now();
+  const ids = [`elem_center_a_${suffix}`, `elem_center_b_${suffix}`];
+
+  try {
+    for (const [index, id] of ids.entries()) {
+      const response = await request.post('/api/workspace/elements', {
+        data: {
+          id,
+          filePath: '/elements/_template_element.js',
+          type: 'tool',
+          prompt: 'center camera regression fixture',
+          authored: 'hand',
+          x: index === 0 ? -1800 : 2600,
+          y: index === 0 ? -900 : 1400,
+          width: index === 0 ? 320 : 420,
+          height: index === 0 ? 240 : 300
+        }
+      });
+      await expect(response).toBeOK();
+    }
+
+    await expect
+      .poll(() => page.evaluate((expectedIds) => expectedIds.every(id => window.activeElements.has(id)), ids), {
+        message: 'center camera fixtures should hydrate',
+        timeout: 5_000
+      })
+      .toBe(true);
+
+    await page.mouse.move(640, 400);
+    await page.mouse.wheel(0, -900);
+    await page.mouse.down();
+    await page.mouse.move(160, 140, { steps: 6 });
+    await page.mouse.up();
+    await page.locator('#reset-cam-btn').click();
+
+    const result = await readCenteredCameraState(page);
+    expectCameraCentered(result);
+    expect(result.actualX).not.toBe(0);
+    expect(result.actualY).not.toBe(0);
+  } finally {
+    await Promise.all(ids.map(id => request.delete(`/api/workspace/elements/${id}`)));
+  }
 });
 
 test('Arrow keys do not pan the workspace camera', async ({ page }) => {
@@ -970,13 +1072,13 @@ test('Dragging inside a Strudel editor does not move the element or corrupt code
       return { x: layout.x, y: layout.y };
     }, createdId);
 
-    const textareaBox = await page.evaluate((elementId) => {
-      const input = window.activeElements
+    const editorBox = await page.evaluate((elementId) => {
+      const editor = window.activeElements
         .get(elementId)
         ?.domWrapper.querySelector('.element-shadow-container')
         ?.shadowRoot
-        ?.querySelector('#code');
-      const rect = input.getBoundingClientRect();
+        ?.querySelector('#editor');
+      const rect = editor.getBoundingClientRect();
       return {
         left: rect.left,
         top: rect.top,
@@ -985,9 +1087,9 @@ test('Dragging inside a Strudel editor does not move the element or corrupt code
       };
     }, createdId);
 
-    await page.mouse.move(textareaBox.left + 20, textareaBox.top + 24);
+    await page.mouse.move(editorBox.left + 20, editorBox.top + 24);
     await page.mouse.down();
-    await page.mouse.move(textareaBox.left + Math.min(textareaBox.width - 20, 180), textareaBox.top + 24, { steps: 8 });
+    await page.mouse.move(editorBox.left + Math.min(editorBox.width - 20, 180), editorBox.top + 24, { steps: 8 });
     await page.mouse.up();
 
     const after = await page.evaluate((elementId) => {
