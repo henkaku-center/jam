@@ -10,7 +10,6 @@ export default async function setup(ctx, prevState) {
     code: initialCode,
     draftCode: initialDraftCode,
     running: isCurrentMoodState && typeof prevState?.running === 'boolean' ? prevState.running : false,
-    gain: isCurrentMoodState && Number.isFinite(prevState?.gain) ? prevState.gain : 0.58,
     error: '',
     status: 'loading'
   };
@@ -29,70 +28,16 @@ export default async function setup(ctx, prevState) {
         user-select: text;
         -webkit-user-select: text;
       }
-      .panel {
+      #editor {
         box-sizing: border-box;
         height: 100%;
-        min-height: 220px;
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        gap: 7px;
-        padding: 10px;
+        min-height: 86px;
         overflow: hidden;
         color: #d4d8e0;
-        background: rgba(18, 20, 25, 0.25);
-        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: transparent;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         user-select: text;
         -webkit-user-select: text;
-      }
-      .top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        min-width: 0;
-      }
-      .title {
-        min-width: 0;
-        display: grid;
-        gap: 1px;
-      }
-      h2 {
-        margin: 0;
-        color: #d4d8e0;
-        font-size: 12px;
-        line-height: 1;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-      .sub {
-        color: #555d6e;
-        font-size: 9px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      button, input {
-        font: inherit;
-      }
-      .run {
-        min-width: 48px;
-        height: 24px;
-        padding: 0 9px;
-        border: 1px solid #2a2d35;
-        color: #555d6e;
-        background: transparent;
-        cursor: pointer;
-        font-size: 11px;
-        letter-spacing: 0.05em;
-      }
-      .run.on {
-        border-color: #e63946;
-        color: #e63946;
-      }
-      .run.off {
-        border-color: #2a2d35;
-        color: #555d6e;
       }
       .code-bridge {
         position: absolute;
@@ -100,19 +45,6 @@ export default async function setup(ctx, prevState) {
         height: 1px;
         opacity: 0;
         pointer-events: none;
-      }
-      #editor {
-        width: 100%;
-        min-width: 0;
-        height: 100%;
-        min-height: 86px;
-        box-sizing: border-box;
-        background: transparent;
-        border: 1px solid rgba(42, 45, 53, 0.4);
-        overflow: hidden;
-      }
-      #editor:focus-within {
-        border-color: rgba(61, 66, 80, 0.7);
       }
       .cm-editor {
         height: 100%;
@@ -124,17 +56,12 @@ export default async function setup(ctx, prevState) {
         min-height: 86px;
       }
       .cm-content {
-        padding: 8px 4px;
+        padding: 0;
         caret-color: #f5a623;
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
       }
       .cm-line {
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
-      }
-      .cm-gutters {
-        border-right: 1px solid rgba(42, 45, 53, 0.4);
-        background: transparent;
-        text-shadow: 0 0 4px rgba(0,0,0,0.9);
       }
       .cm-tooltip {
         border: 1px solid #2a2d35;
@@ -149,59 +76,13 @@ export default async function setup(ctx, prevState) {
         background: rgba(59, 130, 246, 0.2);
         color: #d4d8e0;
       }
-      .bottom {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        gap: 8px;
-      }
-      label {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        align-items: center;
-        gap: 6px;
-        color: #555d6e;
-        min-width: 0;
-        font-size: 10px;
-        letter-spacing: 0.05em;
-      }
-      input[type="range"] {
-        width: 100%;
-        min-width: 0;
-        accent-color: #3b82f6;
-      }
-      .status {
-        max-width: 142px;
-        color: #555d6e;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 10px;
-      }
-      .status.error { color: #e63946; }
     </style>
-    <div class="panel">
-      <div class="top">
-        <div class="title">
-          <h2>Jam Strudel</h2>
-          <div class="sub">Official Strudel runtime shared by jam elements</div>
-        </div>
-        <button class="run" id="run" type="button"></button>
-      </div>
-      <textarea id="code" class="code-bridge" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
-      <div id="editor" data-no-drag></div>
-      <div class="bottom">
-        <label>gain <input id="gain" type="range" min="0" max="1" step="0.01"></label>
-        <div class="status" id="status"></div>
-      </div>
-    </div>
+    <textarea id="code" class="code-bridge" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
+    <div id="editor" data-no-drag></div>
   `;
 
-  const runBtn = ctx.domRoot.querySelector('#run');
   const codeBridge = ctx.domRoot.querySelector('#code');
   const editorRoot = ctx.domRoot.querySelector('#editor');
-  const gainInput = ctx.domRoot.querySelector('#gain');
-  const statusEl = ctx.domRoot.querySelector('#status');
   const editorKit = await import('/vendor/strudel-editor.js');
   const { getJamStrudelRuntime } = await import('/strudel-runtime.js');
   const runtime = await getJamStrudelRuntime({
@@ -223,10 +104,7 @@ export default async function setup(ctx, prevState) {
     defaultKeymap,
     drawSelection,
     dropCursor,
-    foldGutter,
-    foldKeymap,
     highlightActiveLine,
-    highlightActiveLineGutter,
     highlightSelectionMatches,
     history,
     historyKeymap,
@@ -236,7 +114,6 @@ export default async function setup(ctx, prevState) {
     jamStrudelAutocomplete,
     javascript,
     keymap,
-    lineNumbers,
     searchKeymap,
     startCompletion,
     strudelTheme,
@@ -246,13 +123,8 @@ export default async function setup(ctx, prevState) {
   let editorView = null;
 
   const render = () => {
-    runBtn.textContent = state.running ? 'stop' : 'play';
-    runBtn.classList.toggle('off', !state.running);
     setEditorValue(state.draftCode);
     syncCodeBridge();
-    if (gainInput.value !== String(state.gain)) gainInput.value = String(state.gain);
-    statusEl.textContent = state.error || state.status;
-    statusEl.classList.toggle('error', Boolean(state.error));
   };
 
   const updateDraft = (source) => {
@@ -342,13 +214,6 @@ export default async function setup(ctx, prevState) {
     '.cm-scroller': {
       background: 'transparent !important'
     },
-    '.cm-gutters': {
-      background: 'transparent !important',
-      borderRight: '1px solid rgba(42, 45, 53, 0.4)'
-    },
-    '.cm-activeLineGutter': {
-      background: 'transparent !important'
-    },
     '.cm-activeLine': {
       background: 'rgba(255,255,255,0.04) !important'
     },
@@ -360,11 +225,8 @@ export default async function setup(ctx, prevState) {
       outline: 'none'
     },
     '.cm-line': {
-      padding: '0 4px',
+      padding: '0',
       textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
-    },
-    '.cm-lineNumbers .cm-gutterElement': {
-      textShadow: '0 0 4px rgba(0,0,0,0.9)'
     }
   });
 
@@ -374,10 +236,7 @@ export default async function setup(ctx, prevState) {
       doc: state.draftCode,
       extensions: [
         Prec.highest(keymap.of(jamShortcutKeymap)),
-        lineNumbers(),
-        highlightActiveLineGutter(),
         history(),
-        foldGutter(),
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),
@@ -414,7 +273,6 @@ export default async function setup(ctx, prevState) {
           ...defaultKeymap,
           ...searchKeymap,
           ...historyKeymap,
-          ...foldKeymap,
           ...completionKeymap
         ])
       ]
@@ -428,7 +286,6 @@ export default async function setup(ctx, prevState) {
       code: state.code,
       draftCode: state.draftCode,
       running: state.running,
-      gain: state.gain,
       moodVersion: state.moodVersion
     });
   };
@@ -441,8 +298,7 @@ export default async function setup(ctx, prevState) {
       state.error = '';
       render();
       const status = await runtime.evaluateElement(elementId, source, {
-        running: state.running,
-        gain: state.gain
+        running: state.running
       });
       state.status = state.running ? 'playing' : 'stopped';
       state.error = status.error || '';
@@ -461,12 +317,6 @@ export default async function setup(ctx, prevState) {
     evalTimer = setTimeout(() => evaluateNow(source), 0);
   };
 
-  const reapplyActivePattern = () => {
-    clearTimeout(evalTimer);
-    publishState();
-    evalTimer = setTimeout(() => evaluateNow(state.code), 0);
-  };
-
   const silenceElement = () => {
     clearTimeout(evalTimer);
     state.running = false;
@@ -476,21 +326,6 @@ export default async function setup(ctx, prevState) {
     evalTimer = setTimeout(() => evaluateNow(state.code), 0);
     render();
   };
-
-  runBtn.addEventListener('click', () => {
-    const shouldRun = !state.running;
-    state.running = shouldRun;
-    render();
-    if (shouldRun) commitAndEvaluate(state.draftCode);
-    else reapplyActivePattern();
-  });
-
-  gainInput.addEventListener('input', () => {
-    state.gain = clamp(Number(gainInput.value), 0, 1);
-    render();
-  });
-
-  gainInput.addEventListener('change', reapplyActivePattern);
 
   codeBridge.addEventListener('input', () => {
     setEditorValue(codeBridge.value, codeBridge.selectionStart, codeBridge.selectionEnd);
@@ -511,12 +346,10 @@ export default async function setup(ctx, prevState) {
       state.draftCode = defaultCode;
       state.moodVersion = moodVersion;
       state.running = false;
-      state.gain = 0.58;
     } else if (typeof value.code === 'string') {
       state.code = value.code;
       state.draftCode = typeof value.draftCode === 'string' ? value.draftCode : value.code;
       if (typeof value.running === 'boolean') state.running = value.running;
-      if (Number.isFinite(value.gain)) state.gain = clamp(value.gain, 0, 1);
     }
     state.moodVersion = moodVersion;
     suppressPublish = false;
@@ -535,7 +368,6 @@ export default async function setup(ctx, prevState) {
         code: state.code,
         draftCode: state.draftCode,
         running: state.running,
-        gain: state.gain,
         moodVersion: state.moodVersion
       };
     },

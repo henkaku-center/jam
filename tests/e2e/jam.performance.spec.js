@@ -587,17 +587,24 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
   try {
     expect(created?.id).toBeTruthy();
     await expect(page.locator('.canvas-element-wrapper')).toHaveCount(expectedElementCount + 1);
-    const shadowText = await page.evaluate((id) => {
+    const editorChrome = await page.evaluate((id) => {
       const element = window.activeElements.get(id);
-      return element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.textContent || '';
+      const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+      return {
+        hasEditor: Boolean(root?.querySelector('#editor')),
+        hasRunButton: Boolean(root?.querySelector('#run')),
+        hasGain: Boolean(root?.querySelector('#gain')),
+        hasStatus: Boolean(root?.querySelector('#status')),
+        hasLineGutter: Boolean(root?.querySelector('.cm-gutters'))
+      };
     }, created.id);
-    expect(shadowText).toContain('Jam Strudel');
-    expect(shadowText).toContain('Official Strudel runtime shared by jam elements');
-    const runLabel = await page.evaluate((id) => {
-      const element = window.activeElements.get(id);
-      return element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot?.querySelector('#run')?.textContent || '';
-    }, created.id);
-    expect(runLabel).toBe('play');
+    expect(editorChrome).toEqual({
+      hasEditor: true,
+      hasRunButton: false,
+      hasGain: false,
+      hasStatus: false,
+      hasLineGutter: false
+    });
     expect(created.layout.prompt).toBe('');
     const hasEvalButton = await page.evaluate((id) => {
       const element = window.activeElements.get(id);
@@ -617,17 +624,16 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
     await expect
       .poll(() => page.evaluate((id) => ({
         source: window.__jamStrudelRuntimeDebug?.sources?.[id] || '',
-        status: window.activeElements
+        draftCode: window.activeElements
           .get(id)
-          ?.domWrapper.querySelector('.element-shadow-container')
-          ?.shadowRoot
-          ?.querySelector('#status')
-          ?.textContent || ''
+          ?.runtime
+          ?.getState?.()
+          ?.draftCode || ''
       }), created.id), {
         message: 'typing should update the draft without auto-evaluating Strudel',
         timeout: 3_000
       })
-      .toMatchObject({ status: 'edited' });
+      .toMatchObject({ draftCode: 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)' });
 
     const sourceBeforeEval = await page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id);
     expect(sourceBeforeEval).not.toContain('<c3 e3 g3>');
@@ -652,13 +658,7 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       .poll(() => page.evaluate((id) => ({
         active: window.__jamStrudelRuntimeDebug?.activeElementIds?.includes(id) || false,
         lastError: window.__jamStrudelRuntimeDebug?.lastError || '',
-        source: window.__jamStrudelRuntimeDebug?.sources?.[id] || '',
-        status: window.activeElements
-          .get(id)
-          ?.domWrapper.querySelector('.element-shadow-container')
-          ?.shadowRoot
-          ?.querySelector('#status')
-          ?.textContent || ''
+        source: window.__jamStrudelRuntimeDebug?.sources?.[id] || ''
       }), created.id), {
         message: 'official Strudel syntax should evaluate into the shared runtime',
         timeout: 8_000
@@ -763,17 +763,16 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
     await expect
       .poll(() => page.evaluate((id) => ({
         active: window.__jamStrudelRuntimeDebug?.activeElementIds?.includes(id) || false,
-        status: window.activeElements
+        running: window.activeElements
           .get(id)
-          ?.domWrapper.querySelector('.element-shadow-container')
-          ?.shadowRoot
-          ?.querySelector('#status')
-          ?.textContent || ''
+          ?.runtime
+          ?.getState?.()
+          ?.running ?? true
       }), created.id), {
         message: 'Modifier+period should silence the Strudel element',
         timeout: 8_000
       })
-      .toMatchObject({ active: false, status: 'stopped' });
+      .toMatchObject({ active: false, running: false });
     expect(browserFailures).toEqual([]);
   } finally {
     if (created?.id) await request.delete(`/api/workspace/elements/${created.id}`);
