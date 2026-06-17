@@ -147,7 +147,7 @@ async function joinWorkspace(page, mode, expectedCount = expectedElementCount) {
   await page.locator('#join-host-btn').click();
 
   await expect(page.locator('#autoplay-overlay')).toHaveClass(/hidden/);
-  await expect(page.locator('#bpm-input')).toBeVisible();
+  await expect(page.locator('#app')).not.toHaveClass(/hidden/);
 
   await expect
     .poll(() => page.evaluate(() => window.activeElements?.size ?? 0), {
@@ -720,17 +720,39 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         const cursor = root?.querySelector('.cm-cursor');
         const cursorStyle = cursor ? getComputedStyle(cursor) : null;
         const cursorRect = cursor?.getBoundingClientRect();
+        const textNode = root ? findTextNode(root.querySelector('.cm-line')) : null;
+        let charWidth = 0;
+        if (textNode) {
+          const range = document.createRange();
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, Math.min(1, textNode.textContent.length));
+          charWidth = range.getBoundingClientRect().width;
+          range.detach?.();
+        }
         return {
           isFocused: editor?.classList.contains('cm-focused') || false,
           editorOutline: editor ? getComputedStyle(editor).outlineStyle : '',
           activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : '',
           cursorWidth: cursorRect?.width || 0,
           cursorHeight: cursorRect?.height || 0,
+          charWidth,
+          cursorDisplay: cursorStyle?.display || '',
           cursorBorderLeftWidth: cursorStyle?.borderLeftWidth || '',
           cursorBackground: cursorStyle?.backgroundColor || '',
           cursorBlendMode: cursorStyle?.mixBlendMode || '',
+          cursorBackdropFilter: cursorStyle?.backdropFilter || cursorStyle?.webkitBackdropFilter || '',
           cursorAnimationName: cursorStyle?.animationName || ''
         };
+
+        function findTextNode(node) {
+          if (!node) return null;
+          if (node.nodeType === Node.TEXT_NODE && node.textContent.length) return node;
+          for (const child of node.childNodes) {
+            const found = findTextNode(child);
+            if (found) return found;
+          }
+          return null;
+        }
       }, created.id), {
         message: 'focused Strudel editor should show only active-line and block-cursor cues',
         timeout: 3_000
@@ -739,22 +761,44 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         isFocused: true,
         editorOutline: 'none',
         activeLineBackground: 'rgba(255, 255, 255, 0.04)',
+        cursorDisplay: 'block',
         cursorBorderLeftWidth: '0px',
-        cursorBackground: 'rgb(255, 255, 255)',
-        cursorBlendMode: 'difference',
+        cursorBackground: 'rgba(255, 255, 255, 0.01)',
+        cursorBlendMode: 'normal',
+        cursorBackdropFilter: 'invert(1)',
         cursorAnimationName: 'strudel-block-cursor-blink'
       });
 
     const focusedCursorSize = await page.evaluate((id) => {
-      const cursor = window.activeElements
+      const root = window.activeElements
         .get(id)
         ?.domWrapper.querySelector('.element-shadow-container')
-        ?.shadowRoot
-        ?.querySelector('.cm-cursor');
-      const rect = cursor?.getBoundingClientRect();
-      return { width: rect?.width || 0, height: rect?.height || 0 };
+        ?.shadowRoot;
+      const cursor = root?.querySelector('.cm-cursor');
+      const textNode = findTextNode(root?.querySelector('.cm-line'));
+      const cursorRect = cursor?.getBoundingClientRect();
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, Math.min(1, textNode.textContent.length));
+      const charRect = range.getBoundingClientRect();
+      range.detach?.();
+      return {
+        width: cursorRect?.width || 0,
+        height: cursorRect?.height || 0,
+        charWidth: charRect.width
+      };
+
+      function findTextNode(node) {
+        if (!node) return null;
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.length) return node;
+        for (const child of node.childNodes) {
+          const found = findTextNode(child);
+          if (found) return found;
+        }
+        return null;
+      }
     }, created.id);
-    expect(focusedCursorSize.width).toBeGreaterThan(4);
+    expect(focusedCursorSize.width).toBeCloseTo(focusedCursorSize.charWidth, 0);
     expect(focusedCursorSize.height).toBeGreaterThan(8);
 
     await expect

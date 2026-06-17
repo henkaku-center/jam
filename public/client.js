@@ -29,7 +29,6 @@ const viewport = document.getElementById('canvas-viewport');
 const gridLayer = document.getElementById('canvas-grid');
 const elementsLayer = document.getElementById('canvas-elements');
 const hostCameraFrame = document.getElementById('host-camera-frame');
-const bpmInput = document.getElementById('bpm-input');
 const addElementMenu = document.getElementById('add-element-menu');
 const focusOverlay = document.getElementById('focus-overlay');
 const agentTerminal = document.getElementById('agent-terminal');
@@ -139,11 +138,6 @@ function initYjs() {
 
   elementsMap.observe(event => {
     syncElementsFromMap();
-  });
-
-  clockMap.observe(event => {
-    const bpm = clockMap.get('bpm') || 120;
-    bpmInput.value = bpm;
   });
 
   globalBusMap.observe(event => {
@@ -1180,13 +1174,6 @@ function syncElementsFromMap() {
 }
 
 function setupUIActions() {
-  bpmInput.addEventListener('change', (e) => {
-    const val = parseInt(e.target.value);
-    if (val >= 40 && val <= 240) {
-      changeBPM(val);
-    }
-  });
-
   addElementMenu?.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-add-element]');
     if (!button) return;

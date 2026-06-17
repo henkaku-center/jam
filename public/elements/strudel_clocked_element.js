@@ -20,6 +20,7 @@ export default async function setup(ctx, prevState) {
   let evalTimer = 0;
   let resizeFrame = 0;
   let lastLayoutSize = { width: 0, height: 0 };
+  let lastCameraZoom = null;
   let destroyed = false;
 
   ctx.domRoot.innerHTML = `
@@ -57,6 +58,8 @@ export default async function setup(ctx, prevState) {
         overflow: visible;
         background: transparent;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        isolation: isolate;
+        --strudel-cursor-cell-width: 1ch;
       }
       .cm-scroller {
         display: inline-block;
@@ -86,15 +89,19 @@ export default async function setup(ctx, prevState) {
       }
       .cm-cursorLayer {
         pointer-events: none;
+        z-index: 20;
       }
       .cm-cursor {
+        display: block !important;
         border-left: 0 !important;
         border-right: 0 !important;
-        width: 0.62em !important;
-        min-width: 0.62em;
+        width: var(--strudel-cursor-cell-width) !important;
+        min-width: var(--strudel-cursor-cell-width);
         margin-left: 0;
-        background: #fff;
-        mix-blend-mode: difference;
+        background: rgba(255, 255, 255, 0.01);
+        backdrop-filter: invert(1);
+        -webkit-backdrop-filter: invert(1);
+        mix-blend-mode: normal;
         animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
       }
       .cm-editor .cm-activeLine {
@@ -264,7 +271,8 @@ export default async function setup(ctx, prevState) {
       background: 'transparent !important'
     },
     '&.cm-editor': {
-      background: 'transparent !important'
+      background: 'transparent !important',
+      isolation: 'isolate'
     },
     '.cm-scroller': {
       background: 'transparent !important'
@@ -284,16 +292,20 @@ export default async function setup(ctx, prevState) {
       outline: 'none'
     },
     '.cm-cursorLayer': {
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      zIndex: '20'
     },
     '.cm-cursor': {
+      display: 'block !important',
       borderLeft: '0 !important',
       borderRight: '0 !important',
-      width: '0.62em !important',
-      minWidth: '0.62em',
+      width: 'var(--strudel-cursor-cell-width) !important',
+      minWidth: 'var(--strudel-cursor-cell-width)',
       marginLeft: '0',
-      background: '#fff',
-      mixBlendMode: 'difference',
+      background: 'rgba(255, 255, 255, 0.01)',
+      backdropFilter: 'invert(1)',
+      WebkitBackdropFilter: 'invert(1)',
+      mixBlendMode: 'normal',
       animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
     },
     '.cm-line': {
@@ -439,6 +451,13 @@ export default async function setup(ctx, prevState) {
   evalTimer = setTimeout(() => evaluateNow(state.code), 0);
 
   return {
+    update() {
+      const zoom = window.__jamCamera?.zoom ?? 1;
+      if (zoom !== lastCameraZoom) {
+        lastCameraZoom = zoom;
+        scheduleEditorResize();
+      }
+    },
     getState() {
       return {
         code: state.code,
@@ -503,6 +522,7 @@ export default async function setup(ctx, prevState) {
     const lineCount = editorView?.state.doc.lines || 1;
     const lineHeight = readPixelSize(editorRoot.querySelector('.cm-line'), 'lineHeight', 15);
     const charWidth = readCharWidth();
+    setCursorCellWidth(charWidth);
     const longestLineLength = Math.max(16, ...editorView.state.doc.toString().split('\n').map(line => line.length));
     const measuredWidth = Math.ceil(Math.max(
       editorRoot.scrollWidth,
@@ -534,13 +554,20 @@ export default async function setup(ctx, prevState) {
   }
 
   function readCharWidth() {
+    const content = editorRoot.querySelector('.cm-content') || editorRoot;
     const probe = document.createElement('span');
     probe.textContent = '0000000000';
     probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;';
-    editorRoot.appendChild(probe);
+    content.appendChild(probe);
     const width = probe.getBoundingClientRect().width / 10;
     probe.remove();
     return Number.isFinite(width) && width > 0 ? width : 7;
+  }
+
+  function setCursorCellWidth(charWidth) {
+    if (!Number.isFinite(charWidth) || charWidth <= 0) return;
+    const editor = editorRoot.querySelector('.cm-editor');
+    editor?.style.setProperty('--strudel-cursor-cell-width', `${charWidth.toFixed(3)}px`);
   }
 }
 

@@ -235,30 +235,6 @@ body, html {
   background: transparent !important;
 }
 
-.tempo-control {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  z-index: 1000;
-}
-
-.tempo-control input {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-  width: 56px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-weight: bold;
-  font-size: 12px;
-  padding: 4px 3px;
-}
-
-.tempo-control input:focus {
-  outline: none;
-  border-color: var(--border-active);
-}
-
 .add-element-menu {
   position: absolute;
   z-index: 1100;
