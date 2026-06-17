@@ -228,6 +228,7 @@ export default async function setup(ctx, prevState) {
     { key: 'Mod-[', run: indentLess, preventDefault: true },
     { key: 'Mod-]', run: indentMore, preventDefault: true },
     { key: 'Ctrl-Delete', run: deleteWindow, preventDefault: true },
+    { key: 'Ctrl-Backspace', run: deleteWindow, preventDefault: true },
     { key: 'Tab', run: completeOrIndent, preventDefault: true }
   ];
 
@@ -505,7 +506,10 @@ function isSilenceShortcut(event) {
 }
 
 function isDeleteWindowShortcut(event) {
-  return event.key === 'Delete' && event.ctrlKey && !event.metaKey && !event.altKey;
+  return (event.key === 'Delete' || event.key === 'Backspace') &&
+    event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey;
 }
 
 function isIndentShortcut(event) {

@@ -984,56 +984,58 @@ test('Visible Strudel editor keybindings evaluate real keyboard input', async ({
   }
 });
 
-test('Ctrl+Delete inside a Strudel editor deletes that element', async ({ page, request }) => {
-  await joinWorkspace(page, 'controller');
-  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+for (const shortcut of ['Control+Delete', 'Control+Backspace']) {
+  test(`${shortcut} inside a Strudel editor deletes that element`, async ({ page, request }) => {
+    await joinWorkspace(page, 'controller');
+    const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
 
-  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
+    await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
-  await expect
-    .poll(() => page.evaluate((knownIds) => {
+    await expect
+      .poll(() => page.evaluate((knownIds) => {
+        for (const [elementId, layout] of window.elementsMap.entries()) {
+          if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+        }
+        return '';
+      }, beforeIds), {
+        message: 'Strudel element should be added',
+        timeout: 8_000
+      })
+      .not.toBe('');
+
+    const createdId = await page.evaluate((knownIds) => {
       for (const [elementId, layout] of window.elementsMap.entries()) {
         if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
       }
       return '';
-    }, beforeIds), {
-      message: 'Strudel element should be added',
-      timeout: 8_000
-    })
-    .not.toBe('');
+    }, beforeIds);
 
-  const createdId = await page.evaluate((knownIds) => {
-    for (const [elementId, layout] of window.elementsMap.entries()) {
-      if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+    try {
+      await page.evaluate((elementId) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        if (!view) throw new Error('missing CodeMirror view');
+        view.focus();
+      }, createdId);
+
+      await page.keyboard.press(shortcut);
+
+      await expect
+        .poll(() => page.evaluate((elementId) => window.elementsMap?.has(elementId) ?? true, createdId), {
+          message: `focused Strudel editor should be removed by ${shortcut}`,
+          timeout: 3_000
+        })
+        .toBe(false);
+      await expect(page.locator(`#wrapper-${createdId}`)).toHaveCount(0);
+    } finally {
+      if (createdId) await request.delete(`/api/workspace/elements/${createdId}`);
     }
-    return '';
-  }, beforeIds);
-
-  try {
-    await page.evaluate((elementId) => {
-      const view = window.activeElements
-        .get(elementId)
-        ?.domWrapper.querySelector('.element-shadow-container')
-        ?.shadowRoot
-        ?.querySelector('#editor')
-        ?.cmView;
-      if (!view) throw new Error('missing CodeMirror view');
-      view.focus();
-    }, createdId);
-
-    await page.keyboard.press('Control+Delete');
-
-    await expect
-      .poll(() => page.evaluate((elementId) => window.elementsMap?.has(elementId) ?? true, createdId), {
-        message: 'focused Strudel editor should be removed by Ctrl+Delete',
-        timeout: 3_000
-      })
-      .toBe(false);
-    await expect(page.locator(`#wrapper-${createdId}`)).toHaveCount(0);
-  } finally {
-    if (createdId) await request.delete(`/api/workspace/elements/${createdId}`);
-  }
-});
+  });
+}
 
 test('Multiple Strudel elements keep independent runtime patterns', async ({ page, request }) => {
   const browserFailures = collectBrowserFailures(page);
