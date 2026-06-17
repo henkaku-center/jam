@@ -191,10 +191,14 @@ export default async function setup(ctx, prevState) {
     searchKeymap,
     startCompletion,
     strudelTheme,
-    syntaxHighlighting
+    syntaxHighlighting,
+    yCollab,
+    yUndoManagerKeymap
   } = editorKit;
   let applyingEditorChange = false;
   let editorView = null;
+  const yText = getCollaborativeCodeText();
+  if (yText) state.draftCode = yText.toString();
 
   const render = () => {
     setEditorValue(state.draftCode);
@@ -380,7 +384,7 @@ export default async function setup(ctx, prevState) {
       doc: state.draftCode,
       extensions: [
         Prec.highest(keymap.of(jamShortcutKeymap)),
-        history(),
+        ...getUndoAndCollaborationExtensions(),
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),
@@ -430,7 +434,7 @@ export default async function setup(ctx, prevState) {
           ...closeBracketsKeymap,
           ...defaultKeymap,
           ...searchKeymap,
-          ...historyKeymap,
+          ...(yText ? yUndoManagerKeymap : historyKeymap),
           ...completionKeymap
         ])
       ]
@@ -442,6 +446,7 @@ export default async function setup(ctx, prevState) {
 
   const publishState = () => {
     if (suppressPublish) return;
+    state.draftCode = getEditorValue();
     ctx.bus.pubGlobal('state', {
       code: state.code,
       draftCode: state.draftCode,
@@ -472,6 +477,7 @@ export default async function setup(ctx, prevState) {
   const commitAndEvaluate = (source = state.draftCode) => {
     clearTimeout(evalTimer);
     state.code = source;
+    state.draftCode = getEditorValue();
     state.running = true;
     publishState();
     evalTimer = setTimeout(() => evaluateNow(source), 0);
@@ -508,7 +514,9 @@ export default async function setup(ctx, prevState) {
       state.running = false;
     } else if (typeof value.code === 'string') {
       state.code = value.code;
-      state.draftCode = typeof value.draftCode === 'string' ? value.draftCode : value.code;
+      const incomingDraftCode = typeof value.draftCode === 'string' ? value.draftCode : value.code;
+      if (yText) seedCollaborativeCodeText(yText, incomingDraftCode);
+      state.draftCode = yText ? getEditorValue() : incomingDraftCode;
       if (typeof value.running === 'boolean') state.running = value.running;
     }
     state.moodVersion = moodVersion;
@@ -537,6 +545,7 @@ export default async function setup(ctx, prevState) {
       if (editorView?.hasFocus) scheduleEditorOverlaySync();
     },
     getState() {
+      state.draftCode = getEditorValue();
       return {
         code: state.code,
         draftCode: state.draftCode,
@@ -561,6 +570,29 @@ export default async function setup(ctx, prevState) {
 
   function getEditorValue() {
     return editorView?.state.doc.toString() ?? state.draftCode;
+  }
+
+  function getCollaborativeCodeText() {
+    if (!ctx.ydoc || typeof ctx.ydoc.getText !== 'function') return null;
+    const text = ctx.ydoc.getText(`strudel:${elementId}:code`);
+    seedCollaborativeCodeText(text, state.draftCode || state.code || getRuntimeDebugSource());
+    return text;
+  }
+
+  function seedCollaborativeCodeText(text, source) {
+    if (!text || text.length > 0 || !source) return;
+    text.insert(0, String(source));
+  }
+
+  function getRuntimeDebugSource() {
+    return window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '';
+  }
+
+  function getUndoAndCollaborationExtensions() {
+    if (!yText) return [history()];
+    return [
+      yCollab(yText, ctx.awareness || null)
+    ];
   }
 
   function setEditorValue(value, selectionStart, selectionEnd = selectionStart) {
