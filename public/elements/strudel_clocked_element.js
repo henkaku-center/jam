@@ -312,6 +312,18 @@ export default async function setup(ctx, prevState) {
     '.cm-line span, .cm-content span': {
       textShadow: 'none !important'
     },
+    '.cm-line .ͼ11, .cm-line .ͼ16, .cm-content .ͼ11, .cm-content .ͼ16': {
+      color: '#67e8f9 !important'
+    },
+    '.cm-line .ͼy, .cm-line .ͼw, .cm-content .ͼy, .cm-content .ͼw': {
+      color: '#a7f3d0 !important'
+    },
+    '.cm-line .ͼs, .cm-line .ͼ19, .cm-content .ͼs, .cm-content .ͼ19': {
+      color: '#5eead4 !important'
+    },
+    '.cm-line .ͼ13, .cm-content .ͼ13': {
+      color: '#6ee7e0 !important'
+    },
     '.cm-activeLine': {
       background: 'transparent !important'
     },
