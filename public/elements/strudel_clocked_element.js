@@ -19,12 +19,13 @@ export default async function setup(ctx, prevState) {
   let suppressPublish = false;
   let evalTimer = 0;
   let resizeFrame = 0;
-  let cursorOverlayFrame = 0;
+  let editorOverlayFrame = 0;
   let lastLayoutSize = { width: 0, height: 0 };
   let lastCameraZoom = null;
   let destroyed = false;
   let cursorOverlay = null;
-  let cursorOverlayStyle = null;
+  let selectionOverlay = null;
+  let editorOverlayStyle = null;
 
   ctx.domRoot.innerHTML = `
     <style>
@@ -131,10 +132,13 @@ export default async function setup(ctx, prevState) {
         background: rgba(22, 78, 99, 0.5) !important;
       }
       .cm-editor.cm-focused .cm-selectionBackground,
+      .cm-editor.cm-editor.cm-focused .cm-selectionBackground,
       .cm-editor .cm-line::selection,
       .cm-editor .cm-selectionLayer .cm-selectionBackground,
+      .cm-editor.cm-editor .cm-selectionLayer .cm-selectionBackground,
       .cm-editor .cm-content ::selection {
-        background: #164e63 !important;
+        background: transparent !important;
+        background-color: transparent !important;
       }
       .cm-tooltip {
         border: 1px solid #164e63;
@@ -314,8 +318,9 @@ export default async function setup(ctx, prevState) {
     '&.cm-focused .cm-activeLine': {
       background: 'rgba(22, 78, 99, 0.5) !important'
     },
-    '&.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, .cm-content ::selection': {
-      background: '#164e63 !important'
+    '&.cm-focused .cm-selectionBackground, &.cm-editor.cm-editor.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, &.cm-editor.cm-editor .cm-selectionLayer .cm-selectionBackground, & .cm-content ::selection': {
+      background: 'transparent !important',
+      backgroundColor: 'transparent !important'
     },
     '.cm-content': {
       minHeight: '100%',
@@ -385,7 +390,7 @@ export default async function setup(ctx, prevState) {
             scheduleEditorResize();
           }
           if (update.docChanged || update.selectionSet || update.geometryChanged || update.viewportChanged || update.focusChanged) {
-            scheduleCursorOverlaySync();
+            scheduleEditorOverlaySync();
           }
           if (!update.docChanged || applyingEditorChange) return;
           updateDraft(update.state.doc.toString());
@@ -393,11 +398,11 @@ export default async function setup(ctx, prevState) {
         EditorView.domEventHandlers({
           keydown: runEditorShortcut,
           focus() {
-            scheduleCursorOverlaySync();
+            scheduleEditorOverlaySync();
             return false;
           },
           blur() {
-            scheduleCursorOverlaySync();
+            scheduleEditorOverlaySync();
             return false;
           },
           pointerdown(event) {
@@ -421,7 +426,7 @@ export default async function setup(ctx, prevState) {
   });
   editorRoot.cmView = editorView;
   scheduleEditorResize();
-  scheduleCursorOverlaySync();
+  scheduleEditorOverlaySync();
 
   const publishState = () => {
     if (suppressPublish) return;
@@ -512,7 +517,7 @@ export default async function setup(ctx, prevState) {
         lastCameraZoom = zoom;
         scheduleEditorResize();
       }
-      if (editorView?.hasFocus) scheduleCursorOverlaySync();
+      if (editorView?.hasFocus) scheduleEditorOverlaySync();
     },
     getState() {
       return {
@@ -530,8 +535,8 @@ export default async function setup(ctx, prevState) {
       });
       try { editorView?.destroy(); } catch {}
       cancelAnimationFrame(resizeFrame);
-      cancelAnimationFrame(cursorOverlayFrame);
-      removeCursorOverlay();
+      cancelAnimationFrame(editorOverlayFrame);
+      removeEditorOverlays();
       try { await runtime.removeElement(elementId); } catch {}
     }
   };
@@ -572,24 +577,28 @@ export default async function setup(ctx, prevState) {
     resizeFrame = requestAnimationFrame(measureAndPublishEditorSize);
   }
 
-  function scheduleCursorOverlaySync() {
-    if (destroyed || cursorOverlayFrame) return;
-    cursorOverlayFrame = requestAnimationFrame(syncCursorOverlay);
+  function scheduleEditorOverlaySync() {
+    if (destroyed || editorOverlayFrame) return;
+    editorOverlayFrame = requestAnimationFrame(syncEditorOverlays);
   }
 
-  function syncCursorOverlay() {
-    cursorOverlayFrame = 0;
+  function syncEditorOverlays() {
+    editorOverlayFrame = 0;
     if (destroyed || !editorView || !editorRoot.isConnected || !editorView.hasFocus) {
       hideCursorOverlay();
+      hideSelectionOverlay();
       return;
     }
+
+    const hasSelection = editorView.state.selection.ranges.some(range => !range.empty);
+    if (hasSelection) {
+      hideCursorOverlay();
+      syncSelectionOverlay();
+      return;
+    }
+    hideSelectionOverlay();
 
     const selection = editorView.state.selection.main;
-    if (!selection.empty) {
-      hideCursorOverlay();
-      return;
-    }
-
     const coords = editorView.coordsAtPos(selection.head);
     if (!coords) {
       hideCursorOverlay();
@@ -604,10 +613,71 @@ export default async function setup(ctx, prevState) {
     overlay.style.height = `${Math.max(1, coords.bottom - coords.top)}px`;
   }
 
+  function syncSelectionOverlay() {
+    const rects = getSelectionOverlayRects();
+    if (!rects.length) {
+      hideSelectionOverlay();
+      return;
+    }
+
+    const overlay = ensureSelectionOverlay();
+    overlay.style.display = 'block';
+    while (overlay.children.length < rects.length) {
+      const rectNode = document.createElement('div');
+      rectNode.className = 'jam-strudel-document-selection-rect';
+      overlay.appendChild(rectNode);
+    }
+    while (overlay.children.length > rects.length) {
+      overlay.lastElementChild?.remove();
+    }
+
+    rects.forEach((rect, index) => {
+      const rectNode = overlay.children[index];
+      rectNode.style.left = `${rect.left}px`;
+      rectNode.style.top = `${rect.top}px`;
+      rectNode.style.width = `${rect.width}px`;
+      rectNode.style.height = `${rect.height}px`;
+    });
+  }
+
+  function getSelectionOverlayRects() {
+    const rects = [];
+    const { doc, selection } = editorView.state;
+    for (const range of selection.ranges) {
+      if (range.empty) continue;
+      const from = Math.min(range.from, range.to);
+      const to = Math.max(range.from, range.to);
+      let line = doc.lineAt(from);
+      while (line.from <= to) {
+        const segmentFrom = Math.max(from, line.from);
+        const segmentTo = Math.min(to, line.to);
+        if (segmentFrom < segmentTo) {
+          const start = editorView.coordsAtPos(segmentFrom, 1);
+          const end = editorView.coordsAtPos(segmentTo, -1);
+          if (start && end) {
+            const left = Math.min(start.left, end.left);
+            const right = Math.max(start.left, end.left);
+            const top = Math.min(start.top, end.top);
+            const bottom = Math.max(start.bottom, end.bottom);
+            rects.push({
+              left,
+              top,
+              width: Math.max(1, right - left),
+              height: Math.max(1, bottom - top)
+            });
+          }
+        }
+        if (line.to >= to || line.number >= doc.lines) break;
+        line = doc.line(line.number + 1);
+      }
+    }
+    return rects;
+  }
+
   function ensureCursorOverlay() {
-    if (!cursorOverlayStyle) {
-      cursorOverlayStyle = document.createElement('style');
-      cursorOverlayStyle.textContent = `
+    if (!editorOverlayStyle) {
+      editorOverlayStyle = document.createElement('style');
+      editorOverlayStyle.textContent = `
         @keyframes jam-strudel-document-cursor-blink {
           0%, 49% { opacity: 1; }
           50%, 100% { opacity: 0; }
@@ -621,8 +691,20 @@ export default async function setup(ctx, prevState) {
           z-index: 2147483647;
           animation: jam-strudel-document-cursor-blink 1.05s steps(1, end) infinite;
         }
+        .jam-strudel-document-selection {
+          position: fixed;
+          inset: 0;
+          display: none;
+          pointer-events: none;
+          z-index: 2147483646;
+        }
+        .jam-strudel-document-selection-rect {
+          position: fixed;
+          background: #fff;
+          mix-blend-mode: difference;
+        }
       `;
-      document.head.appendChild(cursorOverlayStyle);
+      document.head.appendChild(editorOverlayStyle);
     }
     if (!cursorOverlay) {
       cursorOverlay = document.createElement('div');
@@ -633,15 +715,32 @@ export default async function setup(ctx, prevState) {
     return cursorOverlay;
   }
 
+  function ensureSelectionOverlay() {
+    ensureCursorOverlay();
+    if (!selectionOverlay) {
+      selectionOverlay = document.createElement('div');
+      selectionOverlay.className = 'jam-strudel-document-selection';
+      selectionOverlay.dataset.strudelSelectionOverlay = elementId;
+      document.body.appendChild(selectionOverlay);
+    }
+    return selectionOverlay;
+  }
+
   function hideCursorOverlay() {
     if (cursorOverlay) cursorOverlay.style.display = 'none';
   }
 
-  function removeCursorOverlay() {
+  function hideSelectionOverlay() {
+    if (selectionOverlay) selectionOverlay.style.display = 'none';
+  }
+
+  function removeEditorOverlays() {
     cursorOverlay?.remove();
-    cursorOverlayStyle?.remove();
+    selectionOverlay?.remove();
+    editorOverlayStyle?.remove();
     cursorOverlay = null;
-    cursorOverlayStyle = null;
+    selectionOverlay = null;
+    editorOverlayStyle = null;
   }
 
   function measureAndPublishEditorSize() {

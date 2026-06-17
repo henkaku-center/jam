@@ -1,8 +1,8 @@
 {
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 678,
-    "y": 372,
+    "x": 710,
+    "y": 457,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -15,25 +15,25 @@
     "id": "elem_hz6unh73f",
     "x": 829,
     "y": 308,
-    "width": 130,
+    "width": 157,
     "height": 41,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781718297328
+    "reloadToken": 1781718612446
   },
   "elem_5cyikeb3o": {
     "id": "elem_5cyikeb3o",
     "x": 413,
     "y": 560,
-    "width": 273,
+    "width": 332,
     "height": 25,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781718297353
+    "reloadToken": 1781718612442
   },
   "elem_i0xqjtqhh": {
     "id": "elem_i0xqjtqhh",
@@ -46,17 +46,5 @@
     "prompt": "blank synth element",
     "authored": "hand",
     "reloadToken": 0
-  },
-  "elem_9d8r5fkdv": {
-    "id": "elem_9d8r5fkdv",
-    "x": 460,
-    "y": 260,
-    "width": 130,
-    "height": 25,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 1781718297356
   }
 }
