@@ -10,7 +10,6 @@ import { spawn, spawnSync } from 'child_process';
 import pty from 'node-pty';
 import { getYDoc, setupWSConnection } from './node_modules/y-websocket/bin/utils.cjs';
 
-// Load environment variables
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -29,7 +28,6 @@ const LIVE_COMMIT_DEBOUNCE_MS = Number(process.env.LIVE_COMMIT_DEBOUNCE_MS || 80
 const app = express();
 app.use(express.json());
 
-// Ensure directories exist
 const publicDir = path.resolve('public');
 const elementsDir = path.join(publicDir, 'elements');
 if (!fs.existsSync(publicDir)) {
@@ -39,7 +37,6 @@ if (!fs.existsSync(elementsDir)) {
   fs.mkdirSync(elementsDir, { recursive: true });
 }
 
-// Serve static files from public/
 app.use(express.static(publicDir));
 app.use('/vendor/xterm', express.static(path.resolve('node_modules/@xterm/xterm')));
 app.use('/vendor/xterm-addon-fit', express.static(path.resolve('node_modules/@xterm/addon-fit')));
@@ -104,7 +101,6 @@ function workspaceSnapshot() {
     .sort((a, b) => String(a.id).localeCompare(String(b.id)));
 }
 
-// Keep track of workspace layout
 const manifestPath = path.resolve('workspace_layout.json');
 let liveCommitTimer = null;
 let liveCommitInFlight = false;
@@ -210,14 +206,12 @@ function processLiveCommitQueue() {
   }
 }
 
-// Initialize Yjs workspace document on server
 const doc = getYDoc('jam-workspace');
 const elementsMap = doc.getMap('elements');
 const clockMap = doc.getMap('clock');
 const globalBusMap = doc.getMap('global_bus');
 const AGENT_ORIGIN = { origin: 'agent-api' };
 
-// Watch elements map and save manifest to disk
 elementsMap.observe(() => {
   try {
     const layout = elementsMap.toJSON();
@@ -227,7 +221,6 @@ elementsMap.observe(() => {
   }
 });
 
-// Load existing manifest on startup
 if (fs.existsSync(manifestPath)) {
   try {
     const data = fs.readFileSync(manifestPath, 'utf8');
@@ -243,7 +236,6 @@ if (fs.existsSync(manifestPath)) {
   }
 }
 
-// Low-latency controller WebSocket server state
 const controllerClients = new Set();
 let hostClient = null;
 
@@ -458,10 +450,8 @@ process.on('exit', () => {
   terminalSessions.forEach(closeAgentTerminalSession);
 });
 
-// Server-side compilation cache to throttle client loop conditions
-const compileCache = new Map(); // filePath -> { rawCode, transpiledCode, timestamp }
+const compileCache = new Map();
 
-// LLM Code Compilation endpoint
 app.post('/api/compile', async (req, res) => {
   const { prompt, elementId, filePath, prevState, forceCompile = false, authored, allowOverwrite = false } = req.body;
   
@@ -469,12 +459,10 @@ app.post('/api/compile', async (req, res) => {
     return res.status(400).json({ error: 'Missing required parameters: prompt, elementId, or filePath' });
   }
 
-  // Fast path for Visual NTP handshake requests
   if (prompt === 'PING') {
     return res.json({ success: true, message: 'PONG' });
   }
 
-  // Ensure filePath is within public/elements for safety
   let resolvedPath = '';
   try {
     resolvedPath = resolveElementFilePath(filePath);
@@ -482,7 +470,6 @@ app.post('/api/compile', async (req, res) => {
     return res.status(400).json({ error: 'Invalid file path. Path must be inside public/elements' });
   }
 
-  // Throttling / Caching check
   const now = Date.now();
   const cached = compileCache.get(filePath);
   if (cached && (now - cached.timestamp < 3000) && prompt.includes('Initialize')) {
@@ -566,17 +553,12 @@ app.post('/api/compile', async (req, res) => {
 
   generatedCode = stripCodeFences(generatedCode);
 
-  // Write the code to disk
   fs.writeFileSync(resolvedPath, generatedCode, 'utf8');
   console.log(`[Compiler] Code written to: ${resolvedPath}`);
   queueLiveCommit([resolvedPath], `compile ${elementId}`);
 
-  // Transpile to IIFE string for new Function()
-  // Replace 'export default function setup' with 'return function setup'
-  // and 'export default async function setup' with 'return async function setup'
   let transpiled = transpileModuleSource(generatedCode);
 
-  // Cache compile results
   compileCache.set(filePath, {
     rawCode: generatedCode,
     transpiledCode: transpiled,
@@ -717,7 +699,6 @@ app.post('/api/agent-command', async (req, res) => {
   });
 });
 
-// Sessions API
 const sessionsDir = path.resolve(REPO_ROOT, 'sessions');
 
 app.get('/api/sessions', (req, res) => {
@@ -769,7 +750,6 @@ app.get('/api/sessions/:date/rollouts/:filename', (req, res) => {
   const { date, filename } = req.params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'invalid date' });
   if (!/^[\w\-.]+\.jsonl$/.test(filename)) return res.status(400).json({ error: 'invalid filename' });
-  // search all source subdirs
   const dateDir = path.join(sessionsDir, date);
   let filePath = null;
   if (fs.existsSync(dateDir)) {
@@ -782,9 +762,8 @@ app.get('/api/sessions/:date/rollouts/:filename', (req, res) => {
   const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(Boolean);
   const events = [];
   let meta = null;
-  // Codex format: function_call and function_call_output are role-less response_items
-  const pendingCalls = new Map(); // call_id → {name, input, output}
-  const callOrder = [];           // ordered list of call_ids seen so far
+  const pendingCalls = new Map();
+  const callOrder = [];
   let totalTokenUsage = null;
 
   const flushCalls = () => {
@@ -818,7 +797,6 @@ app.get('/api/sessions/:date/rollouts/:filename', (req, res) => {
         const role = p.role;
 
         if (!role) {
-          // Codex role-less items: function_call, function_call_output, reasoning
           if (p.type === 'function_call') {
             let input = p.arguments;
             try { input = JSON.parse(p.arguments); } catch {}
@@ -841,12 +819,10 @@ app.get('/api/sessions/:date/rollouts/:filename', (req, res) => {
           .map(c => c.text.trim())
           .filter(Boolean);
 
-        // Claude format: tool_use items in content array
         const contentToolCalls = (p.content || [])
           .filter(c => c.type === 'tool_use')
           .map(c => ({ name: c.name, input: c.input, output: null, callId: c.id }));
 
-        // Claude format: tool_result items paired with previous tool_use
         (p.content || [])
           .filter(c => c.type === 'tool_result')
           .forEach(c => {
@@ -1265,17 +1241,14 @@ async function generateWithGemini(compilerPrompt) {
   return code;
 }
 
-// Helper: Smart Local Mock Compiler
 function getMockCode(prompt, elementId, prevState, elementsMap) {
   const p = prompt.toLowerCase();
   const freq = prevState?.frequency || 220;
   const name = prevState?.name || 'Instrument';
 
-  // Workspace awareness: find if there is an active LFO element on the canvas to route compile-time connections!
   let lfoElementId = '';
   if (elementsMap) {
     try {
-      // In Yjs, elementsMap is a Y.Map. We can iterate over its keys
       for (const id of elementsMap.keys()) {
         const layout = elementsMap.get(id);
         if (layout && (layout.type === 'lfo' || id.includes('lfo'))) {
@@ -1289,7 +1262,6 @@ function getMockCode(prompt, elementId, prevState, elementsMap) {
   }
 
   if (p.includes('lfo') || p.includes('modulator') || p.includes('wave')) {
-    // Generate LFO Modulator
     return `// LFO Modulator Element
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
@@ -1426,7 +1398,6 @@ export default function setup(ctx, prevState) {
   };
 }`;
   } else if (p.includes('sequencer') || p.includes('drum') || p.includes('beat')) {
-    // Generate Step Sequencer
     return `// Drum Step Sequencer Element
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
@@ -1618,7 +1589,6 @@ export default function setup(ctx, prevState) {
   };
 }`;
   } else if (p.includes('visualizer') || p.includes('analyzer')) {
-    // Generate visualizer
     return `// Canvas Audio Visualizer
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
@@ -1713,7 +1683,6 @@ export default function setup(ctx, prevState) {
   };
 }`;
   } else {
-    // Default interactive Synth Sound-Maker
     return `// Interactive Synthesizer Element
 export default function setup(ctx, prevState) {
   const dom = ctx.domRoot;
@@ -1877,19 +1846,16 @@ export default function setup(ctx, prevState) {
   }
 }
 
-// Start HTTP server and bind WebSocket upgrade listeners
 const server = http.createServer(app);
 
 const wssYjs = new WebSocketServer({ noServer: true });
 const wssController = new WebSocketServer({ noServer: true });
 const wssTerminal = new WebSocketServer({ noServer: true });
 
-// Handle standard Yjs connections
 wssYjs.on('connection', (ws, req) => {
   setupWSConnection(ws, req, { docName: 'jam-workspace', gc: true });
 });
 
-// Handle custom raw low-latency controller connections
 wssController.on('connection', (ws, req) => {
   const isHost = req.url.includes('host=true');
   
@@ -1902,7 +1868,6 @@ wssController.on('connection', (ws, req) => {
   }
 
   ws.on('message', (message) => {
-    // If we receive a message from a controller, forward it instantly to the host
     if (!isHost) {
       if (hostClient && hostClient.readyState === 1) {
         hostClient.send(message);
@@ -1921,7 +1886,6 @@ wssController.on('connection', (ws, req) => {
   });
 });
 
-// Bridge one independent interactive agent PTY into each connected browser client.
 wssTerminal.on('connection', async (ws) => {
   let session = null;
 
@@ -1939,7 +1903,7 @@ wssTerminal.on('connection', async (ws) => {
       } else if (msg.type === 'resize') {
         resizeAgentPty(session, msg.cols, msg.rows);
       } else if (msg.type === 'clear') {
-        session.history.length = 0;
+        if (session) session.history.length = 0;
         sendTerminalMessage(ws, { type: 'clear' });
       }
     } catch (err) {
@@ -1952,7 +1916,6 @@ wssTerminal.on('connection', async (ws) => {
   });
 });
 
-// Intercept server upgrades and route accordingly
 server.on('upgrade', (req, socket, head) => {
   const url = req.url || '';
   if (url.startsWith('/yjs')) {

@@ -23,7 +23,12 @@ export default async function setup(ctx, prevState) {
 
   ctx.domRoot.innerHTML = `
     <style>
-      :host { display: block; height: 100%; }
+      :host {
+        display: block;
+        height: 100%;
+        user-select: text;
+        -webkit-user-select: text;
+      }
       .panel {
         box-sizing: border-box;
         height: 100%;
@@ -40,6 +45,8 @@ export default async function setup(ctx, prevState) {
         border: 1px solid rgba(45, 212, 191, 0.5);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        user-select: text;
+        -webkit-user-select: text;
       }
       .top {
         display: flex;
@@ -91,6 +98,8 @@ export default async function setup(ctx, prevState) {
         min-height: 86px;
         box-sizing: border-box;
         resize: none;
+        user-select: text;
+        -webkit-user-select: text;
         padding: 8px;
         color: #d1fae5;
         background: rgba(2, 6, 23, 0.68);
@@ -242,6 +251,9 @@ export default async function setup(ctx, prevState) {
     state.status = state.draftCode === state.code ? 'ready' : 'edited';
     render();
   });
+
+  codeInput.addEventListener('pointerdown', event => event.stopPropagation());
+  codeInput.addEventListener('mousedown', event => event.stopPropagation());
 
   codeInput.addEventListener('keydown', (event) => {
     if (isSilenceShortcut(event)) {

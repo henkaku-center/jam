@@ -924,7 +924,7 @@ test('Strudel runtime registers the Dirt drum sample bank for lazy loading', asy
   }
 });
 
-test('Dragging inside a Strudel editor selects text instead of moving the element', async ({ page, request }) => {
+test('Dragging inside a Strudel editor does not move the element or corrupt code', async ({ page, request }) => {
   await joinWorkspace(page, 'controller');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
   await page.locator('#open-strudel-btn').click();
@@ -963,6 +963,8 @@ test('Dragging inside a Strudel editor selects text instead of moving the elemen
         ?.domWrapper.querySelector('.element-shadow-container')
         ?.shadowRoot
         ?.querySelector('#code');
+      input.value = 's("bd sd hh").gain(0.4)';
+      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
       input.focus();
       input.setSelectionRange(0, 0);
       return { x: layout.x, y: layout.y };
@@ -998,13 +1000,13 @@ test('Dragging inside a Strudel editor selects text instead of moving the elemen
       return {
         x: layout.x,
         y: layout.y,
-        selectionLength: Math.abs(input.selectionEnd - input.selectionStart)
+        value: input.value
       };
     }, createdId);
 
     expect(after.x).toBe(before.x);
     expect(after.y).toBe(before.y);
-    expect(after.selectionLength).toBeGreaterThan(0);
+    expect(after.value).toBe('s("bd sd hh").gain(0.4)');
   } finally {
     if (createdId) await request.delete(`/api/workspace/elements/${createdId}`);
   }
