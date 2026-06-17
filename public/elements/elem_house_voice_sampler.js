@@ -657,7 +657,7 @@ export default function setup(ctx, prevState) {
           height: 200px;
           box-sizing: border-box;
           padding: 5px;
-          background: #120f16;
+          background: rgba(18, 20, 25, 0.25);
           border: 1px solid ${selectedColor()};
           border-radius: 8px;
           color: #f8fafc;
@@ -674,8 +674,8 @@ export default function setup(ctx, prevState) {
         }
         .scope {
           height: 28px;
-          background: #07060a;
-          border: 1px solid #3f2636;
+          background: rgba(18, 20, 25, 0.25);
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 5px;
           overflow: hidden;
           margin-bottom: 2px;
@@ -704,9 +704,9 @@ export default function setup(ctx, prevState) {
           min-width: 0;
           height: 18px;
           box-sizing: border-box;
-          border: 1px solid #5b294d;
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 4px;
-          background: #1d1020;
+          background: rgba(18, 20, 25, 0.25);
           color: #fce7f3;
           font: inherit;
           font-size: 9px;
@@ -765,7 +765,7 @@ export default function setup(ctx, prevState) {
         }
         .cell.current {
           background: #facc15 !important;
-          box-shadow: 0 0 8px rgba(250, 204, 21, 0.9);
+          
         }
         .status {
           margin-top: 2px;

@@ -39,9 +39,9 @@ export default function setup(ctx, prevState) {
         min-width: 260px;
         min-height: 190px;
         overflow: hidden;
-        border: 1px solid rgba(248, 113, 113, 0.58);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #020304;
+        background: rgba(18, 20, 25, 0.25);
         color: #e5fff7;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         box-shadow:
@@ -75,7 +75,7 @@ export default function setup(ctx, prevState) {
         color: #bdfcf1;
         font-size: 10px;
         line-height: 1.2;
-        text-shadow: 0 0 8px rgba(45, 212, 191, 0.85);
+        text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
       }
 
       .origin,
@@ -98,16 +98,16 @@ export default function setup(ctx, prevState) {
         height: 28px;
         display: grid;
         place-items: center;
-        border: 1px solid rgba(94, 234, 212, 0.48);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: rgba(1, 18, 20, 0.78);
+        background: rgba(18, 20, 25, 0.25);
         color: #e5fff7;
         font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         cursor: pointer;
       }
 
       button[aria-pressed="true"] {
-        border-color: rgba(248, 113, 113, 0.86);
+        border-color: rgba(42, 45, 53, 0.6);
         background: rgba(127, 29, 29, 0.82);
         color: #fff1f2;
       }
@@ -117,8 +117,8 @@ export default function setup(ctx, prevState) {
         align-self: start;
         margin-top: 12px;
         padding: 6px 10px;
-        border: 1px solid rgba(248, 113, 113, 0.82);
-        background: rgba(69, 10, 10, 0.76);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         color: #fecaca;
         font-size: clamp(11px, 3.3vw, 18px);
         font-weight: 800;
@@ -130,8 +130,8 @@ export default function setup(ctx, prevState) {
       .caption {
         position: relative;
         padding: 10px 12px 12px;
-        border: 1px solid rgba(94, 234, 212, 0.42);
-        background: rgba(1, 9, 12, 0.78);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         color: #e5fff7;
         font-size: clamp(12px, 3.8vw, 20px);
         font-weight: 800;
@@ -155,16 +155,16 @@ export default function setup(ctx, prevState) {
       .meter {
         width: 104px;
         height: 7px;
-        border: 1px solid rgba(94, 234, 212, 0.42);
-        background: rgba(1, 9, 12, 0.72);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
 
       .meter > i {
         display: block;
         width: 40%;
         height: 100%;
-        background: linear-gradient(90deg, #5eead4, #fca5a5);
-        box-shadow: 0 0 12px rgba(94, 234, 212, 0.55);
+        background: rgba(18, 20, 25, 0.25);
+        
         transform-origin: left center;
       }
 
@@ -188,9 +188,7 @@ export default function setup(ctx, prevState) {
         pointer-events: none;
         position: absolute;
         inset: 0;
-        background:
-          radial-gradient(circle at 50% 45%, transparent 0 46%, rgba(0, 0, 0, 0.36) 72%, rgba(0, 0, 0, 0.78) 100%),
-          linear-gradient(90deg, rgba(248, 113, 113, 0.12), transparent 24%, transparent 76%, rgba(34, 211, 238, 0.12));
+        background: rgba(18, 20, 25, 0.25);
       }
     </style>
     <div class="ufo-feed">

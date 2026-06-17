@@ -549,7 +549,7 @@ export default function setup(ctx, prevState) {
         height: 100%;
         min-width: 280px;
         padding: 10px 12px;
-        background: #08110f;
+        background: rgba(18, 20, 25, 0.25);
         color: #dbe9df;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
         display: grid;
@@ -570,9 +570,9 @@ export default function setup(ctx, prevState) {
         letter-spacing: 0;
       }
       button {
-        border: 1px solid #5f7f74;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px;
-        background: #10221d;
+        background: rgba(18, 20, 25, 0.25);
         color: #e8f3dc;
         cursor: pointer;
         font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
@@ -581,7 +581,7 @@ export default function setup(ctx, prevState) {
       }
       button.on {
         background: #c58434;
-        border-color: #f6d58f;
+        border-color: rgba(42, 45, 53, 0.6);
         color: #08110f;
       }
       .meters {
@@ -591,8 +591,8 @@ export default function setup(ctx, prevState) {
       }
       .meter {
         min-width: 0;
-        border: 1px solid #28433a;
-        background: #0d1916;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         padding: 6px;
       }
       .meter b {
@@ -604,14 +604,14 @@ export default function setup(ctx, prevState) {
       .bar {
         position: relative;
         height: 7px;
-        background: #132620;
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       .bar span {
         position: absolute;
         inset: 0 auto 0 0;
         width: 0%;
-        background: linear-gradient(90deg, #92d3b8, #f6d58f);
+        background: rgba(18, 20, 25, 0.25);
       }
       .controls {
         display: grid;
@@ -636,16 +636,16 @@ export default function setup(ctx, prevState) {
       }
       .step {
         height: 16px;
-        border: 1px solid #28433a;
-        background: #0d1916;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       .step.beat {
-        border-color: #5f7f74;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .step.active {
         background: #f6d58f;
-        border-color: #f6d58f;
-        box-shadow: 0 0 10px rgba(246, 213, 143, 0.55);
+        border-color: rgba(42, 45, 53, 0.6);
+        
       }
     </style>
     <div class="root">

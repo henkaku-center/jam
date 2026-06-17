@@ -34,9 +34,9 @@ export default function setup(ctx, prevState) {
         min-height: 260px;
         display: grid;
         grid-template-rows: auto 1fr;
-        background: #151515;
+        background: rgba(18, 20, 25, 0.25);
         color: #f2f0e7;
-        border: 1px solid rgba(242, 240, 231, 0.14);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 12px/1.35 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         overflow: hidden;
       }
@@ -84,7 +84,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #20c7a6;
+        accent-color: #3b82f6;
       }
       .master-output {
         color: #ffc857;
@@ -106,7 +106,7 @@ export default function setup(ctx, prevState) {
         place-items: center;
         color: #9a968d;
         border: 1px dashed rgba(242, 240, 231, 0.18);
-        background: #181817;
+        background: rgba(18, 20, 25, 0.25);
       }
       .strip {
         flex: 0 0 86px;
@@ -115,7 +115,7 @@ export default function setup(ctx, prevState) {
         grid-template-rows: 38px 24px 62px 1fr 24px;
         gap: 8px;
         padding: 8px;
-        border: 1px solid rgba(242, 240, 231, 0.13);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         background: #242421;
       }
       .channel-name {
@@ -136,14 +136,14 @@ export default function setup(ctx, prevState) {
         position: relative;
         height: 16px;
         overflow: hidden;
-        border: 1px solid rgba(242, 240, 231, 0.16);
-        background: #10100f;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       .meter-fill {
         position: absolute;
         inset: 0 auto 0 0;
         width: 0%;
-        background: linear-gradient(90deg, #20c7a6 0%, #d4d249 58%, #ff6b4a 100%);
+        background: rgba(18, 20, 25, 0.25);
       }
       .filter {
         display: grid;
@@ -156,9 +156,8 @@ export default function setup(ctx, prevState) {
         width: 42px;
         height: 42px;
         border-radius: 50%;
-        border: 1px solid rgba(242, 240, 231, 0.24);
-        background:
-          radial-gradient(circle at 50% 55%, #30302d 0 52%, #111 53% 100%);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         cursor: ns-resize;
         outline: none;
         touch-action: none;
@@ -194,15 +193,15 @@ export default function setup(ctx, prevState) {
       .mute {
         width: 100%;
         height: 24px;
-        border: 1px solid rgba(242, 240, 231, 0.18);
-        background: #1a1a18;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         color: #d9d5c8;
         font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
         cursor: pointer;
       }
       .mute.active {
         background: #b83b35;
-        border-color: #ff7a6e;
+        border-color: rgba(42, 45, 53, 0.6);
         color: #fff7ed;
       }
     </style>

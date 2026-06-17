@@ -21,7 +21,7 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         height: 100%;
         padding: 12px;
-        background: radial-gradient(circle at 20% 10%, #281414 0, #0c1014 42%, #06080a 100%);
+        background: rgba(18, 20, 25, 0.25);
         color: #f2efe9;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
         display: grid;
@@ -42,8 +42,8 @@ export default function setup(ctx, prevState) {
         letter-spacing: 0.06em;
       }
       button {
-        border: 1px solid #6f3e32;
-        background: #15191d;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         color: #f2efe9;
         font: inherit;
         padding: 5px 8px;
@@ -51,7 +51,7 @@ export default function setup(ctx, prevState) {
       }
       button[aria-pressed="true"] {
         background: #4f241d;
-        border-color: #d99164;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .grid {
         display: grid;
@@ -70,7 +70,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #d99164;
+        accent-color: #3b82f6;
       }
       .steps {
         align-self: end;
@@ -83,8 +83,8 @@ export default function setup(ctx, prevState) {
       .step {
         position: relative;
         height: 34px;
-        border: 1px solid #26343a;
-        background: #0d1518;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       .step::before {
@@ -92,11 +92,11 @@ export default function setup(ctx, prevState) {
         position: absolute;
         inset: auto 0 0;
         height: var(--level, 20%);
-        background: linear-gradient(#e0b065, #784035);
+        background: rgba(18, 20, 25, 0.25);
         opacity: 0.74;
       }
       .step.active {
-        border-color: #f1c17d;
+        border-color: rgba(42, 45, 53, 0.6);
         box-shadow: 0 0 12px #d9916466;
       }
       .step.mute::before {

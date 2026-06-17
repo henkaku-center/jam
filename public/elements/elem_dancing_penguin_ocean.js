@@ -27,10 +27,10 @@ export default function setup(ctx, prevState) {
         min-width: 340px;
         min-height: 250px;
         overflow: hidden;
-        border: 1px solid rgba(125, 211, 252, 0.5);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #061827;
-        color: #ecfeff;
+        background: rgba(18, 20, 25, 0.25);
+        color: #d4d8e0;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       canvas {
@@ -51,7 +51,7 @@ export default function setup(ctx, prevState) {
       .panel {
         min-width: 0;
         padding: 8px;
-        border: 1px solid rgba(224, 242, 254, 0.22);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         background: rgba(3, 7, 18, 0.62);
         backdrop-filter: blur(8px);
@@ -71,28 +71,28 @@ export default function setup(ctx, prevState) {
         min-width: 0;
         display: grid;
         gap: 3px;
-        color: #bae6fd;
+        color: #d4d8e0;
         font-size: 9px;
       }
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #38bdf8;
+        accent-color: #3b82f6;
       }
       button {
         width: 58px;
         height: 34px;
         color: #082f49;
-        background: #7dd3fc;
-        border: 1px solid #e0f2fe;
+        background: #3b82f6;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         font: inherit;
         cursor: pointer;
       }
       button.off {
         color: #dbeafe;
-        background: rgba(15, 23, 42, 0.82);
-        border-color: rgba(186, 230, 253, 0.34);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
     </style>
     <div class="penguin">

@@ -37,9 +37,9 @@ export default function setup(ctx, prevState) {
         min-width: 280px;
         min-height: 210px;
         overflow: hidden;
-        border: 1px solid rgba(166, 190, 199, 0.58);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #071016;
+        background: rgba(18, 20, 25, 0.25);
         color: #f8fafc;
         font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -76,7 +76,7 @@ export default function setup(ctx, prevState) {
         width: 42px;
         height: 7px;
         overflow: hidden;
-        border: 1px solid rgba(226, 232, 240, 0.62);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         background: rgba(3, 7, 18, 0.34);
       }
@@ -84,7 +84,7 @@ export default function setup(ctx, prevState) {
       .pulse-fill {
         width: 0%;
         height: 100%;
-        background: linear-gradient(90deg, #f43f5e, #e0f2fe, #2dd4bf);
+        background: rgba(18, 20, 25, 0.25);
       }
 
       .controls {
@@ -96,7 +96,7 @@ export default function setup(ctx, prevState) {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
         padding: 8px;
-        border: 1px solid rgba(226, 232, 240, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         background: rgba(5, 12, 18, 0.62);
         color: #e5f4f7;
@@ -112,13 +112,13 @@ export default function setup(ctx, prevState) {
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #2dd4bf;
+        accent-color: #3b82f6;
       }
 
       .toggle {
         height: 26px;
         align-self: end;
-        border: 1px solid rgba(226, 232, 240, 0.46);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         color: #061016;
         background: #a7f3d0;
@@ -128,7 +128,7 @@ export default function setup(ctx, prevState) {
 
       .toggle.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
+        background: rgba(18, 20, 25, 0.25);
       }
 
       @media (max-width: 360px) {

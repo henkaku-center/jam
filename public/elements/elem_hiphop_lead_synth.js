@@ -266,10 +266,8 @@ export default function setup(ctx, prevState) {
         padding: 10px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(11, 12, 16, 0.98), rgba(21, 22, 24, 0.98) 55%, rgba(18, 28, 24, 0.98)),
-          repeating-linear-gradient(90deg, rgba(250, 204, 21, 0.07) 0 1px, transparent 1px 22px);
-        border: 1px solid rgba(250, 204, 21, 0.58);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         box-shadow: inset 0 0 24px rgba(20, 184, 166, 0.08);
@@ -290,7 +288,7 @@ export default function setup(ctx, prevState) {
       }
       .tag {
         margin-top: 2px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -305,7 +303,7 @@ export default function setup(ctx, prevState) {
         width: 46px;
         height: 28px;
         padding: 0;
-        border: 1px solid rgba(250, 204, 21, 0.7);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #111827;
         background: #facc15;
@@ -313,21 +311,21 @@ export default function setup(ctx, prevState) {
       }
       .toggle.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.8);
+        background: rgba(18, 20, 25, 0.25);
       }
       select {
         height: 28px;
-        color: #ecfeff;
-        background: rgba(2, 6, 23, 0.78);
-        border: 1px solid rgba(148, 163, 184, 0.34);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         outline: none;
       }
       .scope {
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: #05070a;
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       canvas {
@@ -352,7 +350,7 @@ export default function setup(ctx, prevState) {
         width: 100%;
         min-width: 0;
         height: 14px;
-        accent-color: #14b8a6;
+        accent-color: #3b82f6;
       }
       .steps {
         display: grid;
@@ -363,9 +361,9 @@ export default function setup(ctx, prevState) {
         height: 20px;
         min-width: 0;
         padding: 0;
-        color: #d1fae5;
-        background: rgba(31, 41, 55, 0.94);
-        border: 1px solid rgba(148, 163, 184, 0.24);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px;
         cursor: pointer;
         overflow: hidden;
@@ -373,14 +371,14 @@ export default function setup(ctx, prevState) {
       }
       .step.on {
         color: #042f2e;
-        background: #2dd4bf;
-        border-color: rgba(153, 246, 228, 0.72);
+        background: #3b82f6;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .step.current {
         color: #111827;
         background: #facc15;
-        border-color: #fef08a;
-        box-shadow: 0 0 12px rgba(250, 204, 21, 0.68);
+        border-color: rgba(42, 45, 53, 0.6);
+        
       }
     </style>
     <div class="lead">

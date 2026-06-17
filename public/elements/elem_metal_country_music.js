@@ -43,9 +43,9 @@ export default function setup(ctx, prevState) {
         grid-template-rows: auto 1fr auto auto;
         gap: 8px;
         overflow: hidden;
-        background: #11100d;
+        background: rgba(18, 20, 25, 0.25);
         color: #f7f2e8;
-        border: 1px solid rgba(247, 242, 232, 0.18);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 11px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .top {
@@ -63,7 +63,7 @@ export default function setup(ctx, prevState) {
       button {
         width: 34px;
         height: 25px;
-        border: 1px solid #d9a441;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px;
         background: #c47f22;
         color: #130d08;
@@ -73,18 +73,15 @@ export default function setup(ctx, prevState) {
       button.off {
         background: #211b16;
         color: #f7f2e8;
-        border-color: rgba(247, 242, 232, 0.28);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .stage {
         position: relative;
         min-height: 0;
-        border: 1px solid rgba(247, 242, 232, 0.16);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         overflow: hidden;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,0.06), transparent 38%),
-          radial-gradient(circle at 28% 22%, rgba(243,215,122,0.14), transparent 32%),
-          linear-gradient(135deg, #171411 0%, #2b2118 46%, #1b1b1d 100%);
+        background: rgba(18, 20, 25, 0.25);
       }
       canvas {
         display: block;
@@ -109,7 +106,7 @@ export default function setup(ctx, prevState) {
       }
       .meter span.on {
         background: #e8c457;
-        box-shadow: 0 0 8px rgba(232, 196, 87, 0.72);
+        
       }
       .controls {
         display: grid;
@@ -135,7 +132,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #d9a441;
+        accent-color: #3b82f6;
       }
       .readout {
         overflow: hidden;

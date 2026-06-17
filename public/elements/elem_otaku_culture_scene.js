@@ -178,10 +178,10 @@ export default function setup(ctx, prevState) {
         min-width: 360px;
         min-height: 260px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         color: #fff7ed;
-        background: #080612;
+        background: rgba(18, 20, 25, 0.25);
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .art {
@@ -196,9 +196,7 @@ export default function setup(ctx, prevState) {
       .veil {
         position: absolute;
         inset: 0;
-        background:
-          radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.04), transparent 36%),
-          linear-gradient(180deg, rgba(4, 2, 12, 0.08), rgba(4, 2, 12, 0.42));
+        background: rgba(18, 20, 25, 0.25);
         pointer-events: none;
       }
       .hud {
@@ -214,7 +212,7 @@ export default function setup(ctx, prevState) {
       .panel {
         min-width: 0;
         padding: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         background: rgba(5, 6, 18, 0.68);
         backdrop-filter: blur(8px);
@@ -240,22 +238,22 @@ export default function setup(ctx, prevState) {
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #fb7185;
+        accent-color: #3b82f6;
       }
       button {
         width: 58px;
         height: 34px;
         color: #111827;
         background: #fef08a;
-        border: 1px solid #ffffff;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         font: inherit;
         cursor: pointer;
       }
       button.off {
         color: #e5e7eb;
-        background: rgba(15, 23, 42, 0.82);
-        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .meter {
         position: absolute;
@@ -268,7 +266,7 @@ export default function setup(ctx, prevState) {
       .meter > div {
         width: calc(var(--pulse) * 100%);
         height: 100%;
-        background: linear-gradient(90deg, #22d3ee, #fb7185, #fef08a);
+        background: rgba(18, 20, 25, 0.25);
       }
     </style>
     <div class="scene">

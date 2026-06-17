@@ -272,13 +272,11 @@ export default function setup(ctx, prevState) {
         padding: 10px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(5, 8, 13, 0.98), rgba(14, 17, 23, 0.98) 50%, rgba(18, 23, 20, 0.98)),
-          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.038) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(186, 230, 253, 0.56);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        box-shadow: inset 0 0 28px rgba(125, 211, 252, 0.08);
+        box-shadow: inset 0 0 28px rgba(59, 130, 246, 0.5);
       }
       .top {
         min-width: 0;
@@ -289,14 +287,14 @@ export default function setup(ctx, prevState) {
       }
       h2 {
         margin: 0;
-        color: #bae6fd;
+        color: #d4d8e0;
         font-size: 14px;
         line-height: 1;
         letter-spacing: 0;
       }
       .tag {
         margin-top: 2px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -309,7 +307,7 @@ export default function setup(ctx, prevState) {
       .mode {
         height: 28px;
         padding: 0 9px;
-        border: 1px solid rgba(186, 230, 253, 0.7);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #082f49;
         background: #bae6fd;
@@ -318,21 +316,21 @@ export default function setup(ctx, prevState) {
       .toggle.off,
       .mode.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(18, 20, 25, 0.25);
       }
       select {
         height: 28px;
-        color: #ecfeff;
-        background: rgba(2, 6, 23, 0.78);
-        border: 1px solid rgba(148, 163, 184, 0.34);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         outline: none;
       }
       .scope {
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: #040609;
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       canvas {
@@ -357,7 +355,7 @@ export default function setup(ctx, prevState) {
         width: 100%;
         min-width: 0;
         height: 14px;
-        accent-color: #7dd3fc;
+        accent-color: #3b82f6;
       }
       .keys {
         position: relative;
@@ -370,19 +368,19 @@ export default function setup(ctx, prevState) {
       .key {
         height: 38px;
         border-radius: 3px;
-        border: 1px solid rgba(226, 232, 240, 0.34);
-        background: linear-gradient(#f8fafc, #cbd5e1);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         opacity: 0.74;
       }
       .key.black {
         height: 25px;
-        background: linear-gradient(#111827, #020617);
-        border-color: rgba(15, 23, 42, 0.8);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
         opacity: 0.9;
       }
       .key.active {
-        background: linear-gradient(#bae6fd, #38bdf8);
-        box-shadow: 0 0 12px rgba(125, 211, 252, 0.72);
+        background: rgba(18, 20, 25, 0.25);
+        
         opacity: 1;
       }
     </style>

@@ -99,7 +99,7 @@ export default function setup(ctx, prevState) {
         border-radius: 50%;
         background: #64ffda; /* Aqua-green accent */
         cursor: pointer;
-        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        
       }
       input[type="range"]::-moz-range-thumb {
         width: 18px;
@@ -107,10 +107,10 @@ export default function setup(ctx, prevState) {
         border-radius: 50%;
         background: #64ffda;
         cursor: pointer;
-        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        
       }
       button {
-        background: #007bff;
+        background: rgba(18, 20, 25, 0.25);
         color: white;
         border: none;
         padding: 10px 20px;
@@ -121,7 +121,7 @@ export default function setup(ctx, prevState) {
         width: 100%;
       }
       button:hover {
-        background: #0056b3;
+        background: rgba(18, 20, 25, 0.25);
       }
       button:active {
         transform: scale(0.98);
@@ -134,9 +134,9 @@ export default function setup(ctx, prevState) {
         width: 100px;
         height: 100px;
         border-radius: 50%;
-        background: radial-gradient(circle, #3a3a3a 0%, #2a2a2a 100%);
-        border: 2px solid #64ffda;
-        box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        
       }
       .value-display {
           font-size: 0.8em;

@@ -70,7 +70,7 @@ export default function setup(ctx, prevState) {
         height: 200px;
         overflow: hidden;
         border-radius: 8px;
-        background: #071018;
+        background: rgba(18, 20, 25, 0.25);
         box-shadow:
           inset 0 0 0 1px rgba(255,255,255,0.18),
           0 8px 24px rgba(0,0,0,0.35);

@@ -32,7 +32,7 @@ export default function setup(ctx, prevState) {
         gap: 8px;
         background: #f6f2ea;
         color: #151515;
-        border: 1px solid rgba(20, 20, 20, 0.18);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         overflow: hidden;
       }
@@ -51,9 +51,9 @@ export default function setup(ctx, prevState) {
       button {
         width: 30px;
         height: 24px;
-        border: 1px solid #242424;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px;
-        background: #151515;
+        background: rgba(18, 20, 25, 0.25);
         color: #f8f3e8;
         cursor: pointer;
         font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
@@ -68,7 +68,7 @@ export default function setup(ctx, prevState) {
         background:
           linear-gradient(90deg, rgba(21,21,21,0.05) 1px, transparent 1px) 0 0 / 32px 100%,
           #fbf8ef;
-        border: 1px solid rgba(21, 21, 21, 0.16);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         overflow: hidden;
       }
@@ -91,7 +91,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #111;
+        accent-color: #3b82f6;
       }
       .readout {
         color: #8a1f20;

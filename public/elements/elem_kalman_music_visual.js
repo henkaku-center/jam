@@ -20,9 +20,9 @@ export default function setup(ctx, prevState) {
         min-width: 260px;
         min-height: 190px;
         overflow: hidden;
-        border: 1px solid rgba(94, 234, 212, 0.42);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #05070a;
+        background: rgba(18, 20, 25, 0.25);
       }
       canvas {
         display: block;
@@ -48,11 +48,11 @@ export default function setup(ctx, prevState) {
         gap: 2px;
       }
       .name {
-        color: #99f6e4;
+        color: #d4d8e0;
         font-size: 12px;
       }
       .sub {
-        color: #94a3b8;
+        color: #555d6e;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -71,7 +71,7 @@ export default function setup(ctx, prevState) {
       .bar {
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, #5eead4, #fde047, #fb7185);
+        background: rgba(18, 20, 25, 0.25);
       }
     </style>
     <div class="kalman">

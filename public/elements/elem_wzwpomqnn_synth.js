@@ -34,10 +34,8 @@ export default function setup(ctx, prevState) {
         gap: 8px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          radial-gradient(circle at 12% 0%, rgba(34, 197, 94, 0.22), transparent 34%),
-          linear-gradient(135deg, #10151f 0%, #1a1b25 48%, #0d1f22 100%);
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 12px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
@@ -70,7 +68,7 @@ export default function setup(ctx, prevState) {
       .power {
         width: 34px;
         height: 26px;
-        border: 1px solid rgba(255, 255, 255, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         color: #f8fafc;
         background: rgba(15, 23, 42, 0.58);
@@ -78,13 +76,13 @@ export default function setup(ctx, prevState) {
       }
       .power.on {
         color: #071316;
-        background: #5eead4;
-        box-shadow: 0 0 18px rgba(94, 234, 212, 0.45);
+        background: #3b82f6;
+        
       }
       .visual {
         position: relative;
         min-height: 74px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         overflow: hidden;
         background: rgba(2, 6, 23, 0.42);
@@ -131,7 +129,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #5eead4;
+        accent-color: #3b82f6;
       }
     </style>
     <div class="wrap">

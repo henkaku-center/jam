@@ -272,10 +272,8 @@ export default function setup(ctx, prevState) {
         gap: 9px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(8, 10, 9, 0.98), rgba(19, 14, 10, 0.98) 52%, rgba(8, 17, 15, 0.98)),
-          repeating-linear-gradient(45deg, rgba(250, 204, 21, 0.09) 0 2px, transparent 2px 18px);
-        border: 1px solid rgba(244, 114, 22, 0.5);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -294,7 +292,7 @@ export default function setup(ctx, prevState) {
       }
       .sub {
         margin-top: 2px;
-        color: #a7f3d0;
+        color: #d4d8e0;
         font-size: 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -310,14 +308,14 @@ export default function setup(ctx, prevState) {
         min-width: 50px;
         color: #1c1208;
         background: #fb923c;
-        border: 1px solid rgba(253, 186, 116, 0.78);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         cursor: pointer;
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.8);
-        border-color: rgba(148, 163, 184, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -335,7 +333,7 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #fb923c;
+        accent-color: #3b82f6;
       }
       .root {
         display: grid;
@@ -348,8 +346,8 @@ export default function setup(ctx, prevState) {
         min-width: 0;
         height: 24px;
         color: #ffedd5;
-        background: rgba(2, 6, 23, 0.72);
-        border: 1px solid rgba(251, 146, 60, 0.4);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
       }
       .pulse {
@@ -363,18 +361,16 @@ export default function setup(ctx, prevState) {
         position: relative;
         min-height: 74px;
         overflow: hidden;
-        border: 1px solid rgba(251, 146, 60, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background:
-          radial-gradient(circle at 50% 55%, rgba(251, 146, 60, 0.24), transparent 23%),
-          linear-gradient(90deg, rgba(6, 78, 59, 0.24), rgba(41, 37, 36, 0.22), rgba(124, 45, 18, 0.22));
+        background: rgba(18, 20, 25, 0.25);
       }
       .ring {
         position: absolute;
         inset: 50% auto auto 50%;
         width: 16px;
         height: 16px;
-        border: 1px solid rgba(253, 186, 116, 0.78);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 999px;
         transform: translate(-50%, -50%) scale(var(--scale));
         opacity: var(--alpha);
@@ -387,18 +383,18 @@ export default function setup(ctx, prevState) {
       .step {
         min-height: 18px;
         border-radius: 3px;
-        background: rgba(15, 23, 42, 0.82);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         opacity: 0.48;
       }
       .step.hit {
         background: #fb923c;
-        border-color: rgba(253, 186, 116, 0.72);
+        border-color: rgba(42, 45, 53, 0.6);
         opacity: 0.82;
       }
       .step.play {
         opacity: 1;
-        box-shadow: 0 0 11px rgba(251, 146, 60, 0.74);
+        
         transform: translateY(-1px);
       }
     </style>

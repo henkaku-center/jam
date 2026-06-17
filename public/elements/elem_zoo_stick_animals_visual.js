@@ -39,9 +39,8 @@ export default function setup(ctx, prevState) {
         min-height: 220px;
         overflow: hidden;
         border-radius: 8px;
-        border: 1px solid rgba(34, 197, 94, 0.28);
-        background:
-          linear-gradient(180deg, #dff7ff 0%, #fef3c7 58%, #bbf7d0 100%);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       canvas {
         display: block;
@@ -56,7 +55,7 @@ export default function setup(ctx, prevState) {
         border-radius: 6px;
         color: #14532d;
         background: rgba(240, 253, 244, 0.78);
-        border: 1px solid rgba(34, 197, 94, 0.22);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
         letter-spacing: 0;
         text-transform: capitalize;

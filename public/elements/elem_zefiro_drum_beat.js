@@ -549,7 +549,7 @@ export default function setup(ctx, prevState) {
         height: 100%;
         min-width: 280px;
         padding: 10px 12px;
-        background: #06070d;
+        background: rgba(18, 20, 25, 0.25);
         color: #e5eef6;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
         display: grid;
@@ -574,8 +574,8 @@ export default function setup(ctx, prevState) {
         gap: 5px;
       }
       button {
-        border: 1px solid #2563eb;
-        background: #0f172a;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         color: #dbeafe;
         border-radius: 4px;
         font: inherit;
@@ -583,8 +583,8 @@ export default function setup(ctx, prevState) {
         cursor: pointer;
       }
       button.on {
-        background: #0e7490;
-        border-color: #67e8f9;
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       label {
         display: grid;
@@ -595,7 +595,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #22d3ee;
+        accent-color: #3b82f6;
       }
       .meter {
         display: grid;
@@ -608,25 +608,25 @@ export default function setup(ctx, prevState) {
         height: 8px;
         position: relative;
         overflow: hidden;
-        border: 1px solid #1e3a5f;
-        background: #0f172a;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       .bar span {
         position: absolute;
         inset: 0 auto 0 0;
         width: 0%;
-        background: linear-gradient(90deg, #22d3ee, #c084fc, #facc15);
+        background: rgba(18, 20, 25, 0.25);
       }
       .src {
-        color: #94a3b8;
+        color: #555d6e;
         text-align: right;
         font-size: 10px;
       }
       .orb {
         align-self: stretch;
         min-height: 58px;
-        border: 1px solid #164e63;
-        background: radial-gradient(circle at center, #155e75 0%, #312e81 36%, #0f172a 68%);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         display: grid;
         place-items: center;
         overflow: hidden;
@@ -635,7 +635,7 @@ export default function setup(ctx, prevState) {
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        background: radial-gradient(circle at 36% 30%, #fef3c7, #22d3ee 38%, #7c3aed 72%);
+        background: rgba(18, 20, 25, 0.25);
         box-shadow: 0 0 calc(9px + var(--pulse) * 34px) rgba(34, 211, 238, 0.78);
         transform: scale(calc(0.9 + var(--pulse) * 0.55)) rotate(calc(var(--step) * 24deg));
       }

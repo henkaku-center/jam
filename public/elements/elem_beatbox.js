@@ -326,10 +326,8 @@ export default function setup(ctx, prevState) {
         gap: 9px;
         overflow: hidden;
         color: #eff6ff;
-        background:
-          linear-gradient(135deg, #111315, #1c1b18 52%, #101923),
-          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(251, 191, 36, 0.5);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -363,7 +361,7 @@ export default function setup(ctx, prevState) {
       }
       button {
         height: 28px;
-        border: 1px solid rgba(253, 230, 138, 0.58);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #1f1604;
         background: #fbbf24;
@@ -371,8 +369,8 @@ export default function setup(ctx, prevState) {
       }
       button.off {
         color: #cbd5e1;
-        background: #18202a;
-        border-color: #475569;
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .pattern {
         display: grid;
@@ -384,13 +382,13 @@ export default function setup(ctx, prevState) {
         min-width: 0;
         padding: 0 6px;
         color: #dbeafe;
-        background: #17202a;
-        border-color: #405064;
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .pattern button.active {
         color: #1f1604;
         background: #f59e0b;
-        border-color: #fde68a;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .body {
         min-height: 76px;
@@ -413,8 +411,8 @@ export default function setup(ctx, prevState) {
       }
       .cell {
         min-width: 0;
-        border: 1px solid #344255;
-        background: #121923;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         border-radius: 3px;
         opacity: 0.46;
       }
@@ -447,20 +445,20 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #f59e0b;
+        accent-color: #3b82f6;
       }
       .meter {
         height: 9px;
         overflow: hidden;
-        border: 1px solid #4b5563;
-        background: #0b1118;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         border-radius: 3px;
       }
       .meter span {
         display: block;
         width: 0%;
         height: 100%;
-        background: linear-gradient(90deg, #f97316, #facc15, #38bdf8);
+        background: rgba(18, 20, 25, 0.25);
       }
     </style>
     <div class="root">

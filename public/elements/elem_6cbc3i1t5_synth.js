@@ -30,8 +30,8 @@ export default function setup(ctx, prevState) {
   dom.innerHTML = `
     <style>
       .card {
-        background: rgba(20, 20, 30, 0.95);
-        border: 2px solid #ef4444;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 12px;
         padding: 15px;
         color: #fff;
@@ -42,10 +42,10 @@ export default function setup(ctx, prevState) {
       }
       h3 { margin: 0 0 10px 0; color: #ef4444; text-align: center; font-size: 14px; }
       .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; align-items: center; }
-      input[type=range] { flex-grow: 1; margin-left: 10px; accent-color: #ef4444; }
+      input[type=range] { flex-grow: 1; margin-left: 10px; accent-color: #3b82f6; }
       .val { color: #fbbf24; font-weight: bold; min-width: 45px; text-align: right; }
       .wave-btn {
-        flex: 1; margin: 0 2px; padding: 4px; background: #2d2d3d; border: 1px solid #ef4444;
+        flex: 1; margin: 0 2px; padding: 4px; background: #2d2d3d; border: 1px solid rgba(42, 45, 53, 0.6);
         color: #fff; border-radius: 4px; cursor: pointer; font-size: 9px;
       }
       .wave-btn.active {

@@ -93,10 +93,8 @@ export default function setup(ctx, prevState) {
         grid-template-rows: auto auto 1fr;
         gap: 8px;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(13, 18, 28, 0.96), rgba(30, 24, 38, 0.96) 56%, rgba(12, 18, 24, 0.96)),
-          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(216, 180, 254, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.32 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -114,7 +112,7 @@ export default function setup(ctx, prevState) {
       }
       .sub {
         margin-top: 3px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 10px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -124,7 +122,7 @@ export default function setup(ctx, prevState) {
         height: 28px;
         min-width: 48px;
         padding: 0 9px;
-        border: 1px solid rgba(216, 180, 254, 0.58);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #13091f;
         background: #d8b4fe;
@@ -133,8 +131,8 @@ export default function setup(ctx, prevState) {
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
-        border-color: rgba(148, 163, 184, 0.34);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -151,14 +149,12 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #d8b4fe;
+        accent-color: #3b82f6;
       }
       .stage {
         min-height: 78px;
-        border: 1px solid rgba(216, 180, 254, 0.32);
-        background:
-          radial-gradient(circle at 48% 44%, rgba(233, 213, 255, 0.32), transparent calc(25% + var(--pulse) * 11%)),
-          linear-gradient(180deg, rgba(13, 18, 30, 0.58), rgba(4, 8, 18, 0.82));
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         display: grid;
         grid-template-columns: 1fr auto;
         align-items: end;
@@ -189,7 +185,7 @@ export default function setup(ctx, prevState) {
       }
       .steps span.on {
         background: #f5d0fe;
-        box-shadow: 0 0 10px rgba(216, 180, 254, 0.76);
+        
       }
     </style>
     <div class="root">

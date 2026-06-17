@@ -30,9 +30,9 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         height: 100%;
         padding: 14px;
-        border: 1px solid rgba(125, 211, 252, 0.34);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: linear-gradient(180deg, rgba(8, 18, 29, 0.96), rgba(13, 24, 33, 0.96));
+        background: rgba(18, 20, 25, 0.25);
         color: #e5f7ff;
         font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
@@ -64,35 +64,33 @@ export default function setup(ctx, prevState) {
         text-overflow: ellipsis;
       }
       button {
-        border: 1px solid rgba(148, 163, 184, 0.36);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: rgba(15, 23, 42, 0.86);
+        background: rgba(18, 20, 25, 0.25);
         color: #dbeafe;
         font: inherit;
         padding: 7px 9px;
         cursor: pointer;
       }
       button.active {
-        border-color: rgba(52, 211, 153, 0.7);
+        border-color: rgba(42, 45, 53, 0.6);
         background: rgba(6, 78, 59, 0.65);
-        color: #d1fae5;
+        color: #d4d8e0;
       }
       .meter {
         position: relative;
         height: 56px;
         margin: 8px 0 12px;
         border-radius: 8px;
-        background:
-          linear-gradient(90deg, rgba(14, 165, 233, 0.2), rgba(34, 197, 94, 0.24)),
-          rgba(2, 6, 23, 0.64);
-        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         overflow: hidden;
       }
       .sweep {
         position: absolute;
         inset: 0 auto 0 0;
         width: 34%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        background: rgba(18, 20, 25, 0.25);
       }
       .spot {
         position: absolute;
@@ -110,7 +108,7 @@ export default function setup(ctx, prevState) {
         position: absolute;
         left: 10px;
         bottom: 8px;
-        color: #bae6fd;
+        color: #d4d8e0;
       }
       .grid {
         display: grid;
@@ -124,7 +122,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #38bdf8;
+        accent-color: #3b82f6;
       }
       .read {
         display: flex;
@@ -135,7 +133,7 @@ export default function setup(ctx, prevState) {
         margin-top: 11px;
         height: 52px;
         overflow: hidden;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 11px;
       }
       .empty {

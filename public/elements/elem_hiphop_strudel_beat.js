@@ -52,10 +52,8 @@ export default async function setup(ctx, prevState) {
         padding: 10px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(6, 7, 10, 0.96), rgba(19, 21, 25, 0.96) 54%, rgba(8, 18, 20, 0.96)),
-          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(45, 212, 191, 0.46);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -73,14 +71,14 @@ export default async function setup(ctx, prevState) {
       }
       h2 {
         margin: 0;
-        color: #99f6e4;
+        color: #d4d8e0;
         font-size: 13px;
         line-height: 1;
         letter-spacing: 0;
       }
       .sub,
       .status {
-        color: #94a3b8;
+        color: #555d6e;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -96,14 +94,14 @@ export default async function setup(ctx, prevState) {
         min-width: 54px;
         padding: 0 10px;
         color: #041011;
-        background: #5eead4;
-        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: #3b82f6;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         cursor: pointer;
       }
       .run.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
+        background: rgba(18, 20, 25, 0.25);
       }
       textarea {
         box-sizing: border-box;
@@ -113,15 +111,15 @@ export default async function setup(ctx, prevState) {
         min-height: 96px;
         resize: none;
         padding: 8px;
-        color: #ecfeff;
+        color: #d4d8e0;
         background: rgba(0, 0, 0, 0.44);
-        border: 1px solid rgba(148, 163, 184, 0.3);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         outline: none;
       }
       textarea:focus {
-        border-color: #5eead4;
-        box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+        border-color: rgba(42, 45, 53, 0.6);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
       }
       .bottom {
         display: grid;
@@ -140,7 +138,7 @@ export default async function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #5eead4;
+        accent-color: #3b82f6;
       }
       .status {
         max-width: 132px;

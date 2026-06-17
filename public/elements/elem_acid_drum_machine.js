@@ -603,10 +603,8 @@ export default function setup(ctx, prevState) {
         gap: 9px;
         overflow: hidden;
         color: #eef2ff;
-        background:
-          linear-gradient(135deg, rgba(9, 10, 12, 0.98), rgba(15, 19, 18, 0.98) 54%, rgba(22, 18, 13, 0.98)),
-          repeating-linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(250, 204, 21, 0.5);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -625,7 +623,7 @@ export default function setup(ctx, prevState) {
       }
       .sub {
         margin-top: 2px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -641,14 +639,14 @@ export default function setup(ctx, prevState) {
         min-width: 50px;
         color: #0f172a;
         background: #facc15;
-        border: 1px solid rgba(254, 240, 138, 0.72);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         cursor: pointer;
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.8);
-        border-color: rgba(148, 163, 184, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -666,7 +664,7 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #facc15;
+        accent-color: #3b82f6;
       }
       .pattern {
         display: grid;
@@ -679,8 +677,8 @@ export default function setup(ctx, prevState) {
         min-width: 0;
         height: 24px;
         color: #fefce8;
-        background: rgba(2, 6, 23, 0.72);
-        border: 1px solid rgba(250, 204, 21, 0.36);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
       }
       .grid {
@@ -697,33 +695,33 @@ export default function setup(ctx, prevState) {
         align-items: stretch;
       }
       .name {
-        color: #94a3b8;
+        color: #555d6e;
         display: grid;
         align-items: center;
         font-size: 9px;
       }
       .cell {
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        background: rgba(15, 23, 42, 0.82);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         border-radius: 3px;
         opacity: 0.48;
       }
-      .cell.on.kick { background: #f43f5e; border-color: rgba(251, 113, 133, 0.74); }
-      .cell.on.snare { background: #22d3ee; border-color: rgba(103, 232, 249, 0.72); }
-      .cell.on.hat { background: #eab308; border-color: rgba(254, 240, 138, 0.68); }
-      .cell.on.acid { background: #84cc16; border-color: rgba(190, 242, 100, 0.72); }
-      .cell.on.clap { background: #a78bfa; border-color: rgba(196, 181, 253, 0.72); }
-      .cell.on.crash { background: #f97316; border-color: rgba(253, 186, 116, 0.72); }
-      .cell.on.stab { background: #38bdf8; border-color: rgba(125, 211, 252, 0.72); }
-      .cell.on.hoover { background: #fb7185; border-color: rgba(251, 113, 133, 0.72); }
-      .cell.on.siren { background: #facc15; border-color: rgba(254, 240, 138, 0.72); }
-      .cell.on.vox { background: #f472b6; border-color: rgba(249, 168, 212, 0.72); }
-      .cell.on.bleep { background: #2dd4bf; border-color: rgba(94, 234, 212, 0.72); }
+      .cell.on.kick { background: #f43f5e; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.snare { background: #22d3ee; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.hat { background: #eab308; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.acid { background: #84cc16; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.clap { background: #a78bfa; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.crash { background: #f97316; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.stab { background: #38bdf8; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.hoover { background: #fb7185; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.siren { background: #facc15; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.vox { background: #f472b6; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.bleep { background: #3b82f6; border-color: rgba(42, 45, 53, 0.6); }
       .cell.play {
         opacity: 1;
         transform: translateY(-1px);
-        box-shadow: 0 0 10px rgba(250, 204, 21, 0.62);
+        
       }
     </style>
     <div class="acid">

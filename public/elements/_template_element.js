@@ -10,8 +10,8 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         height: 100%;
         padding: 12px;
-        background: #081018;
-        color: #d1fae5;
+        background: rgba(18, 20, 25, 0.25);
+        color: #d4d8e0;
         font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       label {

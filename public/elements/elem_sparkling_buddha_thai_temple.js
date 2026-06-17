@@ -40,9 +40,9 @@ export default function setup(ctx, prevState) {
         min-width: 300px;
         min-height: 230px;
         overflow: hidden;
-        border: 1px solid rgba(250, 204, 21, 0.58);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #05060a;
+        background: rgba(18, 20, 25, 0.25);
         color: #fff7ed;
         font: 11px/1.28 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         box-shadow:
@@ -67,18 +67,18 @@ export default function setup(ctx, prevState) {
         gap: 8px;
         align-items: center;
         padding: 8px;
-        border: 1px solid rgba(254, 240, 138, 0.38);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: rgba(25, 13, 5, 0.76);
+        background: rgba(18, 20, 25, 0.25);
         backdrop-filter: blur(8px);
       }
 
       button {
         width: 42px;
         height: 30px;
-        border: 1px solid rgba(254, 240, 138, 0.72);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: linear-gradient(180deg, #fde68a, #f59e0b);
+        background: rgba(18, 20, 25, 0.25);
         color: #211002;
         font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         cursor: pointer;
@@ -86,8 +86,8 @@ export default function setup(ctx, prevState) {
 
       button.off {
         color: #fed7aa;
-        background: rgba(67, 20, 7, 0.86);
-        border-color: rgba(251, 146, 60, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
 
       .controls {
@@ -113,7 +113,7 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #facc15;
+        accent-color: #3b82f6;
       }
 
       .title {

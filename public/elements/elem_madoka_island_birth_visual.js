@@ -37,15 +37,15 @@ export default function setup(ctx, prevState) {
         min-height: 300px;
         overflow: hidden;
         border-radius: 8px;
-        border: 1px solid rgba(148, 163, 184, 0.24);
-        background: #000;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       iframe {
         display: block;
         width: 100%;
         height: 100%;
         border: 0;
-        background: #000;
+        background: rgba(18, 20, 25, 0.25);
       }
       .label {
         position: absolute;
@@ -55,7 +55,7 @@ export default function setup(ctx, prevState) {
         border-radius: 6px;
         color: rgba(248, 250, 252, 0.78);
         background: rgba(2, 6, 23, 0.48);
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         pointer-events: none;
         text-shadow: 0 1px 6px rgba(0, 0, 0, 0.72);
@@ -70,7 +70,7 @@ export default function setup(ctx, prevState) {
       button {
         width: 28px;
         height: 24px;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         color: rgba(248, 250, 252, 0.8);
         background: rgba(2, 6, 23, 0.48);
@@ -82,7 +82,7 @@ export default function setup(ctx, prevState) {
       }
       button[aria-pressed="false"] {
         color: rgba(248, 250, 252, 0.42);
-        border-color: rgba(148, 163, 184, 0.18);
+        border-color: rgba(42, 45, 53, 0.6);
       }
     </style>
     <div class="frame-shell">

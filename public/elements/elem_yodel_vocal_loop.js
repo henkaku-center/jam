@@ -115,10 +115,8 @@ export default function setup(ctx, prevState) {
         grid-template-rows: auto auto 1fr;
         gap: 9px;
         color: #f7fee7;
-        background:
-          linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(26, 31, 18, 0.96) 54%, rgba(7, 20, 19, 0.96)),
-          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 16px);
-        border: 1px solid rgba(190, 242, 100, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.32 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -136,7 +134,7 @@ export default function setup(ctx, prevState) {
       }
       .sub {
         margin-top: 3px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 10px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -146,7 +144,7 @@ export default function setup(ctx, prevState) {
         height: 28px;
         min-width: 48px;
         padding: 0 9px;
-        border: 1px solid rgba(190, 242, 100, 0.56);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #07140f;
         background: #bef264;
@@ -155,8 +153,8 @@ export default function setup(ctx, prevState) {
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
-        border-color: rgba(148, 163, 184, 0.34);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -173,14 +171,12 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #bef264;
+        accent-color: #3b82f6;
       }
       .stage {
         min-height: 68px;
-        border: 1px solid rgba(132, 204, 22, 0.34);
-        background:
-          radial-gradient(circle at calc(50% + var(--pan) * 18%) 44%, rgba(250, 204, 21, 0.48), transparent calc(23% + var(--pulse) * 15%)),
-          linear-gradient(180deg, rgba(6, 15, 12, 0.62), rgba(2, 6, 23, 0.8));
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         display: grid;
         grid-template-columns: 1fr auto;
         align-items: end;
@@ -208,11 +204,11 @@ export default function setup(ctx, prevState) {
       }
       .steps span.on {
         background: #bef264;
-        box-shadow: 0 0 10px rgba(190, 242, 100, 0.72);
+        
       }
       .source {
         margin-top: -3px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 10px;
         overflow: hidden;
         text-overflow: ellipsis;

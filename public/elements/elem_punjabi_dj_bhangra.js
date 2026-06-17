@@ -35,9 +35,9 @@ export default function setup(ctx, prevState) {
         grid-template-rows: auto 1fr auto;
         gap: 8px;
         overflow: hidden;
-        background: #0d0c12;
+        background: rgba(18, 20, 25, 0.25);
         color: #fff7e6;
-        border: 1px solid rgba(255, 247, 230, 0.18);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 11px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .top {
@@ -55,7 +55,7 @@ export default function setup(ctx, prevState) {
       button {
         width: 34px;
         height: 25px;
-        border: 1px solid #ffb703;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px;
         background: #ffb703;
         color: #17110a;
@@ -63,20 +63,17 @@ export default function setup(ctx, prevState) {
         font: 750 11px/1 ui-sans-serif, system-ui, sans-serif;
       }
       button.off {
-        background: #17131c;
+        background: rgba(18, 20, 25, 0.25);
         color: #fff7e6;
-        border-color: rgba(255, 247, 230, 0.28);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .stage {
         min-height: 0;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(255, 247, 230, 0.16);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background:
-          linear-gradient(135deg, rgba(255, 183, 3, 0.18), transparent 36%),
-          radial-gradient(circle at 72% 24%, rgba(255, 0, 110, 0.18), transparent 34%),
-          linear-gradient(180deg, #17131c 0%, #111925 100%);
+        background: rgba(18, 20, 25, 0.25);
       }
       canvas {
         display: block;
@@ -100,7 +97,7 @@ export default function setup(ctx, prevState) {
       }
       .steps span.on {
         background: #ffd166;
-        box-shadow: 0 0 10px rgba(255, 209, 102, 0.76);
+        
       }
       .controls {
         display: grid;
@@ -116,7 +113,7 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #ffb703;
+        accent-color: #3b82f6;
       }
     </style>
     <div class="root">

@@ -37,8 +37,8 @@ export default function setup(ctx, prevState) {
       .root {
         height: 100%;
         padding: 10px 12px;
-        background: #06090d;
-        color: #d1fae5;
+        background: rgba(18, 20, 25, 0.25);
+        color: #d4d8e0;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
         display: grid;
         grid-template-rows: auto auto 1fr auto;
@@ -53,16 +53,16 @@ export default function setup(ctx, prevState) {
       }
       .status {
         font-size: 10px;
-        color: #94a3b8;
+        color: #555d6e;
       }
       .status.ok { color: #4ade80; }
       .status.warn { color: #fbbf24; }
       .status.err { color: #f87171; }
       select {
         width: 100%;
-        background: #0f172a;
+        background: rgba(18, 20, 25, 0.25);
         color: #e2e8f0;
-        border: 1px solid #1e293b;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: inherit;
         padding: 3px 4px;
       }
@@ -82,19 +82,19 @@ export default function setup(ctx, prevState) {
       .meter .bar {
         position: relative;
         height: 8px;
-        background: #0f172a;
-        border: 1px solid #1e293b;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         overflow: hidden;
       }
       .meter .bar > span {
         position: absolute;
         inset: 0 auto 0 0;
-        background: linear-gradient(90deg, #22d3ee, #a78bfa);
+        background: rgba(18, 20, 25, 0.25);
       }
       .meter .val { text-align: right; color: #cbd5e1; }
       .log {
         font-size: 10px;
-        color: #64748b;
+        color: #555d6e;
         white-space: pre-wrap;
         max-height: 60px;
         overflow: hidden;

@@ -274,10 +274,8 @@ export default function setup(ctx, prevState) {
         padding: 11px;
         overflow: hidden;
         color: #f3f4f6;
-        background:
-          linear-gradient(135deg, #151515 0%, #24211e 55%, #101315 100%),
-          repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(248, 113, 113, 0.45);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -312,7 +310,7 @@ export default function setup(ctx, prevState) {
         padding: 0 8px;
         color: #fef2f2;
         background: #292524;
-        border: 1px solid #57534e;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         font: inherit;
         cursor: pointer;
@@ -320,7 +318,7 @@ export default function setup(ctx, prevState) {
       button.on {
         color: #111827;
         background: #fb923c;
-        border-color: #fed7aa;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .steps {
         display: grid;
@@ -330,16 +328,16 @@ export default function setup(ctx, prevState) {
       }
       .step {
         min-width: 0;
-        border: 1px solid #44403c;
-        background: #1c1917;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       .step.beat {
-        border-color: #78716c;
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .step.now {
         background: #f97316;
-        border-color: #fed7aa;
-        box-shadow: 0 0 14px rgba(249, 115, 22, 0.58);
+        border-color: rgba(42, 45, 53, 0.6);
+        
       }
       .step.hit {
         background-image: linear-gradient(180deg, rgba(248,113,113,0.95), rgba(124,45,18,0.4));
@@ -360,7 +358,7 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         min-width: 0;
         width: 100%;
-        accent-color: #fb923c;
+        accent-color: #3b82f6;
       }
       .meters {
         display: grid;
@@ -378,12 +376,12 @@ export default function setup(ctx, prevState) {
       }
       .lamp {
         height: 16px;
-        border: 1px solid #44403c;
-        background: #0c0a09;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
       .voice.active .lamp {
         background: #f43f5e;
-        border-color: #fecdd3;
+        border-color: rgba(42, 45, 53, 0.6);
         box-shadow: 0 0 calc(5px + var(--pulse) * 18px) rgba(244, 63, 94, 0.66);
       }
     </style>

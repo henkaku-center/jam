@@ -33,8 +33,8 @@ export default function setup(ctx, prevState) {
         min-height: 190px;
         overflow: hidden;
         border-radius: 8px;
-        border: 1px solid rgba(167, 139, 250, 0.58);
-        background: #030408;
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
       }
 
       canvas {

@@ -163,11 +163,8 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          radial-gradient(circle at 18% 20%, rgba(20, 184, 166, 0.34), transparent 34%),
-          radial-gradient(circle at 85% 12%, rgba(251, 191, 36, 0.28), transparent 31%),
-          linear-gradient(135deg, #111827 0%, #1f2937 58%, #0f172a 100%);
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         padding: 10px;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -197,7 +194,7 @@ export default function setup(ctx, prevState) {
         width: 34px;
         height: 28px;
         flex: 0 0 auto;
-        border: 1px solid rgba(248, 250, 252, 0.22);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         background: rgba(15, 23, 42, 0.62);
         color: #f8fafc;
@@ -205,8 +202,8 @@ export default function setup(ctx, prevState) {
         font-size: 14px;
       }
       .power[aria-pressed="true"] {
-        background: #14b8a6;
-        border-color: rgba(255, 255, 255, 0.45);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
         color: #06231f;
       }
       .scope {
@@ -216,14 +213,14 @@ export default function setup(ctx, prevState) {
         align-items: end;
         gap: 3px;
         padding: 6px;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         background: rgba(2, 6, 23, 0.46);
       }
       .bar {
         min-height: 5px;
         border-radius: 4px 4px 2px 2px;
-        background: linear-gradient(180deg, #fde68a, #14b8a6);
+        background: rgba(18, 20, 25, 0.25);
         transform-origin: bottom;
         opacity: 0.76;
       }
@@ -235,10 +232,10 @@ export default function setup(ctx, prevState) {
       }
       .pad {
         height: 30px;
-        border: 1px solid rgba(248, 250, 252, 0.2);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         color: #f8fafc;
-        background: rgba(15, 23, 42, 0.7);
+        background: rgba(18, 20, 25, 0.25);
         cursor: pointer;
         font-size: 11px;
         font-weight: 800;
@@ -246,7 +243,7 @@ export default function setup(ctx, prevState) {
       .pad.active {
         background: #fbbf24;
         color: #1f2937;
-        border-color: rgba(255, 255, 255, 0.5);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .row {
         display: grid;
@@ -259,14 +256,14 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #14b8a6;
+        accent-color: #3b82f6;
       }
       select {
         width: 100%;
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: rgba(15, 23, 42, 0.76);
+        background: rgba(18, 20, 25, 0.25);
         color: #f8fafc;
         font-size: 10px;
         padding: 3px 5px;

@@ -231,7 +231,7 @@ export default function setup(ctx, prevState) {
           border-radius: 50%;
           background: #61dafb;
           cursor: pointer;
-          box-shadow: 0 0 5px rgba(97, 218, 251, 0.5);
+          
         }
         input[type="range"]::-moz-range-thumb {
           width: 18px;
@@ -239,7 +239,7 @@ export default function setup(ctx, prevState) {
           border-radius: 50%;
           background: #61dafb;
           cursor: pointer;
-          box-shadow: 0 0 5px rgba(97, 218, 251, 0.5);
+          
         }
         button {
           padding: 1cqw 1.5cqw;
@@ -288,7 +288,7 @@ export default function setup(ctx, prevState) {
           width: 100%;
           padding: 6px;
           border-radius: 4px;
-          border: 1px solid #555;
+          border: 1px solid rgba(42, 45, 53, 0.6);
           background-color: #444;
           color: #eee;
           -webkit-appearance: none;

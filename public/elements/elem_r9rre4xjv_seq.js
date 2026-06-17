@@ -204,8 +204,8 @@ export default function setup(ctx, prevState) {
           width: 260px;
           box-sizing: border-box;
           padding: 10px;
-          background: #111827;
-          border: 1px solid #22d3ee;
+          background: rgba(18, 20, 25, 0.25);
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 8px;
           color: #f8fafc;
           font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -230,7 +230,7 @@ export default function setup(ctx, prevState) {
         }
         input[type="range"] {
           width: 118px;
-          accent-color: #22d3ee;
+          accent-color: #3b82f6;
         }
         label {
           display: inline-flex;
@@ -239,7 +239,7 @@ export default function setup(ctx, prevState) {
           white-space: nowrap;
         }
         input[type="checkbox"] {
-          accent-color: #22d3ee;
+          accent-color: #3b82f6;
         }
         .matrix {
           display: grid;
@@ -252,15 +252,15 @@ export default function setup(ctx, prevState) {
           align-items: center;
         }
         .label {
-          color: #94a3b8;
+          color: #555d6e;
           font-size: 9px;
         }
         .step {
           height: 18px;
           min-width: 0;
-          border: 1px solid #334155;
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 3px;
-          background: #1f2937;
+          background: rgba(18, 20, 25, 0.25);
           color: transparent;
           cursor: pointer;
           padding: 0;
@@ -271,13 +271,13 @@ export default function setup(ctx, prevState) {
         .step.active {
           color: #082f49;
           background: #22d3ee;
-          border-color: #67e8f9;
-          box-shadow: 0 0 8px rgba(34, 211, 238, 0.55);
+          border-color: rgba(42, 45, 53, 0.6);
+          
         }
         .step.ghost {
-          color: #cffafe;
-          background: #155e75;
-          border-color: #0891b2;
+          color: #d4d8e0;
+          background: rgba(18, 20, 25, 0.25);
+          border-color: rgba(42, 45, 53, 0.6);
           box-shadow: none;
         }
         .step.current {

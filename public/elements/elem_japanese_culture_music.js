@@ -254,10 +254,8 @@ export default function setup(ctx, prevState) {
         padding: 12px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          radial-gradient(circle at 18% 20%, rgba(248, 113, 113, 0.22), transparent 32%),
-          linear-gradient(135deg, #131521, #1d2433 56%, #090b12);
-        border: 1px solid rgba(251, 191, 36, 0.46);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -287,15 +285,15 @@ export default function setup(ctx, prevState) {
         min-width: 58px;
         color: #111827;
         background: #fbbf24;
-        border: 1px solid #fde68a;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         font: inherit;
         cursor: pointer;
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
-        border-color: rgba(148, 163, 184, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -312,7 +310,7 @@ export default function setup(ctx, prevState) {
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #fbbf24;
+        accent-color: #3b82f6;
       }
       .steps {
         min-height: 0;
@@ -326,13 +324,13 @@ export default function setup(ctx, prevState) {
       .step {
         min-width: 0;
         height: calc(14px + var(--height) * 44px);
-        border: 1px solid rgba(251, 191, 36, 0.22);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 999px 999px 4px 4px;
-        background: rgba(15, 23, 42, 0.78);
+        background: rgba(18, 20, 25, 0.25);
         opacity: 0.5;
       }
       .step.on {
-        background: linear-gradient(180deg, rgba(254, 243, 199, 0.92), rgba(185, 28, 28, 0.38));
+        background: rgba(18, 20, 25, 0.25);
         opacity: 0.9;
       }
       .step.now {

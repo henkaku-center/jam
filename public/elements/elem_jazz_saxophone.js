@@ -229,8 +229,8 @@ export default function setup(ctx, prevState) {
         padding: 12px;
         overflow: hidden;
         color: #f8fafc;
-        background: linear-gradient(135deg, #15120d, #17202a 54%, #08111a);
-        border: 1px solid rgba(251, 191, 36, 0.5);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         box-shadow: inset 0 0 28px rgba(251, 191, 36, 0.08);
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -261,15 +261,15 @@ export default function setup(ctx, prevState) {
         min-width: 58px;
         color: #111827;
         background: #fbbf24;
-        border: 1px solid #fde68a;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         font: inherit;
         cursor: pointer;
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
-        border-color: rgba(148, 163, 184, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -287,7 +287,7 @@ export default function setup(ctx, prevState) {
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #fbbf24;
+        accent-color: #3b82f6;
       }
       .staff {
         min-height: 0;
@@ -301,14 +301,14 @@ export default function setup(ctx, prevState) {
       .note {
         min-width: 0;
         height: calc(16px + var(--height) * 44px);
-        border: 1px solid rgba(251, 191, 36, 0.22);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 4px 4px 8px 8px;
-        background: rgba(15, 23, 42, 0.76);
+        background: rgba(18, 20, 25, 0.25);
         opacity: 0.45;
       }
       .note.on {
         opacity: 0.85;
-        background: linear-gradient(180deg, rgba(253, 230, 138, 0.85), rgba(146, 64, 14, 0.5));
+        background: rgba(18, 20, 25, 0.25);
       }
       .note.now {
         opacity: 1;

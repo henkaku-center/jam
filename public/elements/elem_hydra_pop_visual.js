@@ -22,9 +22,9 @@ export default function setup(ctx, prevState) {
         min-width: 280px;
         min-height: 210px;
         overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: #070812;
+        background: rgba(18, 20, 25, 0.25);
         box-shadow:
           0 0 0 2px rgba(255, 44, 160, 0.46),
           0 16px 42px rgba(0, 0, 0, 0.32),
@@ -62,7 +62,7 @@ export default function setup(ctx, prevState) {
         width: 42px;
         height: 8px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.66);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         background: rgba(7, 8, 18, 0.36);
       }
@@ -70,7 +70,7 @@ export default function setup(ctx, prevState) {
       .beat-fill {
         width: 0%;
         height: 100%;
-        background: linear-gradient(90deg, #ffe84a, #ff2ca0, #00d9ff);
+        background: rgba(18, 20, 25, 0.25);
       }
 
       .controls {
@@ -82,7 +82,7 @@ export default function setup(ctx, prevState) {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
         padding: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         background: rgba(7, 8, 18, 0.62);
         color: #ffffff;
@@ -99,7 +99,7 @@ export default function setup(ctx, prevState) {
       input {
         width: 100%;
         min-width: 0;
-        accent-color: #ff2ca0;
+        accent-color: #3b82f6;
       }
 
       @media (max-width: 340px) {
@@ -161,7 +161,7 @@ export default function setup(ctx, prevState) {
           display: grid;
           place-items: center;
           border-radius: 8px;
-          background: #070812;
+          background: rgba(18, 20, 25, 0.25);
           color: #ffffff;
           font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
         }

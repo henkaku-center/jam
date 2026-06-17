@@ -249,10 +249,8 @@ export default function setup(ctx, prevState) {
         padding: 10px;
         overflow: hidden;
         color: #f8fafc;
-        background:
-          linear-gradient(135deg, rgba(8, 9, 12, 0.98), rgba(18, 21, 18, 0.98) 52%, rgba(24, 18, 10, 0.98)),
-          repeating-linear-gradient(0deg, rgba(252, 211, 77, 0.055) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(252, 211, 77, 0.58);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -272,7 +270,7 @@ export default function setup(ctx, prevState) {
       }
       .tag {
         margin-top: 2px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -283,7 +281,7 @@ export default function setup(ctx, prevState) {
         height: 28px;
         min-width: 48px;
         padding: 0 9px;
-        border: 1px solid rgba(252, 211, 77, 0.72);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         color: #1c1917;
         background: #fde68a;
@@ -291,21 +289,21 @@ export default function setup(ctx, prevState) {
       }
       .toggle.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(18, 20, 25, 0.25);
       }
       select {
         height: 28px;
-        color: #ecfeff;
-        background: rgba(2, 6, 23, 0.78);
-        border: 1px solid rgba(148, 163, 184, 0.34);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         outline: none;
       }
       .scope {
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: #040609;
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       canvas {
@@ -328,7 +326,7 @@ export default function setup(ctx, prevState) {
         width: 100%;
         min-width: 0;
         height: 14px;
-        accent-color: #fcd34d;
+        accent-color: #3b82f6;
       }
       .strings {
         display: grid;
@@ -339,12 +337,12 @@ export default function setup(ctx, prevState) {
       .string {
         height: 2px;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(253, 230, 138, 0.86), rgba(148, 163, 184, 0.18));
-        box-shadow: 0 0 8px rgba(252, 211, 77, 0.22);
+        background: rgba(18, 20, 25, 0.25);
+        
       }
       .string.active {
-        background: linear-gradient(90deg, rgba(45, 212, 191, 0.2), #fef3c7, rgba(45, 212, 191, 0.2));
-        box-shadow: 0 0 14px rgba(252, 211, 77, 0.65);
+        background: rgba(18, 20, 25, 0.25);
+        
       }
     </style>
     <div class="guitar">

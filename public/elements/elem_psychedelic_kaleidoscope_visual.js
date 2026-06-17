@@ -26,7 +26,7 @@ export default function setup(ctx, prevState) {
           radial-gradient(circle at 78% 24%, rgba(0, 229, 255, 0.42), transparent 32%),
           radial-gradient(circle at 52% 82%, rgba(255, 64, 169, 0.45), transparent 36%),
           #120020;
-        border: 2px solid rgba(255, 244, 96, 0.82);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         box-shadow: 0 0 24px rgba(0, 229, 255, 0.24), 0 0 52px rgba(255, 64, 169, 0.2);
       }
 
@@ -35,9 +35,7 @@ export default function setup(ctx, prevState) {
         position: absolute;
         inset: 0;
         pointer-events: none;
-        background:
-          linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
-          linear-gradient(0deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+        background: rgba(18, 20, 25, 0.25);
         background-size: 24px 24px;
         mix-blend-mode: screen;
         opacity: 0.48;
@@ -73,7 +71,7 @@ export default function setup(ctx, prevState) {
           display: grid;
           place-items: center;
           border-radius: 8px;
-          background: #09090f;
+          background: rgba(18, 20, 25, 0.25);
           color: #f5d0fe;
           font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
         }

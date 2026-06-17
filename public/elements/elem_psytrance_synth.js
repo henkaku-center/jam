@@ -364,11 +364,9 @@ export default function setup(ctx, prevState) {
         gap: 8px;
         padding: 10px;
         overflow: hidden;
-        color: #ecfeff;
-        background:
-          linear-gradient(135deg, rgba(4, 9, 12, 0.98), rgba(8, 14, 23, 0.98) 52%, rgba(18, 10, 24, 0.98)),
-          repeating-linear-gradient(90deg, rgba(45, 212, 191, 0.08) 0 1px, transparent 1px 18px);
-        border: 1px solid rgba(45, 212, 191, 0.56);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -380,13 +378,13 @@ export default function setup(ctx, prevState) {
       }
       h2 {
         margin: 0;
-        color: #99f6e4;
+        color: #d4d8e0;
         font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
         letter-spacing: 0;
       }
       .sub {
         margin-top: 2px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
       }
       button,
@@ -398,15 +396,15 @@ export default function setup(ctx, prevState) {
         height: 27px;
         min-width: 50px;
         color: #031414;
-        background: #5eead4;
-        border: 1px solid rgba(153, 246, 228, 0.72);
+        background: #3b82f6;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         cursor: pointer;
       }
       button.off {
         color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.82);
-        border-color: rgba(148, 163, 184, 0.42);
+        background: rgba(18, 20, 25, 0.25);
+        border-color: rgba(42, 45, 53, 0.6);
       }
       .controls {
         display: grid;
@@ -424,7 +422,7 @@ export default function setup(ctx, prevState) {
       input[type="range"] {
         min-width: 0;
         width: 100%;
-        accent-color: #5eead4;
+        accent-color: #3b82f6;
       }
       .pattern {
         display: grid;
@@ -436,9 +434,9 @@ export default function setup(ctx, prevState) {
       select {
         min-width: 0;
         height: 24px;
-        color: #ecfeff;
-        background: rgba(2, 6, 23, 0.72);
-        border: 1px solid rgba(45, 212, 191, 0.38);
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
       }
       .grid {
@@ -455,24 +453,24 @@ export default function setup(ctx, prevState) {
       .name {
         display: grid;
         align-items: center;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
       }
       .cell {
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        background: rgba(15, 23, 42, 0.82);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         border-radius: 3px;
         opacity: 0.42;
       }
-      .cell.on.bass { background: #14b8a6; border-color: rgba(94, 234, 212, 0.76); }
-      .cell.on.lead { background: #a78bfa; border-color: rgba(196, 181, 253, 0.76); }
-      .cell.on.blip { background: #facc15; border-color: rgba(254, 240, 138, 0.76); }
-      .cell.on.psy { background: #fb7185; border-color: rgba(253, 164, 175, 0.82); }
-      .cell.on.noise { background: #f97316; border-color: rgba(253, 186, 116, 0.82); }
+      .cell.on.bass { background: rgba(18, 20, 25, 0.25); border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.lead { background: #a78bfa; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.blip { background: #facc15; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.psy { background: #fb7185; border-color: rgba(42, 45, 53, 0.6); }
+      .cell.on.noise { background: #f97316; border-color: rgba(42, 45, 53, 0.6); }
       .cell.play {
         opacity: 1;
         transform: translateY(-1px);
-        box-shadow: 0 0 12px rgba(45, 212, 191, 0.68);
+        
       }
     </style>
     <div class="psy">

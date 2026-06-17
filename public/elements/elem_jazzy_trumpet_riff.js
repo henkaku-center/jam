@@ -283,8 +283,8 @@ export default function setup(ctx, prevState) {
         padding: 13px;
         overflow: hidden;
         color: #fff7ed;
-        background: linear-gradient(135deg, #20130a, #162033 56%, #090c12);
-        border: 1px solid rgba(251, 191, 36, 0.55);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         box-shadow: inset 0 0 30px rgba(251, 191, 36, 0.1);
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -313,9 +313,9 @@ export default function setup(ctx, prevState) {
       button {
         height: 30px;
         padding: 0 10px;
-        border: 1px solid rgba(251, 191, 36, 0.45);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
-        background: rgba(15, 23, 42, 0.76);
+        background: rgba(18, 20, 25, 0.25);
         color: #fde68a;
         font: inherit;
         cursor: pointer;
@@ -327,11 +327,9 @@ export default function setup(ctx, prevState) {
       .stage {
         position: relative;
         height: 64px;
-        border: 1px solid rgba(251, 191, 36, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background:
-          radial-gradient(circle at 28% 42%, rgba(251, 191, 36, var(--glow, 0.16)), transparent 34%),
-          linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(69, 26, 3, 0.54));
+        background: rgba(18, 20, 25, 0.25);
         overflow: hidden;
       }
       .bell {
@@ -341,7 +339,7 @@ export default function setup(ctx, prevState) {
         width: 35px;
         height: 35px;
         border-radius: 50%;
-        border: 8px solid rgba(251, 191, 36, 0.9);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-left-width: 3px;
         transform: scale(var(--scale, 1));
       }
@@ -353,7 +351,7 @@ export default function setup(ctx, prevState) {
         height: 16px;
         transform-origin: left center;
         transform: scaleX(var(--scale, 0.2));
-        background: linear-gradient(90deg, rgba(251, 191, 36, 0.48), rgba(248, 250, 252, 0));
+        background: rgba(18, 20, 25, 0.25);
       }
       .readout {
         position: absolute;
@@ -378,14 +376,14 @@ export default function setup(ctx, prevState) {
       }
       input[type="range"] {
         width: 100%;
-        accent-color: #f59e0b;
+        accent-color: #3b82f6;
       }
       .footer {
         align-self: end;
         display: flex;
         justify-content: space-between;
         gap: 8px;
-        color: #94a3b8;
+        color: #555d6e;
       }
     </style>
     <div class="trumpet">

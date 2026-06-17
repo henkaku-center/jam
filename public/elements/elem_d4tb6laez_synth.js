@@ -57,10 +57,8 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         color: #f8fafc;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at 18% 12%, rgba(45, 212, 191, 0.2), transparent 38%),
-          linear-gradient(145deg, rgba(10, 14, 24, 0.98), rgba(24, 18, 37, 0.96));
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 30px rgba(0, 0, 0, 0.28);
         padding: 12px;
@@ -77,7 +75,7 @@ export default function setup(ctx, prevState) {
 
       h3 {
         margin: 0;
-        color: #a7f3d0;
+        color: #d4d8e0;
         font-size: 12px;
         font-weight: 800;
         letter-spacing: 0;
@@ -86,10 +84,10 @@ export default function setup(ctx, prevState) {
 
       .status {
         min-width: 58px;
-        border: 1px solid rgba(45, 212, 191, 0.45);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 999px;
         padding: 3px 7px;
-        color: #5eead4;
+        color: #3b82f6;
         background: rgba(20, 184, 166, 0.1);
         font-size: 9px;
         font-weight: 800;
@@ -99,8 +97,8 @@ export default function setup(ctx, prevState) {
       .scope {
         height: 46px;
         border-radius: 7px;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        background: rgba(2, 6, 23, 0.76);
+        border: 1px solid rgba(42, 45, 53, 0.6);
+        background: rgba(18, 20, 25, 0.25);
         position: relative;
         overflow: hidden;
         margin-bottom: 9px;
@@ -130,7 +128,7 @@ export default function setup(ctx, prevState) {
         transform: translate(-50%, -50%);
         border-radius: 999px;
         background: #facc15;
-        box-shadow: 0 0 18px rgba(250, 204, 21, 0.9);
+        
       }
 
       .meter {
@@ -139,8 +137,8 @@ export default function setup(ctx, prevState) {
         bottom: 0;
         height: 3px;
         width: 50%;
-        background: linear-gradient(90deg, #2dd4bf, #facc15);
-        box-shadow: 0 0 10px rgba(45, 212, 191, 0.6);
+        background: rgba(18, 20, 25, 0.25);
+        
       }
 
       .row {
@@ -167,7 +165,7 @@ export default function setup(ctx, prevState) {
 
       input[type="range"] {
         width: 100%;
-        accent-color: #2dd4bf;
+        accent-color: #3b82f6;
       }
 
       .selects {
@@ -179,10 +177,10 @@ export default function setup(ctx, prevState) {
       select {
         width: 100%;
         min-width: 0;
-        border: 1px solid rgba(148, 163, 184, 0.3);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         color: #f8fafc;
-        background: rgba(15, 23, 42, 0.94);
+        background: rgba(18, 20, 25, 0.25);
         padding: 5px 6px;
         font-size: 10px;
         font-weight: 700;
@@ -193,13 +191,13 @@ export default function setup(ctx, prevState) {
         justify-content: space-between;
         gap: 8px;
         margin-top: 8px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         font-weight: 700;
       }
 
       .out {
-        color: #5eead4;
+        color: #3b82f6;
         font-variant-numeric: tabular-nums;
       }
     </style>

@@ -20,10 +20,10 @@ export default function setup(ctx, prevState) {
         min-width: 180px;
         min-height: 180px;
         overflow: hidden;
-        border: 1px solid rgba(94, 234, 212, 0.38);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: radial-gradient(circle at 50% 45%, #15212a 0%, #05070b 68%);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38), 0 0 34px rgba(45, 212, 191, 0.12);
+        background: rgba(18, 20, 25, 0.25);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38), 0 0 34px rgba(59, 130, 246, 0.5);
       }
 
       canvas {
@@ -41,10 +41,10 @@ export default function setup(ctx, prevState) {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         padding: 8px;
-        border: 1px solid rgba(148, 163, 184, 0.24);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
-        background: rgba(2, 6, 23, 0.72);
-        color: #d1fae5;
+        background: rgba(18, 20, 25, 0.25);
+        color: #d4d8e0;
         font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
         backdrop-filter: blur(8px);
       }
@@ -56,7 +56,7 @@ export default function setup(ctx, prevState) {
 
       input {
         width: 100%;
-        accent-color: #5eead4;
+        accent-color: #3b82f6;
       }
     </style>
     <div class="cube-shell">
@@ -88,9 +88,9 @@ export default function setup(ctx, prevState) {
           height: 100%;
           display: grid;
           place-items: center;
-          border: 1px solid #334155;
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 8px;
-          background: #060a10;
+          background: rgba(18, 20, 25, 0.25);
           color: #e2e8f0;
           font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
         }

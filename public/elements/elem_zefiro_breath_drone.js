@@ -22,7 +22,7 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         height: 100%;
         padding: 10px 12px;
-        background: #0a0612;
+        background: rgba(18, 20, 25, 0.25);
         color: #ddd6fe;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
         display: grid;
@@ -46,14 +46,14 @@ export default function setup(ctx, prevState) {
       .bar {
         position: relative;
         height: 8px;
-        background: #1e1b4b;
-        border: 1px solid #312e81;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         overflow: hidden;
       }
       .bar > span {
         position: absolute;
         inset: 0 auto 0 0;
-        background: linear-gradient(90deg, #a78bfa, #f0abfc);
+        background: rgba(18, 20, 25, 0.25);
       }
       .src { color: #818cf8; font-size: 10px; }
     </style>

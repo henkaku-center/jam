@@ -278,8 +278,8 @@ export default function setup(ctx, prevState) {
           height: 200px;
           box-sizing: border-box;
           padding: 5px;
-          background: #0c1117;
-          border: 1px solid #a3e635;
+          background: rgba(18, 20, 25, 0.25);
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 8px;
           color: #f8fafc;
           font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -297,8 +297,8 @@ export default function setup(ctx, prevState) {
         .scope {
           height: 48px;
           margin-bottom: 4px;
-          border: 1px solid #334155;
-          background: #05070a;
+          border: 1px solid rgba(42, 45, 53, 0.6);
+          background: rgba(18, 20, 25, 0.25);
           border-radius: 6px;
           overflow: hidden;
         }
@@ -322,7 +322,7 @@ export default function setup(ctx, prevState) {
         input[type="range"] {
           width: 100%;
           height: 12px;
-          accent-color: #a3e635;
+          accent-color: #3b82f6;
         }
         .footer {
           display: grid;
@@ -341,7 +341,7 @@ export default function setup(ctx, prevState) {
           min-width: 0;
           padding: 0;
           border: 0;
-          background: #1f2937;
+          background: rgba(18, 20, 25, 0.25);
           color: #d9f99d;
           border-radius: 2px;
           font: inherit;
@@ -355,11 +355,11 @@ export default function setup(ctx, prevState) {
         .note-cell.current {
           background: #eab308;
           color: #17200b;
-          box-shadow: 0 0 8px rgba(234, 179, 8, 0.8);
+          
         }
         button.toggle {
           height: 20px;
-          border: 1px solid #a3e635;
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 4px;
           background: ${state.enabled ? '#a3e635' : '#1f2937'};
           color: ${state.enabled ? '#17200b' : '#d9f99d'};

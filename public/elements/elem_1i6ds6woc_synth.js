@@ -70,23 +70,23 @@ export default function setup(ctx, prevState) {
     dom.innerHTML = `
       <style>
         .card {
-          background: rgba(20, 25, 35, 0.95);
-          border: 2px solid #06b6d4;
+          background: rgba(18, 20, 25, 0.25);
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 12px;
           padding: 15px;
           color: #fff;
           font-family: monospace;
-          box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+          box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5);
           width: 340px;
           box-sizing: border-box;
         }
-        h3 { margin: 0 0 10px 0; color: #06b6d4; text-align: center; font-size: 14px; }
+        h3 { margin: 0 0 10px 0; color: #3b82f6; text-align: center; font-size: 14px; }
         .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; align-items: center; }
         .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 10px 0; }
         .step {
           height: 24px;
-          background: #1e293b;
-          border: 1px solid #475569;
+          background: rgba(18, 20, 25, 0.25);
+          border: 1px solid rgba(42, 45, 53, 0.6);
           border-radius: 4px;
           cursor: pointer;
           display: flex;
@@ -96,9 +96,9 @@ export default function setup(ctx, prevState) {
           font-weight: bold;
         }
         .step.active {
-          background: #06b6d4;
-          border-color: #22d3ee;
-          box-shadow: 0 0 8px #06b6d4;
+          background: rgba(18, 20, 25, 0.25);
+          border-color: rgba(42, 45, 53, 0.6);
+          box-shadow: 0 0 8px #3b82f6;
           color: #0f172a;
         }
         .step.current {
