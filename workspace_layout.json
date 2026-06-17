@@ -1,15 +1,15 @@
 {
   "elem_white_fluffy_clouds": {
     "id": "elem_white_fluffy_clouds",
-    "x": 1498,
-    "y": -351,
+    "x": 1390,
+    "y": -498,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_white_fluffy_clouds.js",
     "type": "synth",
     "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
     "authored": "hand",
-    "reloadToken": 1779959222478
+    "reloadToken": 1781677678821
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
@@ -21,67 +21,67 @@
     "type": "visual",
     "prompt": "hand-authored glitchy GIF-like cat footage cut-up visual",
     "authored": "hand",
-    "reloadToken": 1779955730701
+    "reloadToken": 1781677678737
   },
   "elem_dancing_koala": {
     "id": "elem_dancing_koala",
-    "x": 1746,
-    "y": -586,
+    "x": 1851,
+    "y": -856,
     "width": 420,
     "height": 300,
     "filePath": "/elements/elem_dancing_koala_visual.js",
     "type": "visual",
     "prompt": "hand-authored dancing koala video loop with VHS trails and stage lights",
     "authored": "hand",
-    "reloadToken": 1779955994516
+    "reloadToken": 1781677678707
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 566,
-    "y": 1178,
+    "x": 1458,
+    "y": -82,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
     "type": "visual",
     "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
     "authored": "hand",
-    "reloadToken": 1779956950014
+    "reloadToken": 1781677678722
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 589,
-    "y": -160,
+    "x": 715,
+    "y": -200,
     "width": 390,
     "height": 280,
     "filePath": "/elements/elem_midi_controller_synth.js",
     "type": "synth",
     "prompt": "simple synth controlled simultaneously by nanoKEY notes and nanoKONTROL CC sliders/modifiers",
     "authored": "hand",
-    "reloadToken": 1779959581899
+    "reloadToken": 1781677678751
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
-    "x": 1178,
-    "y": -141,
+    "x": 1768,
+    "y": -479,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_webcore_os_chimes.js",
     "type": "synth",
     "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
-    "reloadToken": 1779959222477
+    "reloadToken": 1781677678806
   },
   "elem_sparkling_buddha_thai_temple": {
     "id": "elem_sparkling_buddha_thai_temple",
-    "x": 1131,
-    "y": -480,
+    "x": 1104,
+    "y": -561,
     "width": 560,
     "height": 370,
     "filePath": "/elements/elem_sparkling_buddha_thai_temple.js",
     "type": "synth",
     "prompt": "hand-authored sparkling Buddha visual with Thai temple bells, gong, chimes, and drone",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1781677678779
   },
   "elem_puh3bqvig": {
     "id": "elem_puh3bqvig",
@@ -93,6 +93,18 @@
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1781677678765
+  },
+  "elem_u7vkj7zgr": {
+    "id": "elem_u7vkj7zgr",
+    "x": 1910,
+    "y": -427,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 1781677678793
   }
 }
