@@ -732,6 +732,8 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         const editor = root?.querySelector('.cm-editor');
         const activeLine = root?.querySelector('.cm-activeLine');
         const cursor = root?.querySelector('.cm-cursor');
+        const line = root?.querySelector('.cm-line');
+        const token = root?.querySelector('.cm-line span');
         const cursorStyle = cursor ? getComputedStyle(cursor) : null;
         const cursorRect = cursor?.getBoundingClientRect();
         const textNode = root ? findTextNode(root.querySelector('.cm-line')) : null;
@@ -747,6 +749,10 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
           isFocused: editor?.classList.contains('cm-focused') || false,
           editorOutline: editor ? getComputedStyle(editor).outlineStyle : '',
           activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : '',
+          editorColor: editor ? getComputedStyle(editor).color : '',
+          lineColor: line ? getComputedStyle(line).color : '',
+          tokenColor: token ? getComputedStyle(token).color : '',
+          lineTextShadow: line ? getComputedStyle(line).textShadow : '',
           cursorWidth: cursorRect?.width || 0,
           cursorHeight: cursorRect?.height || 0,
           charWidth,
@@ -774,12 +780,16 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       .toMatchObject({
         isFocused: true,
         editorOutline: 'none',
-        activeLineBackground: 'rgba(255, 255, 255, 0.04)',
+        activeLineBackground: 'rgba(22, 78, 99, 0.5)',
+        editorColor: 'rgb(209, 250, 229)',
+        lineColor: 'rgb(209, 250, 229)',
+        tokenColor: 'rgb(209, 250, 229)',
+        lineTextShadow: 'none',
         cursorDisplay: 'block',
         cursorBorderLeftWidth: '0px',
-        cursorBackground: 'rgba(255, 255, 255, 0.01)',
+        cursorBackground: 'rgb(103, 232, 249)',
         cursorBlendMode: 'normal',
-        cursorBackdropFilter: 'invert(1)',
+        cursorBackdropFilter: 'none',
         cursorAnimationName: 'strudel-block-cursor-blink'
       });
 

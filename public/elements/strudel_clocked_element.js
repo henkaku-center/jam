@@ -37,7 +37,7 @@ export default async function setup(ctx, prevState) {
         min-width: 16ch;
         min-height: 1.35em;
         overflow: visible;
-        color: #d4d8e0;
+        color: #d1fae5;
         background: transparent;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         user-select: text;
@@ -56,6 +56,7 @@ export default async function setup(ctx, prevState) {
         min-width: 16ch;
         height: auto;
         overflow: visible;
+        color: #d1fae5 !important;
         background: transparent;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         isolation: isolate;
@@ -74,11 +75,18 @@ export default async function setup(ctx, prevState) {
         width: max-content;
         min-width: 16ch;
         padding: 0;
+        color: #d1fae5;
         caret-color: transparent;
-        text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
+        text-shadow: none;
       }
       .cm-line {
-        text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
+        color: #d1fae5;
+        text-shadow: none;
+      }
+      .cm-line span,
+      .cm-content span {
+        color: #d1fae5 !important;
+        text-shadow: none !important;
       }
       @keyframes strudel-block-cursor-blink {
         0%, 49% { opacity: 1; }
@@ -106,29 +114,35 @@ export default async function setup(ctx, prevState) {
       }
       .cm-editor.cm-focused .cm-cursor {
         border: 0 !important;
-        background: rgba(255, 255, 255, 0.01);
-        backdrop-filter: invert(1);
-        -webkit-backdrop-filter: invert(1);
+        background: #67e8f9;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
       }
       .cm-editor .cm-activeLine {
         background: transparent !important;
       }
       .cm-editor.cm-focused .cm-activeLine {
-        background: rgba(255,255,255,0.04) !important;
+        background: rgba(22, 78, 99, 0.5) !important;
+      }
+      .cm-editor.cm-focused .cm-selectionBackground,
+      .cm-editor .cm-line::selection,
+      .cm-editor .cm-selectionLayer .cm-selectionBackground,
+      .cm-editor .cm-content ::selection {
+        background: #164e63 !important;
       }
       .cm-tooltip {
-        border: 1px solid #2a2d35;
-        background: rgba(18, 20, 25, 0.95);
-        color: #d4d8e0;
+        border: 1px solid #164e63;
+        background: rgba(0, 5, 8, 0.98);
+        color: #d1fae5;
         overflow: visible;
       }
       .cm-tooltip-autocomplete ul {
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .cm-tooltip-autocomplete ul li[aria-selected] {
-        background: rgba(59, 130, 246, 0.2);
-        color: #d4d8e0;
+        background: #164e63;
+        color: #d1fae5;
       }
     </style>
     <textarea id="code" class="code-bridge" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
@@ -274,26 +288,34 @@ export default async function setup(ctx, prevState) {
 
   const editorTheme = EditorView.theme({
     '&': {
-      color: '#d4d8e0',
+      color: '#d1fae5 !important',
       background: 'transparent !important'
     },
     '&.cm-editor': {
+      color: '#d1fae5 !important',
       background: 'transparent !important',
       isolation: 'isolate'
     },
     '.cm-scroller': {
       background: 'transparent !important'
     },
+    '.cm-line, .cm-content, .cm-line span, .cm-content span': {
+      color: '#d1fae5 !important',
+      textShadow: 'none !important'
+    },
     '.cm-activeLine': {
       background: 'transparent !important'
     },
     '&.cm-focused .cm-activeLine': {
-      background: 'rgba(255,255,255,0.04) !important'
+      background: 'rgba(22, 78, 99, 0.5) !important'
+    },
+    '&.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, .cm-content ::selection': {
+      background: '#164e63 !important'
     },
     '.cm-content': {
       minHeight: '100%',
       caretColor: 'transparent',
-      textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
+      textShadow: 'none'
     },
     '&.cm-focused': {
       outline: 'none'
@@ -317,14 +339,14 @@ export default async function setup(ctx, prevState) {
     },
     '&.cm-focused .cm-cursor': {
       border: '0 !important',
-      background: 'rgba(255, 255, 255, 0.01)',
-      backdropFilter: 'invert(1)',
-      WebkitBackdropFilter: 'invert(1)',
+      background: '#67e8f9',
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
       animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
     },
     '.cm-line': {
       padding: '0',
-      textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
+      textShadow: 'none'
     }
   });
 
