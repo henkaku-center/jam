@@ -1,20 +1,8 @@
 {
-  "elem_white_fluffy_clouds": {
-    "id": "elem_white_fluffy_clouds",
-    "x": 1389,
-    "y": -763,
-    "width": 360,
-    "height": 270,
-    "filePath": "/elements/elem_white_fluffy_clouds.js",
-    "type": "synth",
-    "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
-    "authored": "hand",
-    "reloadToken": 1781679472752
-  },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1252,
-    "y": -811,
+    "x": 678,
+    "y": 372,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -23,64 +11,52 @@
     "authored": "hand",
     "reloadToken": 1781679472662
   },
-  "elem_midi_controller_synth": {
-    "id": "elem_midi_controller_synth",
-    "x": 936,
-    "y": -275,
-    "width": 390,
-    "height": 280,
-    "filePath": "/elements/elem_midi_controller_synth.js",
-    "type": "synth",
-    "prompt": "simple synth controlled simultaneously by nanoKEY notes and nanoKONTROL CC sliders/modifiers",
-    "authored": "hand",
-    "reloadToken": 1781679472690
-  },
-  "elem_webcore_os_chimes": {
-    "id": "elem_webcore_os_chimes",
-    "x": 615,
-    "y": -974,
-    "width": 360,
-    "height": 250,
-    "filePath": "/elements/elem_webcore_os_chimes.js",
-    "type": "synth",
-    "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
-    "authored": "hand",
-    "reloadToken": 1781679472737
-  },
-  "elem_puh3bqvig": {
-    "id": "elem_puh3bqvig",
-    "x": 4269,
-    "y": -3863,
-    "width": 360,
-    "height": 260,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 1781679472722
-  },
   "elem_hz6unh73f": {
     "id": "elem_hz6unh73f",
-    "x": 647,
-    "y": -778,
-    "width": 360,
-    "height": 260,
+    "x": 829,
+    "y": 308,
+    "width": 189,
+    "height": 41,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781679480180
+    "reloadToken": 1781712412028
   },
-  "elem_n839lr3yz": {
-    "id": "elem_n839lr3yz",
-    "x": 1179,
-    "y": -781,
-    "width": 360,
-    "height": 260,
+  "elem_5cyikeb3o": {
+    "id": "elem_5cyikeb3o",
+    "x": 413,
+    "y": 560,
+    "width": 399,
+    "height": 25,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781679472704
+    "reloadToken": 1781712411728
+  },
+  "elem_i0xqjtqhh": {
+    "id": "elem_i0xqjtqhh",
+    "x": 1013,
+    "y": 427,
+    "width": 320,
+    "height": 220,
+    "filePath": "/elements/_template_element.js",
+    "type": "synth",
+    "prompt": "blank synth element",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_9d8r5fkdv": {
+    "id": "elem_9d8r5fkdv",
+    "x": 460,
+    "y": 260,
+    "width": 189,
+    "height": 25,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
