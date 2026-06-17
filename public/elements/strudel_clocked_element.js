@@ -179,6 +179,8 @@ export default async function setup(ctx, prevState) {
     drawSelection,
     dropCursor,
     highlightActiveLine,
+    highlightExtension,
+    highlightMiniLocations,
     highlightSelectionMatches,
     history,
     historyKeymap,
@@ -192,6 +194,7 @@ export default async function setup(ctx, prevState) {
     startCompletion,
     strudelTheme,
     syntaxHighlighting,
+    updateMiniLocations,
     yCollab,
     yUndoManagerKeymap
   } = editorKit;
@@ -304,7 +307,8 @@ export default async function setup(ctx, prevState) {
     '&.cm-editor': {
       color: '#d1fae5 !important',
       background: 'transparent !important',
-      isolation: 'isolate'
+      isolation: 'isolate',
+      '--foreground': '#67e8f9'
     },
     '.cm-scroller': {
       background: 'transparent !important'
@@ -397,6 +401,7 @@ export default async function setup(ctx, prevState) {
         }),
         javascript(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        highlightExtension,
         highlightActiveLine(),
         highlightSelectionMatches(),
         strudelTheme,
@@ -441,6 +446,7 @@ export default async function setup(ctx, prevState) {
     })
   });
   editorRoot.cmView = editorView;
+  installPatternHighlighting();
   scheduleEditorResize();
   scheduleEditorOverlaySync();
 
@@ -593,6 +599,27 @@ export default async function setup(ctx, prevState) {
     return [
       yCollab(yText, ctx.awareness || null)
     ];
+  }
+
+  function installPatternHighlighting() {
+    const handleMiniLocations = event => {
+      if (event.detail?.elementId !== elementId || !editorView) return;
+      updateMiniLocations(editorView, event.detail.miniLocations || []);
+    };
+    const handleHighlightFrame = event => {
+      if (event.detail?.elementId !== elementId || !editorView) return;
+      highlightMiniLocations(editorView, event.detail.phase || 0, event.detail.haps || []);
+    };
+
+    window.addEventListener('jam-strudel-mini-locations', handleMiniLocations);
+    window.addEventListener('jam-strudel-highlight-frame', handleHighlightFrame);
+    unsubscribers.push(() => {
+      window.removeEventListener('jam-strudel-mini-locations', handleMiniLocations);
+      window.removeEventListener('jam-strudel-highlight-frame', handleHighlightFrame);
+    });
+
+    const existingLocations = window.__jamStrudelRuntimeDebug?.miniLocations?.[elementId];
+    if (existingLocations?.length) updateMiniLocations(editorView, existingLocations);
   }
 
   function setEditorValue(value, selectionStart, selectionEnd = selectionStart) {
