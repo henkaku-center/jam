@@ -115,10 +115,10 @@ export default async function setup(ctx, prevState) {
       }
       .cm-editor.cm-focused .cm-cursor {
         border: 0 !important;
-        background: #fff;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        mix-blend-mode: difference;
+        background: rgba(255, 255, 255, 0.01);
+        backdrop-filter: invert(1);
+        -webkit-backdrop-filter: invert(1);
+        mix-blend-mode: normal;
         animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
       }
       .cm-editor .cm-activeLine {
@@ -342,10 +342,10 @@ export default async function setup(ctx, prevState) {
     },
     '&.cm-focused .cm-cursor': {
       border: '0 !important',
-      background: '#fff',
-      backdropFilter: 'none',
-      WebkitBackdropFilter: 'none',
-      mixBlendMode: 'difference',
+      background: 'rgba(255, 255, 255, 0.01)',
+      backdropFilter: 'invert(1)',
+      WebkitBackdropFilter: 'invert(1)',
+      mixBlendMode: 'normal',
       animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
     },
     '.cm-line': {

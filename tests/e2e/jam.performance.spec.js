@@ -804,9 +804,9 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         lineTextShadow: 'none',
         cursorDisplay: 'block',
         cursorBorderLeftWidth: '0px',
-        cursorBackground: 'rgb(255, 255, 255)',
-        cursorBlendMode: 'difference',
-        cursorBackdropFilter: 'none',
+        cursorBackground: 'rgba(255, 255, 255, 0.01)',
+        cursorBlendMode: 'normal',
+        cursorBackdropFilter: 'invert(1)',
         cursorAnimationName: 'strudel-block-cursor-blink'
       });
 
