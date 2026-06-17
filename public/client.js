@@ -29,15 +29,8 @@ const viewport = document.getElementById('canvas-viewport');
 const gridLayer = document.getElementById('canvas-grid');
 const elementsLayer = document.getElementById('canvas-elements');
 const hostCameraFrame = document.getElementById('host-camera-frame');
-const modeBadge = document.getElementById('mode-badge');
 const bpmInput = document.getElementById('bpm-input');
-const metroLed = document.getElementById('metro-led');
-const beatCounter = document.getElementById('beat-counter');
-const statX = document.getElementById('stat-x');
-const statY = document.getElementById('stat-y');
-const statZoom = document.getElementById('stat-zoom');
-const openStrudelBtn = document.getElementById('open-strudel-btn');
-const resetCamBtn = document.getElementById('reset-cam-btn');
+const addElementMenu = document.getElementById('add-element-menu');
 const focusOverlay = document.getElementById('focus-overlay');
 const agentTerminal = document.getElementById('agent-terminal');
 const agentTerminalViewport = document.getElementById('agent-terminal-viewport');
@@ -45,6 +38,37 @@ const agentTerminalFocusZone = document.getElementById('agent-terminal-focus-zon
 let agentTerminalTerm = null;
 
 const DEFAULT_STRUDEL_CODE = '';
+const ELEMENT_ADD_OPTIONS = {
+  strudel: {
+    filePath: '/elements/strudel_clocked_element.js',
+    type: 'strudel',
+    prompt: DEFAULT_STRUDEL_CODE,
+    width: 360,
+    height: 260
+  },
+  synth: {
+    filePath: '/elements/_template_element.js',
+    type: 'synth',
+    prompt: 'blank synth element',
+    width: 320,
+    height: 220
+  },
+  visual: {
+    filePath: '/elements/_template_element.js',
+    type: 'visual',
+    prompt: 'blank visual element',
+    width: 320,
+    height: 220
+  },
+  tool: {
+    filePath: '/elements/_template_element.js',
+    type: 'tool',
+    prompt: 'blank tool element',
+    width: 320,
+    height: 220
+  }
+};
+let pendingAddMenuWorldPosition = null;
 
 const roomName = window.location.hash.slice(1) || 'default-jam';
 window.location.hash = roomName;
@@ -67,14 +91,6 @@ function initializeSystem() {
   window.jamAudioOutputEnabled = isAudioOutputEnabled;
   
   hostCameraFrame.classList.add('hidden');
-
-  if (isAudioOutputEnabled) {
-    modeBadge.textContent = 'AUDIO ON';
-    modeBadge.className = 'badge host';
-  } else {
-    modeBadge.textContent = 'MUTED';
-    modeBadge.className = 'badge controller';
-  }
 
   initAudio();
   initYjs();
@@ -251,16 +267,7 @@ function startScheduler() {
 }
 
 function triggerVisualMetronome() {
-  metroLed.classList.add('flash');
-  setTimeout(() => metroLed.classList.remove('flash'), 50);
-  
-  const bpm = clockMap.get('bpm') || 120;
-  const startTime = clockMap.get('startTime') || Date.now();
-  const syncNow = getSyncTime();
-  const elapsedBeats = (syncNow - startTime) * (bpm / 60000);
-  const bar = Math.floor(elapsedBeats / 4) + 1;
-  const beat = Math.floor(elapsedBeats % 4) + 1;
-  beatCounter.textContent = `${bar}.${beat}`;
+  // Tempo is shown as a compact editor only; no global metronome UI is rendered.
 }
 
 startScheduler();
@@ -905,6 +912,7 @@ function setupViewportNavigation() {
 
   viewport.addEventListener('mousedown', (e) => {
     if (e.target === viewport || e.target === gridLayer) {
+      hideAddElementMenu();
       hasUserMovedCamera = true;
       isDragging = true;
       startX = e.clientX - camera.x;
@@ -945,6 +953,13 @@ function setupViewportNavigation() {
     applyViewportTransform();
   });
 
+  viewport.addEventListener('contextmenu', (e) => {
+    if (e.target !== viewport && e.target !== gridLayer && e.target !== elementsLayer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openAddElementMenu(e.clientX, e.clientY);
+  });
+
   applyViewportTransform();
 }
 
@@ -953,10 +968,11 @@ function applyViewportTransform() {
   elementsLayer.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
   
   hostCameraFrame.classList.add('hidden');
-
-  statX.textContent = Math.round(camera.x);
-  statY.textContent = Math.round(camera.y);
-  statZoom.textContent = camera.zoom.toFixed(2);
+  window.__jamCamera = {
+    x: camera.x,
+    y: camera.y,
+    zoom: camera.zoom
+  };
 }
 
 function getWorkspaceElementBounds() {
@@ -1014,6 +1030,11 @@ function centerCameraOnWorkspace() {
   camera.y = viewportHeight / 2 - centerY * nextZoom;
   applyViewportTransform();
 }
+
+window.__jamCenterCamera = () => {
+  hasUserMovedCamera = true;
+  centerCameraOnWorkspace();
+};
 
 function autoCenterInitialWorkspace() {
   if (hasAutoCenteredInitialWorkspace || hasUserMovedCamera || !elementsMap?.size) return;
@@ -1136,32 +1157,73 @@ function setupUIActions() {
     }
   });
 
-  resetCamBtn.addEventListener('click', () => {
-    hasUserMovedCamera = true;
-    centerCameraOnWorkspace();
+  addElementMenu?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-add-element]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    createElementOnCanvas(button.dataset.addElement, pendingAddMenuWorldPosition);
+    hideAddElementMenu();
   });
 
-  openStrudelBtn?.addEventListener('click', () => {
-    createStrudelElementOnCanvas();
+  window.addEventListener('pointerdown', (event) => {
+    if (addElementMenu?.classList.contains('hidden')) return;
+    if (addElementMenu.contains(event.target)) return;
+    hideAddElementMenu();
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hideAddElementMenu();
   });
 }
 
-function createStrudelElementOnCanvas() {
+function openAddElementMenu(clientX, clientY) {
+  if (!addElementMenu) return;
+  pendingAddMenuWorldPosition = screenToWorld(clientX, clientY);
+  addElementMenu.classList.remove('hidden');
+
+  const rect = viewport.getBoundingClientRect();
+  const menuWidth = addElementMenu.offsetWidth || 112;
+  const menuHeight = addElementMenu.offsetHeight || 132;
+  const localX = clientX - rect.left;
+  const localY = clientY - rect.top;
+  const left = Math.min(Math.max(6, localX), Math.max(6, rect.width - menuWidth - 6));
+  const top = Math.min(Math.max(6, localY), Math.max(6, rect.height - menuHeight - 6));
+
+  addElementMenu.style.left = `${left}px`;
+  addElementMenu.style.top = `${top}px`;
+}
+
+function hideAddElementMenu() {
+  if (!addElementMenu) return;
+  addElementMenu.classList.add('hidden');
+  pendingAddMenuWorldPosition = null;
+}
+
+function screenToWorld(clientX, clientY) {
+  const rect = viewport.getBoundingClientRect();
+  return {
+    x: Math.round((clientX - rect.left - camera.x) / camera.zoom),
+    y: Math.round((clientY - rect.top - camera.y) / camera.zoom)
+  };
+}
+
+function createElementOnCanvas(kind, position) {
   if (!ydoc || !elementsMap) return;
+  const option = ELEMENT_ADD_OPTIONS[kind];
+  if (!option || !position) return;
 
   const id = 'elem_' + Math.random().toString(36).substr(2, 9);
-  const centerX = Math.round(-camera.x / camera.zoom + (window.innerWidth / 2) / camera.zoom - 180);
-  const centerY = Math.round(-camera.y / camera.zoom + (window.innerHeight / 2) / camera.zoom - 130);
 
   const layout = {
     id,
-    x: centerX,
-    y: centerY,
-    width: 360,
-    height: 260,
-    filePath: '/elements/strudel_clocked_element.js',
-    type: 'strudel',
-    prompt: DEFAULT_STRUDEL_CODE,
+    x: position.x,
+    y: position.y,
+    width: option.width,
+    height: option.height,
+    filePath: option.filePath,
+    type: option.type,
+    prompt: option.prompt,
     authored: 'hand',
     reloadToken: 0
   };

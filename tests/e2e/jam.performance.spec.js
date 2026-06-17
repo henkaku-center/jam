@@ -147,7 +147,7 @@ async function joinWorkspace(page, mode, expectedCount = expectedElementCount) {
   await page.locator('#join-host-btn').click();
 
   await expect(page.locator('#autoplay-overlay')).toHaveClass(/hidden/);
-  await expect(page.locator('#mode-badge')).toHaveText(mode === 'host' ? 'AUDIO ON' : 'MUTED');
+  await expect(page.locator('#bpm-input')).toBeVisible();
 
   await expect
     .poll(() => page.evaluate(() => window.activeElements?.size ?? 0), {
@@ -215,14 +215,23 @@ async function readCenteredCameraState(page) {
     const expectedY = viewportHeight / 2 - centerY * expectedZoom;
 
     return {
-      actualX: Number(document.querySelector('#stat-x')?.textContent),
-      actualY: Number(document.querySelector('#stat-y')?.textContent),
-      actualZoom: Number(document.querySelector('#stat-zoom')?.textContent),
+      actualX: Math.round(window.__jamCamera?.x ?? 0),
+      actualY: Math.round(window.__jamCamera?.y ?? 0),
+      actualZoom: Number((window.__jamCamera?.zoom ?? 1).toFixed(2)),
       expectedX: Math.round(expectedX),
       expectedY: Math.round(expectedY),
       expectedZoom: Number(expectedZoom.toFixed(2))
     };
   });
+}
+
+async function addElementFromMenu(page, kind, position = { x: 420, y: 260 }) {
+  await page.locator('#canvas-viewport').click({
+    button: 'right',
+    position
+  });
+  await expect(page.locator('#add-element-menu')).not.toHaveClass(/hidden/);
+  await page.locator(`#add-element-menu [data-add-element="${kind}"]`).click();
 }
 
 function expectCameraCentered(result) {
@@ -444,7 +453,7 @@ test('Center Cam frames the bounding box of current workspace elements', async (
     await page.mouse.down();
     await page.mouse.move(160, 140, { steps: 6 });
     await page.mouse.up();
-    await page.locator('#reset-cam-btn').click();
+    await page.evaluate(() => window.__jamCenterCamera?.());
 
     const result = await readCenteredCameraState(page);
     expectCameraCentered(result);
@@ -455,13 +464,68 @@ test('Center Cam frames the bounding box of current workspace elements', async (
   }
 });
 
+test('Viewport context menu adds element types at the clicked location', async ({ page, request }) => {
+  await joinWorkspace(page, 'controller');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+  const clickPosition = { x: 360, y: 290 };
+
+  await page.locator('#canvas-viewport').click({
+    button: 'right',
+    position: clickPosition
+  });
+
+  await expect(page.locator('#add-element-menu')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#add-element-menu [data-add-element]')).toHaveCount(4);
+
+  const expectedPosition = await page.evaluate(({ x, y }) => {
+    const rect = document.querySelector('#canvas-viewport').getBoundingClientRect();
+    const camera = window.__jamCamera || { x: 0, y: 0, zoom: 1 };
+    return {
+      x: Math.round((x - rect.left - camera.x) / camera.zoom),
+      y: Math.round((y - rect.top - camera.y) / camera.zoom)
+    };
+  }, clickPosition);
+
+  await page.locator('#add-element-menu [data-add-element="visual"]').click();
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => {
+      for (const [id, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(id)) return { id, layout };
+      }
+      return null;
+    }, beforeIds), {
+      message: 'context menu should create an element',
+      timeout: 5_000
+    })
+    .not.toBeNull();
+
+  const createdElement = await page.evaluate((knownIds) => {
+    for (const [id, layout] of window.elementsMap.entries()) {
+      if (!knownIds.includes(id)) return { id, layout };
+    }
+    return null;
+  }, beforeIds);
+
+  try {
+    expect(createdElement.layout).toMatchObject({
+      type: 'visual',
+      filePath: '/elements/_template_element.js',
+      x: expectedPosition.x,
+      y: expectedPosition.y
+    });
+  } finally {
+    if (createdElement?.id) await request.delete(`/api/workspace/elements/${createdElement.id}`);
+  }
+});
+
 test('Arrow keys do not pan the workspace camera', async ({ page }) => {
   await joinWorkspace(page, 'controller');
 
   const before = await page.evaluate(() => ({
-    x: document.querySelector('#stat-x')?.textContent,
-    y: document.querySelector('#stat-y')?.textContent,
-    zoom: document.querySelector('#stat-zoom')?.textContent
+    x: Math.round(window.__jamCamera?.x ?? 0),
+    y: Math.round(window.__jamCamera?.y ?? 0),
+    zoom: Number((window.__jamCamera?.zoom ?? 1).toFixed(2))
   }));
   await page.locator('#canvas-viewport').click({ position: { x: 16, y: 16 } });
   await page.keyboard.press('ArrowRight');
@@ -474,9 +538,9 @@ test('Arrow keys do not pan the workspace camera', async ({ page }) => {
   await page.keyboard.press('d');
   await page.waitForTimeout(100);
   const after = await page.evaluate(() => ({
-    x: document.querySelector('#stat-x')?.textContent,
-    y: document.querySelector('#stat-y')?.textContent,
-    zoom: document.querySelector('#stat-zoom')?.textContent
+    x: Math.round(window.__jamCamera?.x ?? 0),
+    y: Math.round(window.__jamCamera?.y ?? 0),
+    zoom: Number((window.__jamCamera?.zoom ?? 1).toFixed(2))
   }));
 
   expect(after).toEqual(before);
@@ -559,7 +623,7 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
   await expect(page.locator('strudel-repl')).toHaveCount(0);
 
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
   await expect
     .poll(() => page.evaluate((knownIds) => {
@@ -784,7 +848,7 @@ test('Visible Strudel editor keybindings evaluate real keyboard input', async ({
   await joinWorkspace(page, 'host');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
 
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
   await expect
     .poll(() => page.evaluate((knownIds) => {
@@ -871,8 +935,8 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
   await joinWorkspace(page, 'host');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
 
-  await page.locator('#open-strudel-btn').click();
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 420, y: 240 });
+  await addElementFromMenu(page, 'strudel', { x: 520, y: 320 });
 
   await expect
     .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].filter(id => !knownIds.includes(id)), beforeIds), {
@@ -986,7 +1050,7 @@ test('Strudel replacement clears deleted dollar-pattern lines from the runtime f
   await joinWorkspace(page, 'host');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
 
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
   await expect
     .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds), {
@@ -1060,7 +1124,7 @@ test('Strudel runtime registers the Dirt drum sample bank for lazy loading', asy
   const browserFailures = collectBrowserFailures(page);
   await joinWorkspace(page, 'host');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
   const id = await expect
     .poll(() => page.evaluate((knownIds) => [...window.elementsMap.keys()].find(elementId => !knownIds.includes(elementId)) || '', beforeIds), {
@@ -1129,7 +1193,7 @@ test('Strudel runtime registers the Dirt drum sample bank for lazy loading', asy
 test('Dragging inside a Strudel editor does not move the element or corrupt code', async ({ page, request }) => {
   await joinWorkspace(page, 'controller');
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
-  await page.locator('#open-strudel-btn').click();
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
 
   const id = await expect
     .poll(() => page.evaluate((knownIds) => {

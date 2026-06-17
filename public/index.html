@@ -51,28 +51,15 @@
       <div id="agent-terminal-focus-zone" aria-hidden="true"></div>
     </div>
 
-    <!-- Top Status / Navigation Bar -->
-    <div class="top-bar">
-      <div class="brand">jam <span id="mode-badge" class="badge">MUTED</span></div>
-      
-      <div class="clock-panel">
-        <span class="label">TEMPO:</span>
-        <input type="number" id="bpm-input" value="120" min="40" max="240" step="1">
-        <span class="bpm-unit">BPM</span>
-        <div class="metro-led" id="metro-led"></div>
-        <div class="beat-counter" id="beat-counter">1.1</div>
-      </div>
+    <div id="add-element-menu" class="add-element-menu hidden" role="menu" aria-label="Add element menu">
+      <button type="button" data-add-element="strudel" role="menuitem">Strudel</button>
+      <button type="button" data-add-element="synth" role="menuitem">Synth</button>
+      <button type="button" data-add-element="visual" role="menuitem">Visual</button>
+      <button type="button" data-add-element="tool" role="menuitem">Tool</button>
+    </div>
 
-      <div class="viewport-stats">
-        <span>X: <span id="stat-x">0</span></span>
-        <span>Y: <span id="stat-y">0</span></span>
-        <span>Zoom: <span id="stat-zoom">1.0</span>x</span>
-      </div>
-
-      <div class="actions">
-        <button id="open-strudel-btn" class="action-btn">+ Strudel Element</button>
-        <button id="reset-cam-btn" class="action-btn">Center</button>
-      </div>
+    <div id="tempo-control" class="tempo-control">
+      <input type="number" id="bpm-input" value="120" min="40" max="240" step="1" aria-label="Tempo BPM" title="Tempo BPM">
     </div>
 
     <!-- Focus Mode Overlay Indicator -->

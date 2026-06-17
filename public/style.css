@@ -223,136 +223,59 @@ body, html {
   background: transparent !important;
 }
 
-/* Top bar */
-.top-bar {
+.tempo-control {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  height: 44px;
-  background: var(--panel-bg);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
+  right: 14px;
+  bottom: 14px;
   z-index: 1000;
 }
 
-.brand {
-  font-weight: 700;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-  font-family: var(--font-sans);
-  letter-spacing: -0.3px;
-}
-
-.badge {
-  font-size: 9px;
-  padding: 2px 5px;
-  font-weight: bold;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-family: var(--font-mono);
-}
-
-#mode-badge.host {
-  border-color: var(--accent-blue);
-  color: var(--accent-blue);
-}
-
-#mode-badge.controller {
-  border-color: var(--text-dim);
-  color: var(--text-dim);
-}
-
-.clock-panel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.clock-panel .label {
-  color: var(--text-dim);
-  font-size: 10px;
-  letter-spacing: 0.05em;
-}
-
-#bpm-input {
+.tempo-control input {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
-  width: 50px;
+  width: 56px;
   text-align: center;
   font-family: var(--font-mono);
   font-weight: bold;
   font-size: 12px;
-  padding: 3px;
+  padding: 4px 3px;
 }
 
-#bpm-input:focus {
+.tempo-control input:focus {
   outline: none;
   border-color: var(--border-active);
 }
 
-.bpm-unit {
-  font-size: 10px;
-  color: var(--text-dim);
-}
-
-.metro-led {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--border);
-  transition: background-color 0.05s ease;
-}
-
-.metro-led.flash {
-  background: var(--accent-red);
-}
-
-.beat-counter {
-  font-size: 11px;
-  color: var(--text);
-  font-weight: bold;
-  min-width: 40px;
-}
-
-.viewport-stats {
-  display: flex;
-  gap: 12px;
-  color: var(--text-dim);
-  font-size: 10px;
-}
-
-.viewport-stats span span {
-  color: var(--text);
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  background: transparent;
+.add-element-menu {
+  position: absolute;
+  z-index: 1100;
+  min-width: 112px;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+  padding: 4px;
+}
+
+.add-element-menu button {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
   color: var(--text-dim);
-  padding: 5px 10px;
+  padding: 7px 9px;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 11px;
-  transition: color 0.1s, border-color 0.1s;
+  text-align: left;
+  transition: color 0.1s, background 0.1s;
 }
 
-.action-btn:hover {
+.add-element-menu button:hover,
+.add-element-menu button:focus {
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  border-color: var(--border-active);
+  outline: none;
 }
 
 /* Host viewport frame */
