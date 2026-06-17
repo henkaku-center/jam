@@ -77,6 +77,15 @@ export default async function setup(ctx, prevState) {
       .cm-line {
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
       }
+      .cm-editor.cm-focused {
+        outline: none !important;
+      }
+      .cm-editor .cm-activeLine {
+        background: transparent !important;
+      }
+      .cm-editor.cm-focused .cm-activeLine {
+        background: rgba(255,255,255,0.04) !important;
+      }
       .cm-tooltip {
         border: 1px solid #2a2d35;
         background: rgba(18, 20, 25, 0.95);
@@ -244,13 +253,16 @@ export default async function setup(ctx, prevState) {
       background: 'transparent !important'
     },
     '.cm-activeLine': {
+      background: 'transparent !important'
+    },
+    '&.cm-focused .cm-activeLine': {
       background: 'rgba(255,255,255,0.04) !important'
     },
     '.cm-content': {
       minHeight: '100%',
       textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
     },
-    '.cm-focused': {
+    '&.cm-focused': {
       outline: 'none'
     },
     '.cm-line': {

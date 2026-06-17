@@ -225,12 +225,25 @@ async function readCenteredCameraState(page) {
   });
 }
 
-async function addElementFromMenu(page, kind, position = { x: 420, y: 260 }) {
-  await page.locator('#canvas-viewport').click({
-    button: 'right',
-    position
-  });
+async function openAddElementMenu(page, position = { x: 420, y: 260 }) {
+  await page.evaluate(({ x, y }) => {
+    const viewport = document.querySelector('#canvas-viewport');
+    if (!viewport) throw new Error('missing canvas viewport');
+    const rect = viewport.getBoundingClientRect();
+    viewport.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      button: 2,
+      buttons: 2,
+      clientX: rect.left + x,
+      clientY: rect.top + y
+    }));
+  }, position);
   await expect(page.locator('#add-element-menu')).not.toHaveClass(/hidden/);
+}
+
+async function addElementFromMenu(page, kind, position = { x: 420, y: 260 }) {
+  await openAddElementMenu(page, position);
   await page.locator(`#add-element-menu [data-add-element="${kind}"]`).click();
 }
 
@@ -469,12 +482,7 @@ test('Viewport context menu adds element types at the clicked location', async (
   const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
   const clickPosition = { x: 360, y: 290 };
 
-  await page.locator('#canvas-viewport').click({
-    button: 'right',
-    position: clickPosition
-  });
-
-  await expect(page.locator('#add-element-menu')).not.toHaveClass(/hidden/);
+  await openAddElementMenu(page, clickPosition);
   await expect(page.locator('#add-element-menu [data-add-element]')).toHaveCount(4);
 
   const expectedPosition = await page.evaluate(({ x, y }) => {
@@ -669,6 +677,60 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       hasStatus: false,
       hasLineGutter: false
     });
+
+    const inactiveEditorStyle = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+      const view = root?.querySelector('#editor')?.cmView;
+      if (!element || !root || !view) throw new Error('missing Strudel editor');
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: 'note("c3").s("sawtooth")' },
+        selection: { anchor: 0, head: 0 }
+      });
+      element.domWrapper.classList.add('active-focus');
+      view.contentDOM.blur();
+      return {
+        wrapperOutlineDisplay: getComputedStyle(element.domWrapper, '::after').display,
+        editorOutline: getComputedStyle(root.querySelector('.cm-editor')).outlineStyle,
+        activeLineBackground: getComputedStyle(root.querySelector('.cm-activeLine')).backgroundColor
+      };
+    }, created.id);
+    expect(inactiveEditorStyle.wrapperOutlineDisplay).toBe('none');
+    expect(inactiveEditorStyle.editorOutline).toBe('none');
+    expect(inactiveEditorStyle.activeLineBackground).toBe('rgba(0, 0, 0, 0)');
+
+    await page.evaluate((id) => {
+      const root = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot;
+      const view = root?.querySelector('#editor')?.cmView;
+      if (!view) throw new Error('missing Strudel editor');
+      view.focus();
+    }, created.id);
+
+    await expect
+      .poll(() => page.evaluate((id) => {
+        const root = window.activeElements
+          .get(id)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot;
+        const editor = root?.querySelector('.cm-editor');
+        const activeLine = root?.querySelector('.cm-activeLine');
+        return {
+          isFocused: editor?.classList.contains('cm-focused') || false,
+          editorOutline: editor ? getComputedStyle(editor).outlineStyle : '',
+          activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : ''
+        };
+      }, created.id), {
+        message: 'focused Strudel editor should show only the active-line cue',
+        timeout: 3_000
+      })
+      .toMatchObject({
+        isFocused: true,
+        editorOutline: 'none',
+        activeLineBackground: 'rgba(255, 255, 255, 0.04)'
+      });
 
     await expect
       .poll(() => page.evaluate((id) => {
