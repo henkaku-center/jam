@@ -212,6 +212,8 @@ export default async function setup(ctx, prevState) {
   const {
     EditorState,
     EditorView,
+    Prec,
+    acceptCompletion,
     autocompletion,
     bracketMatching,
     closeBrackets,
@@ -236,6 +238,7 @@ export default async function setup(ctx, prevState) {
     keymap,
     lineNumbers,
     searchKeymap,
+    startCompletion,
     strudelTheme,
     syntaxHighlighting
   } = editorKit;
@@ -264,37 +267,69 @@ export default async function setup(ctx, prevState) {
     if (isSilenceShortcut(event)) {
       event.preventDefault();
       event.stopPropagation();
-      silenceElement();
-      return true;
+      return silenceEditor();
     }
 
     if (isIndentShortcut(event)) {
       event.preventDefault();
       event.stopPropagation();
       const command = event.shiftKey || event.key === '[' || event.key === '{' ? indentLess : indentMore;
-      command(editorView);
-      return true;
+      return command(editorView);
     }
 
     if (event.key !== 'Enter') return false;
     if (event.altKey) {
       event.preventDefault();
       event.stopPropagation();
-      commitAndEvaluate(getEditorValue());
-      return true;
+      return evaluateFullEditor(editorView);
     }
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault();
       event.stopPropagation();
-      commitAndEvaluate(getSelectionOrCurrentBlock(editorView));
-      return true;
+      return evaluateSelectionOrBlock(editorView);
     }
     if (!event.shiftKey) return false;
     event.preventDefault();
     event.stopPropagation();
-    commitAndEvaluate(getCurrentLine(editorView));
+    return evaluateCurrentLine(editorView);
+  };
+
+  const evaluateFullEditor = (view) => {
+    commitAndEvaluate(view.state.doc.toString());
     return true;
   };
+
+  const evaluateSelectionOrBlock = (view) => {
+    commitAndEvaluate(getSelectionOrCurrentBlock(view));
+    return true;
+  };
+
+  const evaluateCurrentLine = (view) => {
+    commitAndEvaluate(getCurrentLine(view));
+    return true;
+  };
+
+  const silenceEditor = () => {
+    silenceElement();
+    return true;
+  };
+
+  const completeOrIndent = (view) => acceptCompletion(view) || startCompletion(view) || indentMore(view);
+
+  const jamShortcutKeymap = [
+    { key: 'Alt-Enter', run: evaluateFullEditor, preventDefault: true },
+    { key: 'Ctrl-Enter', run: evaluateSelectionOrBlock, preventDefault: true },
+    { key: 'Mod-Enter', run: evaluateSelectionOrBlock, preventDefault: true },
+    { key: 'Shift-Enter', run: evaluateCurrentLine, preventDefault: true },
+    { key: 'Ctrl-.', run: silenceEditor, preventDefault: true },
+    { key: 'Mod-.', run: silenceEditor, preventDefault: true },
+    { key: 'Alt-.', run: silenceEditor, preventDefault: true },
+    { key: 'Ctrl-[', run: indentLess, preventDefault: true },
+    { key: 'Ctrl-]', run: indentMore, preventDefault: true },
+    { key: 'Mod-[', run: indentLess, preventDefault: true },
+    { key: 'Mod-]', run: indentMore, preventDefault: true },
+    { key: 'Tab', run: completeOrIndent, preventDefault: true }
+  ];
 
   const editorTheme = EditorView.theme({
     '&': {
@@ -338,6 +373,7 @@ export default async function setup(ctx, prevState) {
     state: EditorState.create({
       doc: state.draftCode,
       extensions: [
+        Prec.highest(keymap.of(jamShortcutKeymap)),
         lineNumbers(),
         highlightActiveLineGutter(),
         history(),

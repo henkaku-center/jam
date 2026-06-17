@@ -1,4 +1,4 @@
-export { EditorState } from '@codemirror/state';
+export { EditorState, Prec } from '@codemirror/state';
 export {
   EditorView,
   drawSelection,
@@ -26,9 +26,11 @@ export {
 } from '@codemirror/language';
 export {
   autocompletion,
+  acceptCompletion,
   closeBrackets,
   closeBracketsKeymap,
-  completionKeymap
+  completionKeymap,
+  startCompletion
 } from '@codemirror/autocomplete';
 export {
   highlightSelectionMatches,

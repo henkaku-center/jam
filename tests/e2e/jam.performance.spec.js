@@ -780,6 +780,93 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
   }
 });
 
+test('Visible Strudel editor keybindings evaluate real keyboard input', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+
+  await page.locator('#open-strudel-btn').click();
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => {
+      for (const [id, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(id) && layout.type === 'strudel' && layout.filePath === '/elements/strudel_clocked_element.js') {
+          return id;
+        }
+      }
+      return '';
+    }, beforeIds), {
+      message: 'Strudel element should be added',
+      timeout: 8_000
+    })
+    .not.toBe('');
+
+  const id = await page.evaluate((knownIds) => {
+    for (const [elementId, layout] of window.elementsMap.entries()) {
+      if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+    }
+    return '';
+  }, beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => window.activeElements.has(elementId), id), {
+        message: 'Strudel element should hydrate',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    const setVisibleEditorCode = async (source, cursorNeedle = '') => {
+      await page.evaluate(({ elementId, source, cursorNeedle }) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        if (!view) throw new Error('missing CodeMirror view');
+        const cursor = cursorNeedle ? source.indexOf(cursorNeedle) + 2 : source.length;
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: source },
+          selection: { anchor: cursor, head: cursor }
+        });
+        view.focus();
+      }, { elementId: id, source, cursorNeedle });
+    };
+
+    await setVisibleEditorCode('note("a3").s("sawtooth").gain(0.1)');
+    await page.keyboard.press('Alt+Enter');
+    await expect
+      .poll(() => page.evaluate((elementId) => window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '', id), {
+        message: 'Alt+Enter should evaluate the whole visible editor',
+        timeout: 8_000
+      })
+      .toBe('note("a3").s("sawtooth").gain(0.1)');
+
+    await setVisibleEditorCode('note("c3").s("sawtooth")\n\nnote("e3").s("sawtooth")', 'note("e3")');
+    await page.keyboard.press('Control+Enter');
+    await expect
+      .poll(() => page.evaluate((elementId) => window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '', id), {
+        message: 'Ctrl+Enter should evaluate the current visible-editor block',
+        timeout: 8_000
+      })
+      .toBe('note("e3").s("sawtooth")');
+
+    await setVisibleEditorCode('note("c3").s("sawtooth")\nnote("g3").s("sawtooth")', 'note("g3")');
+    await page.keyboard.press('Shift+Enter');
+    await expect
+      .poll(() => page.evaluate((elementId) => window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '', id), {
+        message: 'Shift+Enter should evaluate the current visible-editor line',
+        timeout: 8_000
+      })
+      .toBe('note("g3").s("sawtooth")');
+
+    expect(browserFailures).toEqual([]);
+  } finally {
+    if (id) await request.delete(`/api/workspace/elements/${id}`);
+  }
+});
+
 test('Multiple Strudel elements keep independent runtime patterns', async ({ page, request }) => {
   const browserFailures = collectBrowserFailures(page);
   await joinWorkspace(page, 'host');
