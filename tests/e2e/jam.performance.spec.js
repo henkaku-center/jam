@@ -937,6 +937,8 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
       })
       .toEqual(expect.arrayContaining(ids));
 
+    const hardResetCountBeforeSilence = await page.evaluate(() => window.__jamStrudelRuntimeDebug?.hardResetCount || 0);
+
     await page.evaluate((elementId) => {
       const input = window.activeElements
         .get(elementId)
@@ -971,11 +973,8 @@ test('Multiple Strudel elements keep independent runtime patterns', async ({ pag
         firstSource,
         secondSource: '',
         running: { [ids[0]]: true, [ids[1]]: false },
-        hardResetCount: expect.any(Number)
+        hardResetCount: hardResetCountBeforeSilence
       });
-
-    const hardResetCount = await page.evaluate(() => window.__jamStrudelRuntimeDebug?.hardResetCount || 0);
-    expect(hardResetCount).toBeGreaterThan(0);
 
     expect(browserFailures).toEqual([]);
   } finally {

@@ -116,14 +116,14 @@ async function evaluateElementNow(elementId, code, options = {}) {
     runtimeState.sources.delete(elementId);
     runtimeState.running.set(elementId, false);
     runtimeState.errors.delete(elementId);
-    await queueCommit({ resetScheduler: true });
+    await queueCommit();
     return getStatus(elementId);
   }
 
   runtimeState.lastError = '';
   const pattern = await repl.evaluate(source, false, true);
   if (runtimeState.elementOperations.get(elementId) !== operationId) {
-    await queueCommit({ resetScheduler: true });
+    await queueCommit();
     return getStatus(elementId);
   }
   if (!pattern) {
@@ -158,7 +158,7 @@ async function removeElementNow(elementId) {
   runtimeState.running.delete(elementId);
   runtimeState.elementOperations.delete(elementId);
   runtimeState.errors.delete(elementId);
-  await queueCommit({ resetScheduler: true });
+  await queueCommit();
 }
 
 async function setAudioEnabled(enabled) {
