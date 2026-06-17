@@ -113,26 +113,13 @@ export default async function setup(ctx, prevState) {
         mix-blend-mode: normal;
         animation: none;
       }
-      .cm-cursor::after {
-        content: "";
-      }
       .cm-editor.cm-focused .cm-cursor {
         border: 0 !important;
-        background: #67e8f9;
+        background: #fff;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+        mix-blend-mode: difference;
         animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
-      }
-      .cm-editor.cm-focused .cm-cursor::after {
-        content: attr(data-cursor-char);
-        position: absolute;
-        inset: 0;
-        color: #000508;
-        font-family: var(--strudel-cursor-font-family);
-        font-size: var(--strudel-cursor-font-size);
-        line-height: var(--strudel-cursor-line-height);
-        text-shadow: none;
-        white-space: pre;
       }
       .cm-editor .cm-activeLine {
         background: transparent !important;
@@ -353,26 +340,13 @@ export default async function setup(ctx, prevState) {
       mixBlendMode: 'normal',
       animation: 'none'
     },
-    '.cm-cursor::after': {
-      content: '""'
-    },
     '&.cm-focused .cm-cursor': {
       border: '0 !important',
-      background: '#67e8f9',
+      background: '#fff',
       backdropFilter: 'none',
       WebkitBackdropFilter: 'none',
+      mixBlendMode: 'difference',
       animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
-    },
-    '&.cm-focused .cm-cursor::after': {
-      content: 'attr(data-cursor-char)',
-      position: 'absolute',
-      inset: '0',
-      color: '#000508',
-      fontFamily: 'var(--strudel-cursor-font-family)',
-      fontSize: 'var(--strudel-cursor-font-size)',
-      lineHeight: 'var(--strudel-cursor-line-height)',
-      textShadow: 'none',
-      whiteSpace: 'pre'
     },
     '.cm-line': {
       padding: '0',
@@ -407,22 +381,11 @@ export default async function setup(ctx, prevState) {
           if (update.docChanged || update.geometryChanged || update.viewportChanged) {
             scheduleEditorResize();
           }
-          if (update.docChanged || update.selectionSet || update.viewportChanged || update.geometryChanged || update.focusChanged) {
-            scheduleCursorGlyphSync();
-          }
           if (!update.docChanged || applyingEditorChange) return;
           updateDraft(update.state.doc.toString());
         }),
         EditorView.domEventHandlers({
           keydown: runEditorShortcut,
-          focus() {
-            scheduleCursorGlyphSync();
-            return false;
-          },
-          blur() {
-            scheduleCursorGlyphSync();
-            return false;
-          },
           pointerdown(event) {
             event.stopPropagation();
             return false;
@@ -444,7 +407,6 @@ export default async function setup(ctx, prevState) {
   });
   editorRoot.cmView = editorView;
   scheduleEditorResize();
-  scheduleCursorGlyphSync();
 
   const publishState = () => {
     if (suppressPublish) return;
@@ -592,10 +554,6 @@ export default async function setup(ctx, prevState) {
     resizeFrame = requestAnimationFrame(measureAndPublishEditorSize);
   }
 
-  function scheduleCursorGlyphSync() {
-    requestAnimationFrame(syncCursorGlyph);
-  }
-
   function measureAndPublishEditorSize() {
     resizeFrame = 0;
     if (destroyed || !editorRoot.isConnected) return;
@@ -605,7 +563,6 @@ export default async function setup(ctx, prevState) {
     const lineHeight = readPixelSize(editorRoot.querySelector('.cm-line'), 'lineHeight', 15);
     const charWidth = readCharWidth();
     setCursorCellWidth(charWidth);
-    syncCursorGlyph();
     const longestLineLength = Math.max(16, ...editorView.state.doc.toString().split('\n').map(line => line.length));
     const measuredWidth = Math.ceil(Math.max(
       editorRoot.scrollWidth,
@@ -672,20 +629,6 @@ export default async function setup(ctx, prevState) {
     editor.style.setProperty('--strudel-cursor-font-family', lineStyle.fontFamily);
     editor.style.setProperty('--strudel-cursor-font-size', `${fontSize.toFixed(3)}px`);
     editor.style.setProperty('--strudel-cursor-line-height', `${lineHeight.toFixed(3)}px`);
-  }
-
-  function syncCursorGlyph() {
-    if (destroyed || !editorView || !editorRoot.isConnected) return;
-    const cursorChar = getCursorCharacter();
-    editorRoot.querySelectorAll('.cm-cursor').forEach(cursor => {
-      cursor.setAttribute('data-cursor-char', cursorChar);
-    });
-  }
-
-  function getCursorCharacter() {
-    const head = editorView.state.selection.main.head;
-    const next = editorView.state.sliceDoc(head, Math.min(head + 1, editorView.state.doc.length));
-    return next && next !== '\n' ? next : ' ';
   }
 }
 
