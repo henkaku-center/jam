@@ -464,6 +464,10 @@ function createElementHarnessContext(elementId, audioOutNode) {
   domWrapper.className = 'element-shadow-container';
   const shadowRoot = domWrapper.attachShadow({ mode: 'open' });
 
+  const _srReset = new CSSStyleSheet();
+  _srReset.replaceSync('* { border-radius: 0 !important; }');
+  shadowRoot.adoptedStyleSheets = [_srReset];
+
   const trackedAddEventListener = (target, type, listener, options) => {
     target.addEventListener(type, listener, options);
     trackedListeners.push({ target, type, listener, options });
@@ -691,14 +695,12 @@ function renderErrorUI(shadowRoot, err) {
       .error-card {
         background: #1e1014;
         border: 2px solid var(--accent-danger, #f43f5e);
-        border-radius: 8px;
         padding: 12px;
         color: #ff859b;
         font-family: monospace;
         font-size: 11px;
         width: 220px;
         white-space: pre-wrap;
-        box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
       }
       .error-title { font-weight: bold; margin-bottom: 6px; color: #f43f5e; }
     </style>

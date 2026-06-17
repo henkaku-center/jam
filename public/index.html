@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A collaborative 2D space designed for local, in-person jam sessions and live performances.">
-  <title>🎵 jam — spatial creative workspace</title>
+  <title>jam</title>
   <script type="importmap">
     {
       "imports": {
@@ -21,16 +21,16 @@
   <!-- Click to Join Overlay (Autoplay Handling) -->
   <div id="autoplay-overlay" class="overlay">
     <div class="overlay-card">
-      <div class="logo">🎵 jam</div>
-      <p class="subtitle">A shared 2D world where music and visuals are spatially situated, hot-reloadable, and AI-composable.</p>
-      
+      <div class="logo">jam</div>
+      <p class="subtitle">A shared 2D space for music and visuals.</p>
+
       <div class="mode-selection">
         <button id="join-host-btn" class="btn btn-primary">
-          <div class="btn-title">🎛️ Join Jam</div>
-          <div class="btn-desc">Same shared canvas and controls for everyone.</div>
+          <div class="btn-title">Join</div>
+          <div class="btn-desc">Connect to the shared canvas.</div>
         </button>
       </div>
-      <div class="footer-tip">Collectively jam with 2-16 friends on your local Wi-Fi.</div>
+      <div class="footer-tip">Local Wi-Fi, 2–16 participants.</div>
     </div>
   </div>
 
@@ -53,7 +53,7 @@
 
     <!-- Top Status / Navigation Bar -->
     <div class="top-bar">
-      <div class="brand">🎵 jam <span id="mode-badge" class="badge">MUTED</span></div>
+      <div class="brand">jam <span id="mode-badge" class="badge">MUTED</span></div>
       
       <div class="clock-panel">
         <span class="label">TEMPO:</span>
@@ -71,13 +71,13 @@
 
       <div class="actions">
         <button id="open-strudel-btn" class="action-btn">+ Strudel Element</button>
-        <button id="reset-cam-btn" class="action-btn">🎯 Center Cam</button>
+        <button id="reset-cam-btn" class="action-btn">Center</button>
       </div>
     </div>
 
     <!-- Focus Mode Overlay Indicator -->
     <div id="focus-overlay" class="focus-overlay hidden">
-      <div class="focus-text">🔍 FOCUS MODE</div>
+      <div class="focus-text">FOCUS</div>
     </div>
   </div>
 

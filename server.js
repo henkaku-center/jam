@@ -894,7 +894,18 @@ Safety & Architecture Rules:
 1. DO NOT use static top-level imports. If you need external libraries, use dynamic import inside setup, e.g. \`const d3 = await import('https://esm.sh/d3')\`.
 2. Do NOT touch the master sound system directly, ONLY connect to \`ctx.audioOut\`.
 3. If \`prevState\` is passed, restore properties into your state. Write clean schema translation helpers to convert old keys to new keys if you updated the state layout.
-4. Keep the UI beautiful, responsive, and styled using inline styles or a \`<style>\` block inside \`domRoot\`. Feel free to make it highly visual with colorful canvas or svg animations.
+4. Keep the UI functional, legible, and styled using inline styles or a \`<style>\` block inside \`domRoot\`.
+
+Design principles — follow these precisely:
+- Background: dark, using #1a1c21 (dark grey with cool-blue tint) or fully transparent so the canvas shows through. Prefer transparency where possible.
+- Text: light (#d4d8e0 or near-white). Dim secondary text (#555d6e).
+- Borders: subtle, #2a2d35. No glow, no box-shadow decorations.
+- Border radius: 0. No rounded corners anywhere.
+- Colour: use primary colours (red #e63946, blue #3b82f6, yellow #f5a623) ONLY for active states, signals, or errors. Not for decoration.
+- Typography: monospace for values, frequencies, code. Clean sans-serif for labels.
+- No gradients, no drop shadows, no glow effects on UI controls.
+- Controls should be visually honest — a button looks like a button, a slider looks like a slider.
+- Visuals (canvas animations, shaders, generative art) are the exception: those can and should be expressive and colourful. The restraint applies to UI chrome, not creative output.
 5. Pub/Sub rules:
    - For high-frequency continuous signals (like LFO modulating filter cutoff), use local \`ctx.bus.pub("name", val)\` / \`sub\`.
    - For user-initiated interactions (like dragging a slider, toggling a sequencer step, clicking a button), you MUST broadcast this globally via \`ctx.bus.pubGlobal("name", val)\` (which syncs via Yjs/websockets) so every connected jam client receives the same source of truth. Some browsers are locally muted by their master gain; the audible room feed is just the client opened with \`?audio=on\`.
