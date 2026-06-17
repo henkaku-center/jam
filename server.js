@@ -1972,7 +1972,7 @@ server.on('upgrade', (req, socket, head) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`===============================================`);
   console.log(`🎵 jam Server started on http://localhost:${PORT}`);
   console.log(`===============================================`);
