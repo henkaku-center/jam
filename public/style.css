@@ -178,6 +178,11 @@ body, html {
   overflow: visible;
 }
 
+.canvas-element-wrapper.element-type-strudel,
+.canvas-element-wrapper.element-type-strudel * {
+  cursor: text;
+}
+
 .canvas-element-wrapper.element-type-strudel.active-focus::after {
   display: none;
 }
@@ -207,6 +212,7 @@ body, html {
   height: 48px;
   z-index: 2;
   pointer-events: auto;
+  cursor: text;
 }
 
 .agent-terminal:focus-within,

@@ -128,8 +128,9 @@ export default async function setup(ctx, prevState) {
         position: absolute;
         inset: 0;
         color: #000508;
-        font: inherit;
-        line-height: inherit;
+        font-family: var(--strudel-cursor-font-family);
+        font-size: var(--strudel-cursor-font-size);
+        line-height: var(--strudel-cursor-line-height);
         text-shadow: none;
         white-space: pre;
       }
@@ -367,8 +368,9 @@ export default async function setup(ctx, prevState) {
       position: 'absolute',
       inset: '0',
       color: '#000508',
-      font: 'inherit',
-      lineHeight: 'inherit',
+      fontFamily: 'var(--strudel-cursor-font-family)',
+      fontSize: 'var(--strudel-cursor-font-size)',
+      lineHeight: 'var(--strudel-cursor-line-height)',
       textShadow: 'none',
       whiteSpace: 'pre'
     },
@@ -649,6 +651,27 @@ export default async function setup(ctx, prevState) {
     if (!Number.isFinite(charWidth) || charWidth <= 0) return;
     const editor = editorRoot.querySelector('.cm-editor');
     editor?.style.setProperty('--strudel-cursor-cell-width', `${charWidth.toFixed(3)}px`);
+    setCursorTextMetrics(editor);
+  }
+
+  function setCursorTextMetrics(editor) {
+    if (!editor) return;
+    const line = editorRoot.querySelector('.cm-line');
+    if (!line) return;
+
+    const lineStyle = getComputedStyle(line);
+    const lineRect = line.getBoundingClientRect();
+    const computedLineHeight = Number.parseFloat(lineStyle.lineHeight);
+    const computedFontSize = Number.parseFloat(lineStyle.fontSize);
+    const visualScale = Number.isFinite(computedLineHeight) && computedLineHeight > 0
+      ? lineRect.height / computedLineHeight
+      : 1;
+    const fontSize = Number.isFinite(computedFontSize) ? computedFontSize * visualScale : 11;
+    const lineHeight = Number.isFinite(lineRect.height) && lineRect.height > 0 ? lineRect.height : fontSize * 1.35;
+
+    editor.style.setProperty('--strudel-cursor-font-family', lineStyle.fontFamily);
+    editor.style.setProperty('--strudel-cursor-font-size', `${fontSize.toFixed(3)}px`);
+    editor.style.setProperty('--strudel-cursor-line-height', `${lineHeight.toFixed(3)}px`);
   }
 
   function syncCursorGlyph() {

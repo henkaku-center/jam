@@ -678,6 +678,23 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       hasLineGutter: false
     });
 
+    const inputCursorStyles = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+      return {
+        terminalFocusZone: getComputedStyle(document.querySelector('#agent-terminal-focus-zone')).cursor,
+        strudelWrapper: getComputedStyle(element.domWrapper).cursor,
+        strudelEditor: getComputedStyle(root.querySelector('#editor')).cursor,
+        strudelCodeMirror: getComputedStyle(root.querySelector('.cm-editor')).cursor
+      };
+    }, created.id);
+    expect(inputCursorStyles).toEqual({
+      terminalFocusZone: 'text',
+      strudelWrapper: 'text',
+      strudelEditor: 'text',
+      strudelCodeMirror: 'text'
+    });
+
     const inactiveEditorStyle = await page.evaluate((id) => {
       const element = window.activeElements.get(id);
       const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
@@ -739,12 +756,20 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         const cursorRect = cursor?.getBoundingClientRect();
         const textNode = root ? findTextNode(root.querySelector('.cm-line')) : null;
         let charWidth = 0;
+        let expectedGlyphFontSize = 0;
         if (textNode) {
           const range = document.createRange();
           range.setStart(textNode, 0);
           range.setEnd(textNode, Math.min(1, textNode.textContent.length));
           charWidth = range.getBoundingClientRect().width;
           range.detach?.();
+        }
+        if (line) {
+          const lineStyle = getComputedStyle(line);
+          const lineRect = line.getBoundingClientRect();
+          const computedLineHeight = Number.parseFloat(lineStyle.lineHeight);
+          const computedFontSize = Number.parseFloat(lineStyle.fontSize);
+          expectedGlyphFontSize = computedLineHeight > 0 ? computedFontSize * (lineRect.height / computedLineHeight) : computedFontSize;
         }
         return {
           isFocused: editor?.classList.contains('cm-focused') || false,
@@ -765,7 +790,9 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
           cursorAnimationName: cursorStyle?.animationName || '',
           cursorGlyph: cursor?.getAttribute('data-cursor-char') || '',
           cursorGlyphColor: cursorGlyphStyle?.color || '',
-          cursorGlyphContent: cursorGlyphStyle?.content || ''
+          cursorGlyphContent: cursorGlyphStyle?.content || '',
+          cursorGlyphFontSize: cursorGlyphStyle ? Number.parseFloat(cursorGlyphStyle.fontSize) : 0,
+          expectedGlyphFontSize
         };
 
         function findTextNode(node) {
@@ -799,6 +826,26 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         cursorGlyphColor: 'rgb(0, 5, 8)',
         cursorGlyphContent: '"n"'
       });
+
+    const focusedGlyphMetrics = await page.evaluate((id) => {
+      const root = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot;
+      const line = root.querySelector('.cm-line');
+      const cursor = root.querySelector('.cm-cursor');
+      const lineStyle = getComputedStyle(line);
+      const lineRect = line.getBoundingClientRect();
+      const computedLineHeight = Number.parseFloat(lineStyle.lineHeight);
+      const computedFontSize = Number.parseFloat(lineStyle.fontSize);
+      const expectedGlyphFontSize = computedLineHeight > 0 ? computedFontSize * (lineRect.height / computedLineHeight) : computedFontSize;
+      const cursorGlyphStyle = getComputedStyle(cursor, '::after');
+      return {
+        actual: Number.parseFloat(cursorGlyphStyle.fontSize),
+        expected: expectedGlyphFontSize
+      };
+    }, created.id);
+    expect(focusedGlyphMetrics.actual).toBeCloseTo(focusedGlyphMetrics.expected, 0);
 
     const focusedCursorSize = await page.evaluate((id) => {
       const root = window.activeElements
