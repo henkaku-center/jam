@@ -35,13 +35,13 @@
     "authored": "hand",
     "reloadToken": 1781718732797
   },
-  "elem_debug_delete_1781719305791": {
-    "id": "elem_debug_delete_1781719305791",
+  "elem_delete_1781719316043": {
+    "id": "elem_delete_1781719316043",
     "x": 40,
     "y": 40,
     "width": 220,
     "height": 120,
-    "filePath": "/elements/elem_debug_delete_1781719305791_visual.js",
+    "filePath": "/elements/elem_delete_1781719316043_visual.js",
     "type": "visual",
     "prompt": "delete shortcut test",
     "authored": "hand",
