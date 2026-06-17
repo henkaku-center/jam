@@ -1,8 +1,8 @@
 {
   "elem_white_fluffy_clouds": {
     "id": "elem_white_fluffy_clouds",
-    "x": 1475,
-    "y": -626,
+    "x": 1389,
+    "y": -763,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_white_fluffy_clouds.js",
@@ -13,8 +13,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1324,
-    "y": -708,
+    "x": 1252,
+    "y": -811,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -23,34 +23,10 @@
     "authored": "hand",
     "reloadToken": 1781677678737
   },
-  "elem_dancing_koala": {
-    "id": "elem_dancing_koala",
-    "x": 1735,
-    "y": -150,
-    "width": 420,
-    "height": 300,
-    "filePath": "/elements/elem_dancing_koala_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored dancing koala video loop with VHS trails and stage lights",
-    "authored": "hand",
-    "reloadToken": 1781677678707
-  },
-  "elem_flying_crane_visual": {
-    "id": "elem_flying_crane_visual",
-    "x": 1394,
-    "y": -166,
-    "width": 620,
-    "height": 390,
-    "filePath": "/elements/elem_black_necked_crane_visual.js",
-    "type": "visual",
-    "prompt": "hand-authored flying black-necked crane wetland visual with animated wings and flock silhouettes",
-    "authored": "hand",
-    "reloadToken": 1781677678722
-  },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 765,
-    "y": -200,
+    "x": 936,
+    "y": -275,
     "width": 390,
     "height": 280,
     "filePath": "/elements/elem_midi_controller_synth.js",
@@ -61,8 +37,8 @@
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
-    "x": 1842,
-    "y": -701,
+    "x": 615,
+    "y": -974,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_webcore_os_chimes.js",
@@ -85,20 +61,20 @@
   },
   "elem_hz6unh73f": {
     "id": "elem_hz6unh73f",
-    "x": 809,
-    "y": -585,
+    "x": 647,
+    "y": -778,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781679071036
+    "reloadToken": 1781679394506
   },
   "elem_n839lr3yz": {
     "id": "elem_n839lr3yz",
-    "x": 1215,
-    "y": -706,
+    "x": 834,
+    "y": -604,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",

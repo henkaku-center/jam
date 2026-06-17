@@ -298,16 +298,38 @@ export default async function setup(ctx, prevState) {
 
   const editorTheme = EditorView.theme({
     '&': {
-      color: '#d1fae5'
+      color: '#d4d8e0',
+      background: 'transparent !important'
+    },
+    '&.cm-editor': {
+      background: 'transparent !important'
+    },
+    '.cm-scroller': {
+      background: 'transparent !important'
+    },
+    '.cm-gutters': {
+      background: 'transparent !important',
+      borderRight: '1px solid rgba(42, 45, 53, 0.4)'
+    },
+    '.cm-activeLineGutter': {
+      background: 'transparent !important'
+    },
+    '.cm-activeLine': {
+      background: 'rgba(255,255,255,0.04) !important'
     },
     '.cm-content': {
-      minHeight: '100%'
+      minHeight: '100%',
+      textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
     },
     '.cm-focused': {
       outline: 'none'
     },
     '.cm-line': {
-      padding: '0 4px'
+      padding: '0 4px',
+      textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
+    },
+    '.cm-lineNumbers .cm-gutterElement': {
+      textShadow: '0 0 4px rgba(0,0,0,0.9)'
     }
   });
 
