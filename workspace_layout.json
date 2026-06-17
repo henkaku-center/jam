@@ -9,7 +9,7 @@
     "type": "synth",
     "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
     "authored": "hand",
-    "reloadToken": 1781679071052
+    "reloadToken": 1781679472752
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
@@ -21,7 +21,7 @@
     "type": "visual",
     "prompt": "hand-authored glitchy GIF-like cat footage cut-up visual",
     "authored": "hand",
-    "reloadToken": 1781677678737
+    "reloadToken": 1781679472662
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
@@ -33,7 +33,7 @@
     "type": "synth",
     "prompt": "simple synth controlled simultaneously by nanoKEY notes and nanoKONTROL CC sliders/modifiers",
     "authored": "hand",
-    "reloadToken": 1781677678751
+    "reloadToken": 1781679472690
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
@@ -45,7 +45,7 @@
     "type": "synth",
     "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
-    "reloadToken": 1781677678806
+    "reloadToken": 1781679472737
   },
   "elem_puh3bqvig": {
     "id": "elem_puh3bqvig",
@@ -57,7 +57,7 @@
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781677678765
+    "reloadToken": 1781679472722
   },
   "elem_hz6unh73f": {
     "id": "elem_hz6unh73f",
@@ -69,18 +69,18 @@
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781679394506
+    "reloadToken": 1781679472677
   },
   "elem_n839lr3yz": {
     "id": "elem_n839lr3yz",
-    "x": 834,
-    "y": -604,
+    "x": 1179,
+    "y": -781,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1781679472704
   }
 }

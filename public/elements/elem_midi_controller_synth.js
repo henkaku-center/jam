@@ -56,7 +56,7 @@ export default function setup(ctx, prevState) {
         height: 100%;
         min-height: 220px;
         padding: 12px;
-        background: #101417;
+        background: rgba(18, 20, 25, 0.25);
         color: #eef6f0;
         font: 12px/1.35 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         display: grid;
@@ -81,7 +81,7 @@ export default function setup(ctx, prevState) {
       .voice-count {
         min-width: 54px;
         text-align: right;
-        color: #7dd3fc;
+        color: #3b82f6;
         font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .midi {
@@ -97,9 +97,9 @@ export default function setup(ctx, prevState) {
       select {
         width: 100%;
         min-height: 30px;
-        border: 1px solid #314047;
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
-        background: #182126;
+        background: rgba(18, 20, 25, 0.25);
         color: #eef6f0;
         padding: 4px 7px;
         font: inherit;
@@ -131,7 +131,7 @@ export default function setup(ctx, prevState) {
       .control input {
         grid-column: 1 / -1;
         width: 100%;
-        accent-color: #2dd4bf;
+        accent-color: #3b82f6;
       }
       .value {
         color: #d1d5db;
@@ -151,7 +151,7 @@ export default function setup(ctx, prevState) {
         color: #f8fafc;
       }
       .note span:last-child {
-        color: #2dd4bf;
+        color: #3b82f6;
         font-size: 18px;
       }
       .meters {
@@ -199,9 +199,9 @@ export default function setup(ctx, prevState) {
       }
       .bar.mod > span { background: #a78bfa; }
       .bar.bend > span { background: #fb923c; }
-      .bar.vel > span { background: #2dd4bf; }
+      .bar.vel > span { background: #3b82f6; }
       .bar.bass > span { background: #60a5fa; }
-      .bar.pluck > span { background: #2dd4bf; }
+      .bar.pluck > span { background: #3b82f6; }
       .bar.pad > span { background: #a78bfa; }
       .bar.bell > span { background: #facc15; }
       .bar.drums > span { background: #fb7185; }

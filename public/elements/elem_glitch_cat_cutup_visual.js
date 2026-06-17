@@ -41,9 +41,9 @@ export default function setup(ctx, prevState) {
         min-width: 260px;
         min-height: 180px;
         overflow: hidden;
-        background: #050505;
+        background: rgba(18, 20, 25, 0.25);
         border-radius: 8px;
-        border: 1px solid rgba(236, 72, 153, 0.55);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         isolation: isolate;
         font: 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -111,9 +111,7 @@ export default function setup(ctx, prevState) {
         inset: 0;
         z-index: 8;
         opacity: 0.42;
-        background:
-          linear-gradient(transparent 0 48%, rgba(255, 255, 255, 0.16) 49%, transparent 52%),
-          repeating-linear-gradient(0deg, rgba(0,0,0,0.36) 0 1px, transparent 1px 3px);
+        background: rgba(18, 20, 25, 0.25);
         transform: translateY(var(--scan-y, 0%));
         mix-blend-mode: overlay;
       }

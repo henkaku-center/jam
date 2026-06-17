@@ -89,13 +89,13 @@ export default function setup(ctx, prevState) {
         min-height: 210px;
         padding: 12px;
         overflow: hidden;
-        color: #ecfeff;
+        color: #d4d8e0;
         background:
           linear-gradient(180deg, rgba(255,255,255,0.15), transparent 42%),
           radial-gradient(circle at 18% 10%, rgba(57,213,255,0.34), transparent 34%),
           radial-gradient(circle at 84% 88%, rgba(250,204,21,0.2), transparent 36%),
           #0b1117;
-        border: 1px solid rgba(148, 163, 184, 0.55);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 8px;
         font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
@@ -117,17 +117,17 @@ export default function setup(ctx, prevState) {
       button {
         width: 34px;
         height: 28px;
-        border: 1px solid rgba(236, 254, 255, 0.62);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 6px;
         color: #071014;
-        background: linear-gradient(#ffffff, #8ee7ff 48%, #2dd4bf);
+        background: rgba(18, 20, 25, 0.25);
         font: 700 12px/1 ui-monospace, monospace;
         cursor: pointer;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 5px 15px rgba(45,212,191,0.2);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 5px 15px rgba(59, 130, 246, 0.5);
       }
       button[aria-pressed="false"] {
         color: #dbeafe;
-        background: linear-gradient(#334155, #111827);
+        background: rgba(18, 20, 25, 0.25);
       }
       .screen {
         position: relative;
@@ -135,7 +135,7 @@ export default function setup(ctx, prevState) {
         place-items: center;
         height: 66px;
         margin: 12px 0;
-        border: 1px solid rgba(125, 211, 252, 0.45);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 7px;
         background:
           repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 4px),
@@ -175,7 +175,7 @@ export default function setup(ctx, prevState) {
         display: grid;
         gap: 5px;
         min-width: 0;
-        color: #bae6fd;
+        color: #d4d8e0;
         font-size: 10px;
         text-transform: uppercase;
       }
@@ -185,13 +185,13 @@ export default function setup(ctx, prevState) {
         box-sizing: border-box;
         min-width: 0;
         color: #f8fafc;
-        background: rgba(15, 23, 42, 0.82);
-        border: 1px solid rgba(125, 211, 252, 0.52);
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         border-radius: 5px;
         font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       input {
-        accent-color: #22d3ee;
+        accent-color: #3b82f6;
       }
       select {
         height: 25px;
