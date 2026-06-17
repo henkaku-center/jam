@@ -71,14 +71,31 @@ export default async function setup(ctx, prevState) {
         width: max-content;
         min-width: 16ch;
         padding: 0;
-        caret-color: #f5a623;
+        caret-color: transparent;
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
       }
       .cm-line {
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
       }
+      @keyframes strudel-block-cursor-blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
       .cm-editor.cm-focused {
         outline: none !important;
+      }
+      .cm-cursorLayer {
+        pointer-events: none;
+      }
+      .cm-cursor {
+        border-left: 0 !important;
+        border-right: 0 !important;
+        width: 0.62em !important;
+        min-width: 0.62em;
+        margin-left: 0;
+        background: #fff;
+        mix-blend-mode: difference;
+        animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
       }
       .cm-editor .cm-activeLine {
         background: transparent !important;
@@ -260,10 +277,24 @@ export default async function setup(ctx, prevState) {
     },
     '.cm-content': {
       minHeight: '100%',
+      caretColor: 'transparent',
       textShadow: '0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)'
     },
     '&.cm-focused': {
       outline: 'none'
+    },
+    '.cm-cursorLayer': {
+      pointerEvents: 'none'
+    },
+    '.cm-cursor': {
+      borderLeft: '0 !important',
+      borderRight: '0 !important',
+      width: '0.62em !important',
+      minWidth: '0.62em',
+      marginLeft: '0',
+      background: '#fff',
+      mixBlendMode: 'difference',
+      animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
     },
     '.cm-line': {
       padding: '0',

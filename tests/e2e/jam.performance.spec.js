@@ -717,20 +717,45 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
           ?.shadowRoot;
         const editor = root?.querySelector('.cm-editor');
         const activeLine = root?.querySelector('.cm-activeLine');
+        const cursor = root?.querySelector('.cm-cursor');
+        const cursorStyle = cursor ? getComputedStyle(cursor) : null;
+        const cursorRect = cursor?.getBoundingClientRect();
         return {
           isFocused: editor?.classList.contains('cm-focused') || false,
           editorOutline: editor ? getComputedStyle(editor).outlineStyle : '',
-          activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : ''
+          activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : '',
+          cursorWidth: cursorRect?.width || 0,
+          cursorHeight: cursorRect?.height || 0,
+          cursorBorderLeftWidth: cursorStyle?.borderLeftWidth || '',
+          cursorBackground: cursorStyle?.backgroundColor || '',
+          cursorBlendMode: cursorStyle?.mixBlendMode || '',
+          cursorAnimationName: cursorStyle?.animationName || ''
         };
       }, created.id), {
-        message: 'focused Strudel editor should show only the active-line cue',
+        message: 'focused Strudel editor should show only active-line and block-cursor cues',
         timeout: 3_000
       })
       .toMatchObject({
         isFocused: true,
         editorOutline: 'none',
-        activeLineBackground: 'rgba(255, 255, 255, 0.04)'
+        activeLineBackground: 'rgba(255, 255, 255, 0.04)',
+        cursorBorderLeftWidth: '0px',
+        cursorBackground: 'rgb(255, 255, 255)',
+        cursorBlendMode: 'difference',
+        cursorAnimationName: 'strudel-block-cursor-blink'
       });
+
+    const focusedCursorSize = await page.evaluate((id) => {
+      const cursor = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('.cm-cursor');
+      const rect = cursor?.getBoundingClientRect();
+      return { width: rect?.width || 0, height: rect?.height || 0 };
+    }, created.id);
+    expect(focusedCursorSize.width).toBeGreaterThan(4);
+    expect(focusedCursorSize.height).toBeGreaterThan(8);
 
     await expect
       .poll(() => page.evaluate((id) => {
