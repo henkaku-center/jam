@@ -155,6 +155,10 @@ body, html {
   transition: opacity 0.3s ease;
 }
 
+.element-shadow-container {
+  overflow: visible;
+}
+
 .canvas-element-wrapper.active-focus {
   z-index: 100;
 }
@@ -168,6 +172,14 @@ body, html {
   bottom: -2px;
   border: 1px solid var(--accent-blue);
   pointer-events: none;
+}
+
+.canvas-element-wrapper.element-type-strudel {
+  overflow: visible;
+}
+
+.canvas-element-wrapper.element-type-strudel.active-focus::after {
+  display: none;
 }
 
 /* Live low-opacity agent terminal */

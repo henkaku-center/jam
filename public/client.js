@@ -543,6 +543,7 @@ function createElementHarnessContext(elementId, audioOutNode) {
     domRoot: domRootProxy,
     clock: clockProxy,
     bus: busProxy,
+    requestLayout: (patch) => requestElementLayout(elementId, patch),
     sendControllerData: (data) => sendControllerMessage({ elementId, data })
   };
 
@@ -630,6 +631,7 @@ async function instantiateElement(id, layout, options = {}) {
     const domWrapper = document.createElement('div');
     domWrapper.id = `wrapper-${id}`;
     domWrapper.className = 'canvas-element-wrapper';
+    if (layout.type) domWrapper.classList.add(`element-type-${layout.type}`);
     domWrapper.style.left = `${layout.x}px`;
     domWrapper.style.top = `${layout.y}px`;
     domWrapper.appendChild(harness.domWrapper);
@@ -853,6 +855,27 @@ function isElementInsideBox(layout, box) {
     layout.y + elemHeight < box.top ||
     layout.y > box.bottom
   );
+}
+
+function requestElementLayout(id, patch) {
+  if (!elementsMap?.has(id) || !patch || typeof patch !== 'object') return;
+
+  const current = elementsMap.get(id);
+  const next = { ...current };
+  let changed = false;
+
+  for (const key of ['width', 'height']) {
+    if (!(key in patch)) continue;
+    const value = Math.round(Number(patch[key]));
+    if (!Number.isFinite(value) || value < 1 || value === current[key]) continue;
+    next[key] = value;
+    changed = true;
+  }
+
+  if (!changed) return;
+  ydoc.transact(() => {
+    elementsMap.set(id, next);
+  });
 }
 
 function runLevelOfDetailCheck() {
@@ -1127,6 +1150,9 @@ function syncElementsFromMap() {
         instantiateElement(id, layout, { forceCompile });
       } else {
         element.layout = layout;
+        element.domWrapper.className = 'canvas-element-wrapper';
+        if (layout.type) element.domWrapper.classList.add(`element-type-${layout.type}`);
+        if (selectedElementId === id) element.domWrapper.classList.add('active-focus');
         element.domWrapper.style.left = `${layout.x}px`;
         element.domWrapper.style.top = `${layout.y}px`;
       }

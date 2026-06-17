@@ -669,6 +669,31 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       hasStatus: false,
       hasLineGutter: false
     });
+
+    await expect
+      .poll(() => page.evaluate((id) => {
+        const element = window.activeElements.get(id);
+        const layout = window.elementsMap.get(id);
+        const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+        const editor = root?.querySelector('#editor');
+        const scroller = root?.querySelector('.cm-scroller');
+        return {
+          wrapperOverflow: getComputedStyle(element.domWrapper).overflow,
+          editorOverflow: editor ? getComputedStyle(editor).overflow : '',
+          scrollerOverflow: scroller ? getComputedStyle(scroller).overflow : '',
+          width: layout?.width || 0,
+          height: layout?.height || 0
+        };
+      }, created.id), {
+        message: 'Strudel editor should float without scroll containers',
+        timeout: 5_000
+      })
+      .toMatchObject({
+        wrapperOverflow: 'visible',
+        editorOverflow: 'visible',
+        scrollerOverflow: 'visible'
+      });
+
     expect(created.layout.prompt).toBe('');
     const hasEvalButton = await page.evaluate((id) => {
       const element = window.activeElements.get(id);
@@ -681,7 +706,7 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
       const code = root?.querySelector('#code');
       if (!code) throw new Error('missing Strudel code editor');
-      code.value = 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)';
+      code.value = 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)\n// this deliberately long line keeps the floating editor wide enough to prove it grows with code content';
       code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     }, created.id);
 
@@ -697,10 +722,39 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         message: 'typing should update the draft without auto-evaluating Strudel',
         timeout: 3_000
       })
-      .toMatchObject({ draftCode: 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)' });
+      .toMatchObject({ draftCode: 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)\n// this deliberately long line keeps the floating editor wide enough to prove it grows with code content' });
+
+    await expect
+      .poll(() => page.evaluate((id) => {
+        const layout = window.elementsMap.get(id);
+        const root = window.activeElements
+          .get(id)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot;
+        const editor = root?.querySelector('#editor');
+        if (!layout || !editor) return false;
+        return layout.width > 360 &&
+          layout.height > 20 &&
+          layout.width >= editor.scrollWidth &&
+          layout.height >= editor.scrollHeight;
+      }, created.id), {
+        message: 'Strudel layout should grow to fit code content',
+        timeout: 5_000
+      })
+      .toBe(true);
 
     const sourceBeforeEval = await page.evaluate((id) => window.__jamStrudelRuntimeDebug?.sources?.[id] || '', created.id);
     expect(sourceBeforeEval).not.toContain('<c3 e3 g3>');
+
+    await page.evaluate((id) => {
+      const code = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#code');
+      code.value = 'note("<c3 e3 g3>").s("sawtooth").gain(0.2).jux(rev)';
+      code.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    }, created.id);
 
     await page.evaluate((id) => {
       const element = window.activeElements.get(id);

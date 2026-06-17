@@ -18,21 +18,24 @@ export default async function setup(ctx, prevState) {
   const unsubscribers = [];
   let suppressPublish = false;
   let evalTimer = 0;
+  let resizeFrame = 0;
+  let lastLayoutSize = { width: 0, height: 0 };
   let destroyed = false;
 
   ctx.domRoot.innerHTML = `
     <style>
       :host {
-        display: block;
-        height: 100%;
+        display: inline-block;
         user-select: text;
         -webkit-user-select: text;
+        overflow: visible;
       }
       #editor {
         box-sizing: border-box;
-        height: 100%;
-        min-height: 86px;
-        overflow: hidden;
+        display: inline-block;
+        min-width: 16ch;
+        min-height: 1.35em;
+        overflow: visible;
         color: #d4d8e0;
         background: transparent;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -47,15 +50,26 @@ export default async function setup(ctx, prevState) {
         pointer-events: none;
       }
       .cm-editor {
-        height: 100%;
+        display: inline-block;
+        width: max-content;
+        min-width: 16ch;
+        height: auto;
+        overflow: visible;
         background: transparent;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .cm-scroller {
-        height: 100%;
-        min-height: 86px;
+        display: inline-block;
+        width: max-content;
+        min-width: 16ch;
+        min-height: 1.35em;
+        height: auto;
+        overflow: visible !important;
+        font-family: inherit;
       }
       .cm-content {
+        width: max-content;
+        min-width: 16ch;
         padding: 0;
         caret-color: #f5a623;
         text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
@@ -67,7 +81,7 @@ export default async function setup(ctx, prevState) {
         border: 1px solid #2a2d35;
         background: rgba(18, 20, 25, 0.95);
         color: #d4d8e0;
-        overflow: hidden;
+        overflow: visible;
       }
       .cm-tooltip-autocomplete ul {
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -125,6 +139,7 @@ export default async function setup(ctx, prevState) {
   const render = () => {
     setEditorValue(state.draftCode);
     syncCodeBridge();
+    scheduleEditorResize();
   };
 
   const updateDraft = (source) => {
@@ -254,6 +269,9 @@ export default async function setup(ctx, prevState) {
         strudelTheme,
         editorTheme,
         EditorView.updateListener.of(update => {
+          if (update.docChanged || update.geometryChanged || update.viewportChanged) {
+            scheduleEditorResize();
+          }
           if (!update.docChanged || applyingEditorChange) return;
           updateDraft(update.state.doc.toString());
         }),
@@ -279,6 +297,7 @@ export default async function setup(ctx, prevState) {
     })
   });
   editorRoot.cmView = editorView;
+  scheduleEditorResize();
 
   const publishState = () => {
     if (suppressPublish) return;
@@ -378,6 +397,7 @@ export default async function setup(ctx, prevState) {
         try { unsub(); } catch {}
       });
       try { editorView?.destroy(); } catch {}
+      cancelAnimationFrame(resizeFrame);
       try { await runtime.removeElement(elementId); } catch {}
     }
   };
@@ -411,6 +431,59 @@ export default async function setup(ctx, prevState) {
   function syncCodeBridge() {
     const value = getEditorValue();
     if (codeBridge.value !== value) codeBridge.value = value;
+  }
+
+  function scheduleEditorResize() {
+    if (destroyed || resizeFrame) return;
+    resizeFrame = requestAnimationFrame(measureAndPublishEditorSize);
+  }
+
+  function measureAndPublishEditorSize() {
+    resizeFrame = 0;
+    if (destroyed || !editorRoot.isConnected) return;
+
+    const content = editorRoot.querySelector('.cm-content');
+    const lineCount = editorView?.state.doc.lines || 1;
+    const lineHeight = readPixelSize(editorRoot.querySelector('.cm-line'), 'lineHeight', 15);
+    const charWidth = readCharWidth();
+    const longestLineLength = Math.max(16, ...editorView.state.doc.toString().split('\n').map(line => line.length));
+    const measuredWidth = Math.ceil(Math.max(
+      editorRoot.scrollWidth,
+      content?.scrollWidth || 0,
+      longestLineLength * charWidth
+    ));
+    const measuredHeight = Math.ceil(Math.max(
+      editorRoot.scrollHeight,
+      content?.scrollHeight || 0,
+      lineCount * lineHeight
+    ));
+    const nextSize = {
+      width: clamp(measuredWidth + 2, 120, 1200),
+      height: clamp(measuredHeight + 2, 20, 900)
+    };
+
+    if (Math.abs(nextSize.width - lastLayoutSize.width) < 2 &&
+        Math.abs(nextSize.height - lastLayoutSize.height) < 2) {
+      return;
+    }
+
+    lastLayoutSize = nextSize;
+    ctx.requestLayout?.(nextSize);
+  }
+
+  function readPixelSize(element, property, fallback) {
+    const value = element ? Number.parseFloat(getComputedStyle(element)[property]) : NaN;
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  function readCharWidth() {
+    const probe = document.createElement('span');
+    probe.textContent = '0000000000';
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;';
+    editorRoot.appendChild(probe);
+    const width = probe.getBoundingClientRect().width / 10;
+    probe.remove();
+    return Number.isFinite(width) && width > 0 ? width : 7;
   }
 }
 
