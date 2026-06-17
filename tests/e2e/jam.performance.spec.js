@@ -735,6 +735,7 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         const line = root?.querySelector('.cm-line');
         const token = root?.querySelector('.cm-line span');
         const cursorStyle = cursor ? getComputedStyle(cursor) : null;
+        const cursorGlyphStyle = cursor ? getComputedStyle(cursor, '::after') : null;
         const cursorRect = cursor?.getBoundingClientRect();
         const textNode = root ? findTextNode(root.querySelector('.cm-line')) : null;
         let charWidth = 0;
@@ -761,7 +762,10 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
           cursorBackground: cursorStyle?.backgroundColor || '',
           cursorBlendMode: cursorStyle?.mixBlendMode || '',
           cursorBackdropFilter: cursorStyle?.backdropFilter || cursorStyle?.webkitBackdropFilter || '',
-          cursorAnimationName: cursorStyle?.animationName || ''
+          cursorAnimationName: cursorStyle?.animationName || '',
+          cursorGlyph: cursor?.getAttribute('data-cursor-char') || '',
+          cursorGlyphColor: cursorGlyphStyle?.color || '',
+          cursorGlyphContent: cursorGlyphStyle?.content || ''
         };
 
         function findTextNode(node) {
@@ -790,7 +794,10 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         cursorBackground: 'rgb(103, 232, 249)',
         cursorBlendMode: 'normal',
         cursorBackdropFilter: 'none',
-        cursorAnimationName: 'strudel-block-cursor-blink'
+        cursorAnimationName: 'strudel-block-cursor-blink',
+        cursorGlyph: 'n',
+        cursorGlyphColor: 'rgb(0, 5, 8)',
+        cursorGlyphContent: '"n"'
       });
 
     const focusedCursorSize = await page.evaluate((id) => {
