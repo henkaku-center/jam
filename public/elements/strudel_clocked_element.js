@@ -38,12 +38,9 @@ export default async function setup(ctx, prevState) {
         gap: 7px;
         padding: 10px;
         overflow: hidden;
-        color: #e5e7eb;
-        background:
-          radial-gradient(circle at 18% 0%, rgba(20, 184, 166, 0.22), transparent 34%),
-          linear-gradient(135deg, #0b1120 0%, #15151e 52%, #101923 100%);
-        border: 1px solid rgba(45, 212, 191, 0.5);
-        border-radius: 8px;
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.72);
+        border: 1px solid #2a2d35;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         user-select: text;
         -webkit-user-select: text;
@@ -62,13 +59,14 @@ export default async function setup(ctx, prevState) {
       }
       h2 {
         margin: 0;
-        color: #ccfbf1;
-        font-size: 13px;
+        color: #d4d8e0;
+        font-size: 12px;
         line-height: 1;
-        letter-spacing: 0;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
       }
       .sub {
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 9px;
         white-space: nowrap;
         overflow: hidden;
@@ -79,17 +77,22 @@ export default async function setup(ctx, prevState) {
       }
       .run {
         min-width: 48px;
-        height: 27px;
+        height: 24px;
         padding: 0 9px;
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        border-radius: 5px;
-        color: #06121b;
-        background: #5eead4;
+        border: 1px solid #2a2d35;
+        color: #555d6e;
+        background: transparent;
         cursor: pointer;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+      }
+      .run.on {
+        border-color: #e63946;
+        color: #e63946;
       }
       .run.off {
-        color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.72);
+        border-color: #2a2d35;
+        color: #555d6e;
       }
       .code-bridge {
         position: absolute;
@@ -104,14 +107,12 @@ export default async function setup(ctx, prevState) {
         height: 100%;
         min-height: 86px;
         box-sizing: border-box;
-        background: rgba(2, 6, 23, 0.68);
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #2a2d35;
         overflow: hidden;
       }
       #editor:focus-within {
-        border-color: #5eead4;
-        box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+        border-color: #3d4250;
       }
       .cm-editor {
         height: 100%;
@@ -124,25 +125,24 @@ export default async function setup(ctx, prevState) {
       }
       .cm-content {
         padding: 8px 4px;
-        caret-color: #facc15;
+        caret-color: #f5a623;
       }
       .cm-gutters {
-        border-right: 1px solid rgba(148, 163, 184, 0.18);
+        border-right: 1px solid #2a2d35;
+        background: transparent;
       }
       .cm-tooltip {
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 6px;
-        background: #0f172a;
-        color: #e5e7eb;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        border: 1px solid #2a2d35;
+        background: #12141a;
+        color: #d4d8e0;
         overflow: hidden;
       }
       .cm-tooltip-autocomplete ul {
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .cm-tooltip-autocomplete ul li[aria-selected] {
-        background: rgba(45, 212, 191, 0.25);
-        color: #f8fafc;
+        background: rgba(59, 130, 246, 0.2);
+        color: #d4d8e0;
       }
       .bottom {
         display: grid;
@@ -155,22 +155,25 @@ export default async function setup(ctx, prevState) {
         grid-template-columns: auto 1fr;
         align-items: center;
         gap: 6px;
-        color: #cbd5e1;
+        color: #555d6e;
         min-width: 0;
+        font-size: 10px;
+        letter-spacing: 0.05em;
       }
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #5eead4;
+        accent-color: #3b82f6;
       }
       .status {
         max-width: 142px;
-        color: #94a3b8;
+        color: #555d6e;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 10px;
       }
-      .status.error { color: #fca5a5; }
+      .status.error { color: #e63946; }
     </style>
     <div class="panel">
       <div class="top">

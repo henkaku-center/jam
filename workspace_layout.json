@@ -1,8 +1,8 @@
 {
   "elem_white_fluffy_clouds": {
     "id": "elem_white_fluffy_clouds",
-    "x": 1390,
-    "y": -498,
+    "x": 1563,
+    "y": -475,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_white_fluffy_clouds.js",
@@ -13,8 +13,8 @@
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1377,
-    "y": -693,
+    "x": 1345,
+    "y": -737,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -25,8 +25,8 @@
   },
   "elem_dancing_koala": {
     "id": "elem_dancing_koala",
-    "x": 1851,
-    "y": -856,
+    "x": 1735,
+    "y": -150,
     "width": 420,
     "height": 300,
     "filePath": "/elements/elem_dancing_koala_visual.js",
@@ -37,8 +37,8 @@
   },
   "elem_flying_crane_visual": {
     "id": "elem_flying_crane_visual",
-    "x": 1458,
-    "y": -82,
+    "x": 1394,
+    "y": -166,
     "width": 620,
     "height": 390,
     "filePath": "/elements/elem_black_necked_crane_visual.js",
@@ -49,7 +49,7 @@
   },
   "elem_midi_controller_synth": {
     "id": "elem_midi_controller_synth",
-    "x": 715,
+    "x": 765,
     "y": -200,
     "width": 390,
     "height": 280,
@@ -61,8 +61,8 @@
   },
   "elem_webcore_os_chimes": {
     "id": "elem_webcore_os_chimes",
-    "x": 1768,
-    "y": -479,
+    "x": 1842,
+    "y": -701,
     "width": 360,
     "height": 250,
     "filePath": "/elements/elem_webcore_os_chimes.js",
@@ -70,18 +70,6 @@
     "prompt": "hand-authored webcore random OS boot chimes and UI sounds inspired by Windows and Mac startup tones",
     "authored": "hand",
     "reloadToken": 1781677678806
-  },
-  "elem_sparkling_buddha_thai_temple": {
-    "id": "elem_sparkling_buddha_thai_temple",
-    "x": 1104,
-    "y": -561,
-    "width": 560,
-    "height": 370,
-    "filePath": "/elements/elem_sparkling_buddha_thai_temple.js",
-    "type": "synth",
-    "prompt": "hand-authored sparkling Buddha visual with Thai temple bells, gong, chimes, and drone",
-    "authored": "hand",
-    "reloadToken": 1781677678779
   },
   "elem_puh3bqvig": {
     "id": "elem_puh3bqvig",
@@ -95,16 +83,16 @@
     "authored": "hand",
     "reloadToken": 1781677678765
   },
-  "elem_u7vkj7zgr": {
-    "id": "elem_u7vkj7zgr",
-    "x": 1910,
-    "y": -427,
+  "elem_hz6unh73f": {
+    "id": "elem_hz6unh73f",
+    "x": 1142,
+    "y": -670,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781677678793
+    "reloadToken": 1781678623307
   }
 }
