@@ -84,12 +84,9 @@ export default function setup(ctx, prevState) {
         display: grid;
         grid-template-rows: auto auto 1fr;
         gap: 8px;
-        color: #eff6ff;
-        background:
-          radial-gradient(circle at 50% 115%, rgba(186, 230, 253, 0.22), transparent 44%),
-          linear-gradient(135deg, rgba(7, 18, 30, 0.96), rgba(21, 33, 48, 0.96) 56%, rgba(12, 20, 29, 0.96));
-        border: 1px solid rgba(125, 211, 252, 0.44);
-        border-radius: 8px;
+        color: #d4d8e0;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 11px/1.32 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .top {
@@ -100,33 +97,39 @@ export default function setup(ctx, prevState) {
       }
       h1 {
         margin: 0;
-        color: #bae6fd;
-        font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
-        letter-spacing: 0;
+        color: #d4d8e0;
+        font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 6px rgba(0,0,0,0.9);
       }
       .sub {
         margin-top: 3px;
-        color: #94a3b8;
+        color: #555d6e;
         font-size: 10px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-shadow: 0 0 4px rgba(0,0,0,0.9);
       }
       button {
-        height: 28px;
-        min-width: 48px;
-        padding: 0 9px;
-        border: 1px solid rgba(125, 211, 252, 0.58);
-        border-radius: 5px;
-        color: #06121e;
-        background: #7dd3fc;
+        height: 24px;
+        min-width: 40px;
+        padding: 0 8px;
+        border: 1px solid #2a2d35;
+        color: #555d6e;
+        background: transparent;
         font: inherit;
         cursor: pointer;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+      }
+      button.on {
+        border-color: #e63946;
+        color: #e63946;
       }
       button.off {
-        color: #cbd5e1;
-        background: rgba(15, 23, 42, 0.78);
-        border-color: rgba(148, 163, 184, 0.34);
+        border-color: #2a2d35;
+        color: #555d6e;
       }
       .controls {
         display: grid;
@@ -138,33 +141,31 @@ export default function setup(ctx, prevState) {
         grid-template-columns: 54px minmax(0, 1fr) 34px;
         align-items: center;
         gap: 7px;
-        color: #dbeafe;
+        color: #555d6e;
+        text-shadow: 0 0 4px rgba(0,0,0,0.9);
       }
       input[type="range"] {
         width: 100%;
         min-width: 0;
-        accent-color: #7dd3fc;
+        accent-color: #3b82f6;
       }
       .orb {
         min-height: 82px;
-        border: 1px solid rgba(125, 211, 252, 0.34);
+        border: 1px solid rgba(42, 45, 53, 0.4);
         display: grid;
         grid-template-columns: 1fr auto;
         align-items: end;
         gap: 8px;
         padding: 10px;
         overflow: hidden;
-        background:
-          radial-gradient(circle at 42% 44%, rgba(255, 255, 255, 0.74), rgba(186, 230, 253, 0.44) calc(17% + var(--pulse) * 12%), transparent calc(28% + var(--pulse) * 14%)),
-          radial-gradient(circle at 66% 34%, rgba(224, 242, 254, 0.34), transparent 25%),
-          linear-gradient(180deg, rgba(8, 20, 32, 0.36), rgba(3, 7, 18, 0.72));
+        background: transparent;
       }
       .word {
-        color: #f8fafc;
+        color: #d4d8e0;
         font: 700 24px/0.95 ui-sans-serif, system-ui, sans-serif;
         letter-spacing: 0;
         transform: translateY(calc(var(--pulse) * -5px));
-        text-shadow: 0 0 calc(7px + var(--pulse) * 18px) rgba(186, 230, 253, 0.76);
+        text-shadow: 0 0 6px rgba(0,0,0,1), 0 0 calc(4px + var(--pulse) * 12px) rgba(0,0,0,0.8);
       }
       .steps {
         display: grid;
@@ -175,14 +176,13 @@ export default function setup(ctx, prevState) {
       .steps span {
         width: 5px;
         height: 26px;
-        background: rgba(148, 163, 184, 0.24);
+        background: rgba(255, 255, 255, 0.08);
       }
       .steps span.wordstep {
-        background: rgba(125, 211, 252, 0.42);
+        background: rgba(59, 130, 246, 0.4);
       }
       .steps span.on {
-        background: #e0f2fe;
-        box-shadow: 0 0 10px rgba(186, 230, 253, 0.72);
+        background: #d4d8e0;
       }
     </style>
     <div class="root">

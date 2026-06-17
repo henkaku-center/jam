@@ -39,8 +39,8 @@ export default async function setup(ctx, prevState) {
         padding: 10px;
         overflow: hidden;
         color: #d4d8e0;
-        background: rgba(18, 20, 25, 0.72);
-        border: 1px solid #2a2d35;
+        background: rgba(18, 20, 25, 0.25);
+        border: 1px solid rgba(42, 45, 53, 0.6);
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         user-select: text;
         -webkit-user-select: text;
@@ -107,12 +107,12 @@ export default async function setup(ctx, prevState) {
         height: 100%;
         min-height: 86px;
         box-sizing: border-box;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid #2a2d35;
+        background: transparent;
+        border: 1px solid rgba(42, 45, 53, 0.4);
         overflow: hidden;
       }
       #editor:focus-within {
-        border-color: #3d4250;
+        border-color: rgba(61, 66, 80, 0.7);
       }
       .cm-editor {
         height: 100%;
@@ -126,14 +126,19 @@ export default async function setup(ctx, prevState) {
       .cm-content {
         padding: 8px 4px;
         caret-color: #f5a623;
+        text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
+      }
+      .cm-line {
+        text-shadow: 0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9);
       }
       .cm-gutters {
-        border-right: 1px solid #2a2d35;
+        border-right: 1px solid rgba(42, 45, 53, 0.4);
         background: transparent;
+        text-shadow: 0 0 4px rgba(0,0,0,0.9);
       }
       .cm-tooltip {
         border: 1px solid #2a2d35;
-        background: #12141a;
+        background: rgba(18, 20, 25, 0.95);
         color: #d4d8e0;
         overflow: hidden;
       }

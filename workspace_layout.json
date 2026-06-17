@@ -1,20 +1,20 @@
 {
   "elem_white_fluffy_clouds": {
     "id": "elem_white_fluffy_clouds",
-    "x": 1563,
-    "y": -475,
+    "x": 1475,
+    "y": -626,
     "width": 360,
     "height": 270,
     "filePath": "/elements/elem_white_fluffy_clouds.js",
     "type": "synth",
     "prompt": "hand-authored clocked vocal track saying white fluffy clouds in an orb-like manner",
     "authored": "hand",
-    "reloadToken": 1781677678821
+    "reloadToken": 1781679071052
   },
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 1345,
-    "y": -737,
+    "x": 1324,
+    "y": -708,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -85,14 +85,26 @@
   },
   "elem_hz6unh73f": {
     "id": "elem_hz6unh73f",
-    "x": 1142,
-    "y": -670,
+    "x": 809,
+    "y": -585,
     "width": 360,
     "height": 260,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781678623307
+    "reloadToken": 1781679071036
+  },
+  "elem_n839lr3yz": {
+    "id": "elem_n839lr3yz",
+    "x": 1215,
+    "y": -706,
+    "width": 360,
+    "height": 260,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
