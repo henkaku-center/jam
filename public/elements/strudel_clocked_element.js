@@ -19,9 +19,12 @@ export default async function setup(ctx, prevState) {
   let suppressPublish = false;
   let evalTimer = 0;
   let resizeFrame = 0;
+  let cursorOverlayFrame = 0;
   let lastLayoutSize = { width: 0, height: 0 };
   let lastCameraZoom = null;
   let destroyed = false;
+  let cursorOverlay = null;
+  let cursorOverlayStyle = null;
 
   ctx.domRoot.innerHTML = `
     <style>
@@ -115,11 +118,11 @@ export default async function setup(ctx, prevState) {
       }
       .cm-editor.cm-focused .cm-cursor {
         border: 0 !important;
-        background: rgba(255, 255, 255, 0.01);
-        backdrop-filter: invert(1);
-        -webkit-backdrop-filter: invert(1);
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         mix-blend-mode: normal;
-        animation: strudel-block-cursor-blink 1.05s steps(1, end) infinite;
+        animation: none;
       }
       .cm-editor .cm-activeLine {
         background: transparent !important;
@@ -342,11 +345,11 @@ export default async function setup(ctx, prevState) {
     },
     '&.cm-focused .cm-cursor': {
       border: '0 !important',
-      background: 'rgba(255, 255, 255, 0.01)',
-      backdropFilter: 'invert(1)',
-      WebkitBackdropFilter: 'invert(1)',
+      background: 'transparent',
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
       mixBlendMode: 'normal',
-      animation: 'strudel-block-cursor-blink 1.05s steps(1, end) infinite'
+      animation: 'none'
     },
     '.cm-line': {
       padding: '0',
@@ -381,11 +384,22 @@ export default async function setup(ctx, prevState) {
           if (update.docChanged || update.geometryChanged || update.viewportChanged) {
             scheduleEditorResize();
           }
+          if (update.docChanged || update.selectionSet || update.geometryChanged || update.viewportChanged || update.focusChanged) {
+            scheduleCursorOverlaySync();
+          }
           if (!update.docChanged || applyingEditorChange) return;
           updateDraft(update.state.doc.toString());
         }),
         EditorView.domEventHandlers({
           keydown: runEditorShortcut,
+          focus() {
+            scheduleCursorOverlaySync();
+            return false;
+          },
+          blur() {
+            scheduleCursorOverlaySync();
+            return false;
+          },
           pointerdown(event) {
             event.stopPropagation();
             return false;
@@ -407,6 +421,7 @@ export default async function setup(ctx, prevState) {
   });
   editorRoot.cmView = editorView;
   scheduleEditorResize();
+  scheduleCursorOverlaySync();
 
   const publishState = () => {
     if (suppressPublish) return;
@@ -497,6 +512,7 @@ export default async function setup(ctx, prevState) {
         lastCameraZoom = zoom;
         scheduleEditorResize();
       }
+      if (editorView?.hasFocus) scheduleCursorOverlaySync();
     },
     getState() {
       return {
@@ -514,6 +530,8 @@ export default async function setup(ctx, prevState) {
       });
       try { editorView?.destroy(); } catch {}
       cancelAnimationFrame(resizeFrame);
+      cancelAnimationFrame(cursorOverlayFrame);
+      removeCursorOverlay();
       try { await runtime.removeElement(elementId); } catch {}
     }
   };
@@ -552,6 +570,78 @@ export default async function setup(ctx, prevState) {
   function scheduleEditorResize() {
     if (destroyed || resizeFrame) return;
     resizeFrame = requestAnimationFrame(measureAndPublishEditorSize);
+  }
+
+  function scheduleCursorOverlaySync() {
+    if (destroyed || cursorOverlayFrame) return;
+    cursorOverlayFrame = requestAnimationFrame(syncCursorOverlay);
+  }
+
+  function syncCursorOverlay() {
+    cursorOverlayFrame = 0;
+    if (destroyed || !editorView || !editorRoot.isConnected || !editorView.hasFocus) {
+      hideCursorOverlay();
+      return;
+    }
+
+    const selection = editorView.state.selection.main;
+    if (!selection.empty) {
+      hideCursorOverlay();
+      return;
+    }
+
+    const coords = editorView.coordsAtPos(selection.head);
+    if (!coords) {
+      hideCursorOverlay();
+      return;
+    }
+
+    const overlay = ensureCursorOverlay();
+    overlay.style.display = 'block';
+    overlay.style.left = `${coords.left}px`;
+    overlay.style.top = `${coords.top}px`;
+    overlay.style.width = `${Math.max(1, readCharWidth())}px`;
+    overlay.style.height = `${Math.max(1, coords.bottom - coords.top)}px`;
+  }
+
+  function ensureCursorOverlay() {
+    if (!cursorOverlayStyle) {
+      cursorOverlayStyle = document.createElement('style');
+      cursorOverlayStyle.textContent = `
+        @keyframes jam-strudel-document-cursor-blink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        .jam-strudel-document-cursor {
+          position: fixed;
+          display: none;
+          pointer-events: none;
+          background: #fff;
+          mix-blend-mode: difference;
+          z-index: 2147483647;
+          animation: jam-strudel-document-cursor-blink 1.05s steps(1, end) infinite;
+        }
+      `;
+      document.head.appendChild(cursorOverlayStyle);
+    }
+    if (!cursorOverlay) {
+      cursorOverlay = document.createElement('div');
+      cursorOverlay.className = 'jam-strudel-document-cursor';
+      cursorOverlay.dataset.strudelCursorOverlay = elementId;
+      document.body.appendChild(cursorOverlay);
+    }
+    return cursorOverlay;
+  }
+
+  function hideCursorOverlay() {
+    if (cursorOverlay) cursorOverlay.style.display = 'none';
+  }
+
+  function removeCursorOverlay() {
+    cursorOverlay?.remove();
+    cursorOverlayStyle?.remove();
+    cursorOverlay = null;
+    cursorOverlayStyle = null;
   }
 
   function measureAndPublishEditorSize() {
@@ -630,6 +720,7 @@ export default async function setup(ctx, prevState) {
     editor.style.setProperty('--strudel-cursor-font-size', `${fontSize.toFixed(3)}px`);
     editor.style.setProperty('--strudel-cursor-line-height', `${lineHeight.toFixed(3)}px`);
   }
+
 }
 
 function isSilenceShortcut(event) {
