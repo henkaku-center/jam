@@ -1,0 +1,250 @@
+{
+  "generated": "2026-05-30T15:27:56.402Z",
+  "sessions": [
+    {
+      "date": "2026-05-28",
+      "description": "This folder archives local coding-agent session logs from the successful jam held on 2026-05-28 from 16:00 to 18:00 JST. - `codex/`: Codex CLI JSONL session logs copied from `~/.codex/sessions/2026/05/28/`.",
+      "readme": "# Jam Session Logs: 2026-05-28\n\nThis folder archives local coding-agent session logs from the successful jam held on 2026-05-28 from 16:00 to 18:00 JST.\n\n- `codex/`: Codex CLI JSONL session logs copied from `~/.codex/sessions/2026/05/28/`.\n- `claude/`: Claude Code JSONL session logs copied from `~/.claude/` when present.\n- `manifest.tsv`: Source, local modification time, file size, archived path, and original path for every copied log.\n\nSelection window: files with modification times from 2026-05-28 16:00:00 through 2026-05-28 18:14:59 JST. The 15-minute buffer captures sessions that were started during the jam and flushed shortly after 18:00.\n",
+      "rollouts": [
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:20:00 JST",
+          "sizeBytes": 228482,
+          "filename": "rollout-2026-05-28T16-10-39-019e6d6b-c1dc-7bc0-956f-95d5bd938562.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-10-39-019e6d6b-c1dc-7bc0-956f-95d5bd938562.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:20:01 JST",
+          "sizeBytes": 171431,
+          "filename": "rollout-2026-05-28T16-17-21-019e6d71-e5df-7b43-b7fd-75ec8bf2ed09.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-17-21-019e6d71-e5df-7b43-b7fd-75ec8bf2ed09.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:35:21 JST",
+          "sizeBytes": 104399,
+          "filename": "rollout-2026-05-28T16-21-52-019e6d76-07bd-7ab2-9f05-f33d7a0ea19b.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-21-52-019e6d76-07bd-7ab2-9f05-f33d7a0ea19b.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:30:00 JST",
+          "sizeBytes": 282573,
+          "filename": "rollout-2026-05-28T16-22-37-019e6d76-b772-7bc1-b34d-025ebc8cae4e.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-22-37-019e6d76-b772-7bc1-b34d-025ebc8cae4e.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:35:58 JST",
+          "sizeBytes": 199284,
+          "filename": "rollout-2026-05-28T16-23-59-019e6d77-f887-7521-b003-bf453f92bd14.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-23-59-019e6d77-f887-7521-b003-bf453f92bd14.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:04:00 JST",
+          "sizeBytes": 945985,
+          "filename": "rollout-2026-05-28T16-24-46-019e6d78-aec1-7cb1-b406-c384f016229b.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-24-46-019e6d78-aec1-7cb1-b406-c384f016229b.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:08:33 JST",
+          "sizeBytes": 1627531,
+          "filename": "rollout-2026-05-28T16-26-22-019e6d7a-25ff-7200-8db6-80e1ac82d7b8.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-26-22-019e6d7a-25ff-7200-8db6-80e1ac82d7b8.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:15:52 JST",
+          "sizeBytes": 375634,
+          "filename": "rollout-2026-05-28T16-33-44-019e6d80-e3bb-79d3-9f40-409708dc75ec.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-33-44-019e6d80-e3bb-79d3-9f40-409708dc75ec.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:59:41 JST",
+          "sizeBytes": 454827,
+          "filename": "rollout-2026-05-28T16-35-02-019e6d82-153e-7aa1-89bc-b1100ca9d2cc.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-35-02-019e6d82-153e-7aa1-89bc-b1100ca9d2cc.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:47:12 JST",
+          "sizeBytes": 533991,
+          "filename": "rollout-2026-05-28T16-36-01-019e6d82-fcb6-7b83-9052-c1e33beef409.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-36-01-019e6d82-fcb6-7b83-9052-c1e33beef409.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:16:41 JST",
+          "sizeBytes": 854296,
+          "filename": "rollout-2026-05-28T16-40-49-019e6d87-614d-7060-8d08-6f9ae26f8a3d.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-40-49-019e6d87-614d-7060-8d08-6f9ae26f8a3d.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:51:59 JST",
+          "sizeBytes": 352561,
+          "filename": "rollout-2026-05-28T16-42-08-019e6d88-96f1-7a13-93e1-5369296f611d.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-42-08-019e6d88-96f1-7a13-93e1-5369296f611d.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 16:48:29 JST",
+          "sizeBytes": 68832,
+          "filename": "rollout-2026-05-28T16-45-57-019e6d8c-166d-7c80-afaf-e157cd95eaa0.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-45-57-019e6d8c-166d-7c80-afaf-e157cd95eaa0.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 18:13:09 JST",
+          "sizeBytes": 8729527,
+          "filename": "rollout-2026-05-28T16-47-55-019e6d8d-e383-79c2-b995-d58c584aaf2b.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-47-55-019e6d8d-e383-79c2-b995-d58c584aaf2b.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:02:12 JST",
+          "sizeBytes": 494976,
+          "filename": "rollout-2026-05-28T16-48-30-019e6d8e-6a6a-7cd2-92a9-d4b09ecd3877.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T16-48-30-019e6d8e-6a6a-7cd2-92a9-d4b09ecd3877.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:16:01 JST",
+          "sizeBytes": 400101,
+          "filename": "rollout-2026-05-28T17-01-27-019e6d9a-43ff-7c21-ae0f-8aaddce2fdbb.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-01-27-019e6d9a-43ff-7c21-ae0f-8aaddce2fdbb.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:21:15 JST",
+          "sizeBytes": 222465,
+          "filename": "rollout-2026-05-28T17-04-01-019e6d9c-9f4d-7880-abb9-bf7571be36c5.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-04-01-019e6d9c-9f4d-7880-abb9-bf7571be36c5.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:42:11 JST",
+          "sizeBytes": 790147,
+          "filename": "rollout-2026-05-28T17-11-40-019e6da3-a1d6-79d0-a5ba-8c21f44e3b03.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-11-40-019e6da3-a1d6-79d0-a5ba-8c21f44e3b03.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:35:23 JST",
+          "sizeBytes": 231659,
+          "filename": "rollout-2026-05-28T17-16-15-019e6da7-d3f4-7e33-a92e-f7c992850afa.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-16-15-019e6da7-d3f4-7e33-a92e-f7c992850afa.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:24:20 JST",
+          "sizeBytes": 280089,
+          "filename": "rollout-2026-05-28T17-16-50-019e6da8-5ad9-7fd1-904b-c5773e920242.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-16-50-019e6da8-5ad9-7fd1-904b-c5773e920242.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:33:01 JST",
+          "sizeBytes": 1938995,
+          "filename": "rollout-2026-05-28T17-18-50-019e6daa-2eed-7c92-b6b6-1ad17bbe759e.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-18-50-019e6daa-2eed-7c92-b6b6-1ad17bbe759e.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:28:10 JST",
+          "sizeBytes": 283659,
+          "filename": "rollout-2026-05-28T17-21-19-019e6dac-74eb-7771-875b-a5ee25cc5428.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-21-19-019e6dac-74eb-7771-875b-a5ee25cc5428.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:37:51 JST",
+          "sizeBytes": 326191,
+          "filename": "rollout-2026-05-28T17-30-08-019e6db4-8988-72d1-8ef0-542f1fab2b12.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-30-08-019e6db4-8988-72d1-8ef0-542f1fab2b12.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:38:42 JST",
+          "sizeBytes": 523183,
+          "filename": "rollout-2026-05-28T17-30-56-019e6db5-4474-7c30-b5cf-8ca285f7d54d.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-30-56-019e6db5-4474-7c30-b5cf-8ca285f7d54d.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:39:42 JST",
+          "sizeBytes": 243622,
+          "filename": "rollout-2026-05-28T17-34-39-019e6db8-ac60-7ba0-8ce3-64e6a2a8bcc7.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-34-39-019e6db8-ac60-7ba0-8ce3-64e6a2a8bcc7.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:47:30 JST",
+          "sizeBytes": 374790,
+          "filename": "rollout-2026-05-28T17-35-58-019e6db9-dfba-7283-82e0-ffe8f4ee9052.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-35-58-019e6db9-dfba-7283-82e0-ffe8f4ee9052.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:37:52 JST",
+          "sizeBytes": 35837,
+          "filename": "rollout-2026-05-28T17-37-16-019e6dbb-1171-7280-91b7-4e2d721f8fa6.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-37-16-019e6dbb-1171-7280-91b7-4e2d721f8fa6.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:44:09 JST",
+          "sizeBytes": 36323,
+          "filename": "rollout-2026-05-28T17-43-34-019e6dc0-d5dd-71c0-8a27-5103a7ea62e0.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-43-34-019e6dc0-d5dd-71c0-8a27-5103a7ea62e0.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 18:10:23 JST",
+          "sizeBytes": 416104,
+          "filename": "rollout-2026-05-28T17-45-24-019e6dc2-83f9-7d61-be1e-5e10ef2be923.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-45-24-019e6dc2-83f9-7d61-be1e-5e10ef2be923.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:55:02 JST",
+          "sizeBytes": 220630,
+          "filename": "rollout-2026-05-28T17-45-58-019e6dc3-079b-70d2-820b-93b43c6d92c2.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-45-58-019e6dc3-079b-70d2-820b-93b43c6d92c2.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 17:57:34 JST",
+          "sizeBytes": 190746,
+          "filename": "rollout-2026-05-28T17-46-50-019e6dc3-d0f4-7420-ae2e-f8469198ddd0.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-46-50-019e6dc3-d0f4-7420-ae2e-f8469198ddd0.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 18:08:54 JST",
+          "sizeBytes": 756253,
+          "filename": "rollout-2026-05-28T17-51-02-019e6dc7-a949-7630-8f6f-5cb56a911e4a.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-51-02-019e6dc7-a949-7630-8f6f-5cb56a911e4a.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 18:03:34 JST",
+          "sizeBytes": 440834,
+          "filename": "rollout-2026-05-28T17-55-47-019e6dcc-03ea-7c50-9512-4f1ba7fc2544.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T17-55-47-019e6dcc-03ea-7c50-9512-4f1ba7fc2544.jsonl"
+        },
+        {
+          "source": "codex",
+          "mtime": "2026-05-28 18:12:33 JST",
+          "sizeBytes": 204855,
+          "filename": "rollout-2026-05-28T18-04-26-019e6dd3-ef73-7bc1-b448-fab8a91433c1.jsonl",
+          "path": "2026-05-28/codex/rollout-2026-05-28T18-04-26-019e6dd3-ef73-7bc1-b448-fab8a91433c1.jsonl"
+        }
+      ]
+    }
+  ]
+}
