@@ -90,6 +90,8 @@ export default async function setup(ctx, prevState) {
       }
       .cm-line {
         color: #d1fae5;
+        position: relative;
+        overflow: visible;
         text-shadow: none;
       }
       .cm-line span,
@@ -130,6 +132,16 @@ export default async function setup(ctx, prevState) {
       }
       .cm-editor.cm-focused .cm-activeLine {
         background: rgba(22, 78, 99, 0.5) !important;
+      }
+      .cm-editor.cm-focused .cm-activeLine::before {
+        content: "❯";
+        position: absolute;
+        left: -1.25ch;
+        top: 0;
+        width: 1ch;
+        color: #67e8f9;
+        pointer-events: none;
+        text-align: right;
       }
       .cm-ySelection {
         background: transparent !important;
@@ -377,6 +389,16 @@ export default async function setup(ctx, prevState) {
     '&.cm-focused .cm-activeLine': {
       background: 'rgba(22, 78, 99, 0.5) !important'
     },
+    '&.cm-focused .cm-activeLine::before': {
+      content: '"❯"',
+      position: 'absolute',
+      left: '-1.25ch',
+      top: '0',
+      width: '1ch',
+      color: '#67e8f9',
+      pointerEvents: 'none',
+      textAlign: 'right'
+    },
     '.cm-ySelection': {
       background: 'transparent !important',
       backgroundColor: 'transparent !important',
@@ -452,6 +474,8 @@ export default async function setup(ctx, prevState) {
     },
     '.cm-line': {
       padding: '0',
+      position: 'relative',
+      overflow: 'visible',
       textShadow: 'none'
     }
   });
