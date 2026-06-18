@@ -27,7 +27,10 @@ export default async function setup(ctx, prevState) {
   let cursorBarVisible = false;
   let cursorOverlay = null;
   let selectionOverlay = null;
+  let remoteCursorOverlay = null;
+  let remoteSelectionOverlay = null;
   let editorOverlayStyle = null;
+  let yjs = null;
 
   ctx.domRoot.innerHTML = `
     <style>
@@ -129,60 +132,35 @@ export default async function setup(ctx, prevState) {
         background: rgba(22, 78, 99, 0.5) !important;
       }
       .cm-ySelection {
-        background-color: inherit;
-        mix-blend-mode: difference;
-        filter: invert(1);
-        outline: 1px solid currentColor;
-        outline-offset: -1px;
+        background: transparent !important;
+        background-color: transparent !important;
+        mix-blend-mode: normal;
+        filter: none;
+        outline: none;
       }
       .cm-yLineSelection {
-        mix-blend-mode: difference;
-        filter: invert(1);
-        outline: 1px solid currentColor;
-        outline-offset: -1px;
+        background: transparent !important;
+        background-color: transparent !important;
+        mix-blend-mode: normal;
+        filter: none;
+        outline: none;
       }
       .cm-ySelectionCaret {
-        display: inline-block !important;
-        box-sizing: border-box;
-        position: relative !important;
-        width: var(--strudel-cursor-cell-width) !important;
-        min-width: var(--strudel-cursor-cell-width) !important;
-        height: var(--strudel-cursor-line-height, 1.35em) !important;
-        margin: 0 calc(-1 * var(--strudel-cursor-cell-width)) 0 0 !important;
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
         padding: 0 !important;
-        border: 1px solid !important;
-        border-radius: 0 !important;
-        vertical-align: text-bottom;
+        border: 0 !important;
         overflow: hidden;
-        mix-blend-mode: difference;
-        filter: invert(1);
-        animation: jam-strudel-remote-cursor-blink 1s steps(1, end) infinite;
-        z-index: 25;
+        animation: none !important;
       }
       .cm-ySelectionCaretDot {
-        position: absolute !important;
-        inset: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        top: 0 !important;
-        left: 0 !important;
-        border-radius: 0 !important;
-        background-color: inherit !important;
-        box-sizing: border-box;
-        transform: none !important;
-      }
-      .cm-ySelectionCaret:hover > .cm-ySelectionCaretDot {
-        transform: none !important;
+        display: none !important;
       }
       .cm-ySelectionInfo {
-        top: calc(-1 * var(--strudel-cursor-line-height, 1.35em)) !important;
-        font: 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-        border: 1px solid currentColor;
-        border-radius: 0 !important;
-      }
-      @keyframes jam-strudel-remote-cursor-blink {
-        0%, 49% { opacity: 1; }
-        50%, 100% { opacity: 0.35; }
+        display: none !important;
       }
       .cm-editor.cm-focused .cm-selectionBackground,
       .cm-editor.cm-editor.cm-focused .cm-selectionBackground,
@@ -214,6 +192,7 @@ export default async function setup(ctx, prevState) {
   const codeBridge = ctx.domRoot.querySelector('#code');
   const editorRoot = ctx.domRoot.querySelector('#editor');
   const editorKit = await import('/vendor/strudel-editor.js');
+  yjs = await import('yjs');
   const { getJamStrudelRuntime } = await import('/strudel-runtime.js');
   const runtime = await getJamStrudelRuntime({
     audioCtx: ctx.rawAudioCtx || ctx.audioCtx,
@@ -395,56 +374,35 @@ export default async function setup(ctx, prevState) {
       background: 'rgba(22, 78, 99, 0.5) !important'
     },
     '.cm-ySelection': {
-      backgroundColor: 'inherit',
-      mixBlendMode: 'difference',
-      filter: 'invert(1)',
-      outline: '1px solid currentColor',
-      outlineOffset: '-1px'
+      background: 'transparent !important',
+      backgroundColor: 'transparent !important',
+      mixBlendMode: 'normal',
+      filter: 'none',
+      outline: 'none'
     },
     '.cm-yLineSelection': {
-      mixBlendMode: 'difference',
-      filter: 'invert(1)',
-      outline: '1px solid currentColor',
-      outlineOffset: '-1px'
+      background: 'transparent !important',
+      backgroundColor: 'transparent !important',
+      mixBlendMode: 'normal',
+      filter: 'none',
+      outline: 'none'
     },
     '.cm-ySelectionCaret': {
-      display: 'inline-block !important',
-      boxSizing: 'border-box',
-      position: 'relative !important',
-      width: 'var(--strudel-cursor-cell-width) !important',
-      minWidth: 'var(--strudel-cursor-cell-width) !important',
-      height: 'var(--strudel-cursor-line-height, 1.35em) !important',
-      margin: '0 calc(-1 * var(--strudel-cursor-cell-width)) 0 0 !important',
+      display: 'none !important',
+      width: '0 !important',
+      minWidth: '0 !important',
+      height: '0 !important',
+      margin: '0 !important',
       padding: '0 !important',
-      border: '1px solid !important',
-      borderRadius: '0 !important',
-      verticalAlign: 'text-bottom',
+      border: '0 !important',
       overflow: 'hidden',
-      mixBlendMode: 'difference',
-      filter: 'invert(1)',
-      animation: 'jam-strudel-remote-cursor-blink 1s steps(1, end) infinite',
-      zIndex: '25'
+      animation: 'none !important'
     },
     '.cm-ySelectionCaretDot': {
-      position: 'absolute !important',
-      inset: '0 !important',
-      width: '100% !important',
-      height: '100% !important',
-      top: '0 !important',
-      left: '0 !important',
-      borderRadius: '0 !important',
-      backgroundColor: 'inherit !important',
-      boxSizing: 'border-box',
-      transform: 'none !important'
-    },
-    '.cm-ySelectionCaret:hover > .cm-ySelectionCaretDot': {
-      transform: 'none !important'
+      display: 'none !important'
     },
     '.cm-ySelectionInfo': {
-      top: 'calc(-1 * var(--strudel-cursor-line-height, 1.35em)) !important',
-      font: '10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important',
-      border: '1px solid currentColor',
-      borderRadius: '0 !important'
+      display: 'none !important'
     },
     '&.cm-focused .cm-selectionBackground, &.cm-editor.cm-editor.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, &.cm-editor.cm-editor .cm-selectionLayer .cm-selectionBackground, & .cm-content ::selection': {
       background: 'transparent !important',
@@ -555,6 +513,7 @@ export default async function setup(ctx, prevState) {
   });
   editorRoot.cmView = editorView;
   installPatternHighlighting();
+  installRemoteAwarenessOverlaySync();
   scheduleEditorResize();
   scheduleEditorOverlaySync();
 
@@ -655,8 +614,9 @@ export default async function setup(ctx, prevState) {
       if (zoom !== lastCameraZoom) {
         lastCameraZoom = zoom;
         scheduleEditorResize();
+        scheduleEditorOverlaySync();
       }
-      if (editorView?.hasFocus) scheduleEditorOverlaySync();
+      if (editorView?.hasFocus || hasRemoteAwarenessCursor()) scheduleEditorOverlaySync();
     },
     getState() {
       state.draftCode = getEditorValue();
@@ -730,6 +690,13 @@ export default async function setup(ctx, prevState) {
     if (existingLocations?.length) updateMiniLocations(editorView, existingLocations);
   }
 
+  function installRemoteAwarenessOverlaySync() {
+    if (!ctx.awareness?.on || !ctx.awareness?.off) return;
+    const handleAwarenessChange = () => scheduleEditorOverlaySync();
+    ctx.awareness.on('change', handleAwarenessChange);
+    unsubscribers.push(() => ctx.awareness.off('change', handleAwarenessChange));
+  }
+
   function setEditorValue(value, selectionStart, selectionEnd = selectionStart) {
     if (!editorView) {
       codeBridge.value = value;
@@ -782,7 +749,17 @@ export default async function setup(ctx, prevState) {
 
   function syncEditorOverlays() {
     editorOverlayFrame = 0;
-    if (destroyed || !editorView || !editorRoot.isConnected || !editorView.hasFocus) {
+    if (destroyed || !editorView || !editorRoot.isConnected) {
+      hideCursorOverlay();
+      hideSelectionOverlay();
+      hideRemoteCursorOverlay();
+      hideRemoteSelectionOverlay();
+      return;
+    }
+
+    syncRemoteAwarenessOverlays();
+
+    if (!editorView.hasFocus) {
       hideCursorOverlay();
       hideSelectionOverlay();
       return;
@@ -812,7 +789,7 @@ export default async function setup(ctx, prevState) {
   }
 
   function syncSelectionOverlay() {
-    const rects = getSelectionOverlayRects();
+    const rects = getRangeOverlayRects(editorView.state.selection.ranges);
     if (!rects.length) {
       hideSelectionOverlay();
       return;
@@ -838,11 +815,11 @@ export default async function setup(ctx, prevState) {
     });
   }
 
-  function getSelectionOverlayRects() {
+  function getRangeOverlayRects(ranges) {
     const rects = [];
-    const { doc, selection } = editorView.state;
-    for (const range of selection.ranges) {
-      if (range.empty) continue;
+    const { doc } = editorView.state;
+    for (const range of ranges) {
+      if (range.empty || range.from === range.to) continue;
       const from = Math.min(range.from, range.to);
       const to = Math.max(range.from, range.to);
       let line = doc.lineAt(from);
@@ -872,31 +849,123 @@ export default async function setup(ctx, prevState) {
     return rects;
   }
 
-  function ensureCursorOverlay() {
-    if (!editorOverlayStyle) {
-      editorOverlayStyle = document.createElement('style');
-      editorOverlayStyle.textContent = `
-        .jam-strudel-document-cursor {
-          position: fixed;
-          display: none;
-          pointer-events: none;
-          background: #fff;
-          mix-blend-mode: difference;
-          z-index: 2147483647;
-        }
-        .jam-strudel-document-selection {
-          display: none;
-          pointer-events: none;
-        }
-        .jam-strudel-document-selection-rect {
-          position: fixed;
-          background: #fff;
-          mix-blend-mode: difference;
-          z-index: 2147483646;
-        }
-      `;
-      document.head.appendChild(editorOverlayStyle);
+  function syncRemoteAwarenessOverlays() {
+    const ranges = getRemoteAwarenessRanges();
+    const selectionRanges = ranges.filter(range => range.from !== range.to);
+    syncRemoteSelectionOverlay(selectionRanges);
+    syncRemoteCursorOverlay(ranges);
+  }
+
+  function syncRemoteCursorOverlay(ranges) {
+    if (!ranges.length) {
+      hideRemoteCursorOverlay();
+      return;
     }
+
+    const overlay = ensureRemoteCursorOverlay();
+    overlay.style.display = 'block';
+    while (overlay.children.length < ranges.length) {
+      const cursorNode = document.createElement('div');
+      cursorNode.className = 'jam-strudel-remote-cursor-rect';
+      overlay.appendChild(cursorNode);
+    }
+    while (overlay.children.length > ranges.length) {
+      overlay.lastElementChild?.remove();
+    }
+
+    const charWidth = Math.max(1, readCharWidth());
+    ranges.forEach((range, index) => {
+      const cursorNode = overlay.children[index];
+      const coords = editorView.coordsAtPos(range.head);
+      if (!coords) {
+        cursorNode.style.display = 'none';
+        return;
+      }
+      cursorNode.style.display = cursorBarVisible ? 'block' : 'none';
+      cursorNode.style.left = `${coords.left}px`;
+      cursorNode.style.top = `${coords.top}px`;
+      cursorNode.style.width = `${charWidth}px`;
+      cursorNode.style.height = `${Math.max(1, coords.bottom - coords.top)}px`;
+    });
+  }
+
+  function syncRemoteSelectionOverlay(ranges) {
+    const rects = getRangeOverlayRects(ranges);
+    if (!rects.length) rects.push(...getRemoteSelectionMarkRects());
+    if (!rects.length) {
+      hideRemoteSelectionOverlay();
+      return;
+    }
+
+    const overlay = ensureRemoteSelectionOverlay();
+    overlay.style.display = 'block';
+    while (overlay.children.length < rects.length) {
+      const rectNode = document.createElement('div');
+      rectNode.className = 'jam-strudel-remote-selection-rect';
+      overlay.appendChild(rectNode);
+    }
+    while (overlay.children.length > rects.length) {
+      overlay.lastElementChild?.remove();
+    }
+
+    rects.forEach((rect, index) => {
+      const rectNode = overlay.children[index];
+      rectNode.style.left = `${rect.left}px`;
+      rectNode.style.top = `${rect.top}px`;
+      rectNode.style.width = `${rect.width}px`;
+      rectNode.style.height = `${rect.height}px`;
+    });
+  }
+
+  function getRemoteSelectionMarkRects() {
+    const rects = [];
+    const marks = editorRoot.querySelectorAll('.cm-ySelection, .cm-yLineSelection');
+    marks.forEach(mark => {
+      for (const rect of mark.getClientRects()) {
+        if (rect.width <= 0 || rect.height <= 0) continue;
+        rects.push({
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    });
+    return rects;
+  }
+
+  function getRemoteAwarenessRanges() {
+    if (!ctx.awareness?.getStates || !ctx.awareness?.doc || !yText || !yjs) return [];
+    const ranges = [];
+    const states = ctx.awareness.getStates();
+    const localClientId = ctx.awareness.doc.clientID;
+    for (const [clientId, awarenessState] of states.entries()) {
+      if (clientId === localClientId) continue;
+      const cursor = awarenessState?.cursor;
+      if (!cursor?.anchor || !cursor?.head) continue;
+      const anchor = yjs.createAbsolutePositionFromRelativePosition(cursor.anchor, yText.doc);
+      const head = yjs.createAbsolutePositionFromRelativePosition(cursor.head, yText.doc);
+      if (!anchor || !head || anchor.type !== yText || head.type !== yText) continue;
+      ranges.push({
+        from: Math.min(anchor.index, head.index),
+        to: Math.max(anchor.index, head.index),
+        head: clamp(head.index, 0, editorView.state.doc.length)
+      });
+    }
+    return ranges;
+  }
+
+  function hasRemoteAwarenessCursor() {
+    if (!ctx.awareness?.getStates || !ctx.awareness?.doc) return false;
+    const localClientId = ctx.awareness.doc.clientID;
+    for (const [clientId, awarenessState] of ctx.awareness.getStates().entries()) {
+      if (clientId !== localClientId && awarenessState?.cursor?.anchor && awarenessState?.cursor?.head) return true;
+    }
+    return false;
+  }
+
+  function ensureCursorOverlay() {
+    ensureEditorOverlayStyle();
     if (!cursorOverlay) {
       cursorOverlay = document.createElement('div');
       cursorOverlay.className = 'jam-strudel-document-cursor';
@@ -906,8 +975,54 @@ export default async function setup(ctx, prevState) {
     return cursorOverlay;
   }
 
+  function ensureEditorOverlayStyle() {
+    if (!editorOverlayStyle) {
+      editorOverlayStyle = document.createElement('style');
+      editorOverlayStyle.textContent = `
+        .jam-strudel-document-cursor,
+        .jam-strudel-remote-cursor-rect {
+          position: fixed;
+          display: none;
+          pointer-events: none;
+          mix-blend-mode: difference;
+          filter: none;
+          animation: none;
+          z-index: 2147483647;
+        }
+        .jam-strudel-document-cursor {
+          background: #fff;
+        }
+        .jam-strudel-document-selection {
+          display: none;
+          pointer-events: none;
+        }
+        .jam-strudel-document-selection-rect,
+        .jam-strudel-remote-selection-rect {
+          position: fixed;
+          mix-blend-mode: difference;
+          filter: none;
+          animation: none;
+          z-index: 2147483646;
+        }
+        .jam-strudel-document-selection-rect {
+          background: #fff;
+        }
+        .jam-strudel-remote-cursor,
+        .jam-strudel-remote-selection {
+          display: none;
+          pointer-events: none;
+        }
+        .jam-strudel-remote-cursor-rect,
+        .jam-strudel-remote-selection-rect {
+          background: #5eead4;
+        }
+      `;
+      document.head.appendChild(editorOverlayStyle);
+    }
+  }
+
   function ensureSelectionOverlay() {
-    ensureCursorOverlay();
+    ensureEditorOverlayStyle();
     if (!selectionOverlay) {
       selectionOverlay = document.createElement('div');
       selectionOverlay.className = 'jam-strudel-document-selection';
@@ -915,6 +1030,28 @@ export default async function setup(ctx, prevState) {
       document.body.appendChild(selectionOverlay);
     }
     return selectionOverlay;
+  }
+
+  function ensureRemoteCursorOverlay() {
+    ensureEditorOverlayStyle();
+    if (!remoteCursorOverlay) {
+      remoteCursorOverlay = document.createElement('div');
+      remoteCursorOverlay.className = 'jam-strudel-remote-cursor';
+      remoteCursorOverlay.dataset.strudelRemoteCursorOverlay = elementId;
+      document.body.appendChild(remoteCursorOverlay);
+    }
+    return remoteCursorOverlay;
+  }
+
+  function ensureRemoteSelectionOverlay() {
+    ensureEditorOverlayStyle();
+    if (!remoteSelectionOverlay) {
+      remoteSelectionOverlay = document.createElement('div');
+      remoteSelectionOverlay.className = 'jam-strudel-remote-selection';
+      remoteSelectionOverlay.dataset.strudelRemoteSelectionOverlay = elementId;
+      document.body.appendChild(remoteSelectionOverlay);
+    }
+    return remoteSelectionOverlay;
   }
 
   function hideCursorOverlay() {
@@ -925,12 +1062,24 @@ export default async function setup(ctx, prevState) {
     if (selectionOverlay) selectionOverlay.style.display = 'none';
   }
 
+  function hideRemoteCursorOverlay() {
+    if (remoteCursorOverlay) remoteCursorOverlay.style.display = 'none';
+  }
+
+  function hideRemoteSelectionOverlay() {
+    if (remoteSelectionOverlay) remoteSelectionOverlay.style.display = 'none';
+  }
+
   function removeEditorOverlays() {
     cursorOverlay?.remove();
     selectionOverlay?.remove();
+    remoteCursorOverlay?.remove();
+    remoteSelectionOverlay?.remove();
     editorOverlayStyle?.remove();
     cursorOverlay = null;
     selectionOverlay = null;
+    remoteCursorOverlay = null;
+    remoteSelectionOverlay = null;
     editorOverlayStyle = null;
   }
 

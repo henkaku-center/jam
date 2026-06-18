@@ -1,8 +1,8 @@
 {
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 510,
-    "y": 336,
+    "x": 759,
+    "y": 428,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -15,24 +15,24 @@
     "id": "elem_d0htcnjq0",
     "x": 819,
     "y": 378,
-    "width": 147,
+    "width": 168,
     "height": 25,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781749348897
+    "reloadToken": 1781750063813
   },
   "elem_e1omj5h3v": {
     "id": "elem_e1omj5h3v",
     "x": 373,
     "y": 588,
-    "width": 881,
+    "width": 882,
     "height": 410,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781749349041
+    "reloadToken": 1781750063936
   }
 }
