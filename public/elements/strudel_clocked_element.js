@@ -607,13 +607,9 @@ export default async function setup(ctx, prevState) {
     evalTimer = setTimeout(() => evaluateNow(state.code), 0);
   }));
 
-  unsubscribers.push(ctx.clock.onTick(tick => {
-    if (!tick || tick.step % 16 !== 0) return;
-    scheduleCursorBarToggle(tick);
-  }));
-
   if (!isCurrentMoodState) publishState();
   render();
+  scheduleNextCursorBarSync();
   evalTimer = setTimeout(() => evaluateNow(state.code), 0);
 
   return {
@@ -732,16 +728,14 @@ export default async function setup(ctx, prevState) {
     if (codeBridge.value !== value) codeBridge.value = value;
   }
 
-  function scheduleCursorBarToggle(tick) {
+  function scheduleNextCursorBarSync() {
     clearTimeout(cursorBarToggleTimer);
-    const audioCtx = ctx.rawAudioCtx || ctx.audioCtx;
-    const delayMs = audioCtx && Number.isFinite(tick.time)
-      ? Math.max(0, (tick.time - audioCtx.currentTime) * 1000)
-      : 0;
+    const delayMs = getMsUntilNextBar();
     cursorBarToggleTimer = setTimeout(() => {
       if (destroyed) return;
-      cursorBarVisible = !cursorBarVisible;
+      cursorBarVisible = getSharedCursorBarVisibility();
       scheduleEditorOverlaySync();
+      scheduleNextCursorBarSync();
     }, delayMs);
   }
 
@@ -765,6 +759,7 @@ export default async function setup(ctx, prevState) {
       return;
     }
 
+    cursorBarVisible = getSharedCursorBarVisibility();
     syncRemoteAwarenessOverlays();
 
     if (!editorView.hasFocus) {
@@ -782,18 +777,64 @@ export default async function setup(ctx, prevState) {
     hideSelectionOverlay();
 
     const selection = editorView.state.selection.main;
-    const coords = editorView.coordsAtPos(selection.head);
+    const coords = getCursorCoords(selection.head);
     if (!coords) {
       hideCursorOverlay();
       return;
     }
 
     const overlay = ensureCursorOverlay();
-    overlay.style.display = cursorBarVisible ? 'block' : 'none';
+    overlay.style.display = 'block';
     overlay.style.left = `${coords.left}px`;
     overlay.style.top = `${coords.top}px`;
     overlay.style.width = `${Math.max(1, readCharWidth())}px`;
     overlay.style.height = `${Math.max(1, coords.bottom - coords.top)}px`;
+    applyCursorBlinkTiming(overlay);
+  }
+
+  function getSharedCursorBarVisibility() {
+    const bpm = Number(ctx.clock?.bpm) || 120;
+    const startTime = Number(ctx.clock?.startTime) || Date.now();
+    const syncNow = typeof ctx.clock?.now === 'function' ? ctx.clock.now() : Date.now();
+    const elapsedBeats = (syncNow - startTime) * (bpm / 60000);
+    const barIndex = Math.floor(Math.max(0, elapsedBeats) / 4);
+    return barIndex % 2 === 0;
+  }
+
+  function getMsUntilNextBar() {
+    const bpm = Number(ctx.clock?.bpm) || 120;
+    const startTime = Number(ctx.clock?.startTime) || Date.now();
+    const syncNow = typeof ctx.clock?.now === 'function' ? ctx.clock.now() : Date.now();
+    const beatMs = 60000 / bpm;
+    const barMs = beatMs * 4;
+    const elapsedMs = Math.max(0, syncNow - startTime);
+    const msIntoBar = ((elapsedMs % barMs) + barMs) % barMs;
+    return clamp(Math.ceil(barMs - msIntoBar) + 4, 16, 10000);
+  }
+
+  function getCursorCoords(pos) {
+    return editorView.coordsAtPos(pos) ||
+      editorView.coordsAtPos(pos, -1) ||
+      editorView.coordsAtPos(pos, 1);
+  }
+
+  function applyCursorBlinkTiming(node, timing = getSharedCursorBlinkTiming()) {
+    node.style.setProperty('--jam-strudel-cursor-blink-cycle', `${timing.cycleMs}ms`);
+    node.style.setProperty('--jam-strudel-cursor-blink-delay', `${timing.delayMs}ms`);
+  }
+
+  function getSharedCursorBlinkTiming() {
+    const bpm = Number(ctx.clock?.bpm) || 120;
+    const startTime = Number(ctx.clock?.startTime) || Date.now();
+    const syncNow = typeof ctx.clock?.now === 'function' ? ctx.clock.now() : Date.now();
+    const barMs = (60000 / bpm) * 4;
+    const cycleMs = barMs * 2;
+    const elapsedMs = Math.max(0, syncNow - startTime);
+    const elapsedInCycle = ((elapsedMs % cycleMs) + cycleMs) % cycleMs;
+    return {
+      cycleMs,
+      delayMs: -elapsedInCycle
+    };
   }
 
   function syncSelectionOverlay() {
@@ -882,18 +923,20 @@ export default async function setup(ctx, prevState) {
     }
 
     const charWidth = Math.max(1, readCharWidth());
+    const blinkTiming = getSharedCursorBlinkTiming();
     ranges.forEach((range, index) => {
       const cursorNode = overlay.children[index];
-      const coords = editorView.coordsAtPos(range.head);
+      const coords = getCursorCoords(range.head);
       if (!coords) {
         cursorNode.style.display = 'none';
         return;
       }
-      cursorNode.style.display = cursorBarVisible ? 'block' : 'none';
+      cursorNode.style.display = 'block';
       cursorNode.style.left = `${coords.left}px`;
       cursorNode.style.top = `${coords.top}px`;
       cursorNode.style.width = `${charWidth}px`;
       cursorNode.style.height = `${Math.max(1, coords.bottom - coords.top)}px`;
+      applyCursorBlinkTiming(cursorNode, blinkTiming);
     });
   }
 
@@ -994,7 +1037,8 @@ export default async function setup(ctx, prevState) {
           pointer-events: none;
           mix-blend-mode: difference;
           filter: none;
-          animation: none;
+          animation: jam-strudel-cursor-bar-blink var(--jam-strudel-cursor-blink-cycle, 4000ms) steps(1, end) infinite;
+          animation-delay: var(--jam-strudel-cursor-blink-delay, 0ms);
           z-index: 2147483647;
         }
         .jam-strudel-document-cursor {
@@ -1023,6 +1067,13 @@ export default async function setup(ctx, prevState) {
         .jam-strudel-remote-cursor-rect,
         .jam-strudel-remote-selection-rect {
           background: #5eead4;
+        }
+        .jam-strudel-remote-selection-rect {
+          background: rgba(94, 234, 212, 0.45);
+        }
+        @keyframes jam-strudel-cursor-bar-blink {
+          0%, 49.999% { opacity: 1; }
+          50%, 100% { opacity: 0; }
         }
       `;
       document.head.appendChild(editorOverlayStyle);
