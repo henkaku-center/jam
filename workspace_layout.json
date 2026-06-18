@@ -34,5 +34,17 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 1781776121702
+  },
+  "elem_drum_machine": {
+    "id": "elem_drum_machine",
+    "x": 420,
+    "y": 120,
+    "width": 520,
+    "height": 340,
+    "filePath": "/elements/elem_drum_machine.js",
+    "type": "audio",
+    "prompt": "hand-authored step drum machine",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
