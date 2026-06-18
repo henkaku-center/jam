@@ -70,5 +70,17 @@
     "prompt": "hand-authored animated display of a cool drummer playing to the Jam clock",
     "authored": "hand",
     "reloadToken": 1781779713778
+  },
+  "elem_dancing_puppy_visual": {
+    "id": "elem_dancing_puppy_visual",
+    "x": 1310,
+    "y": 720,
+    "width": 460,
+    "height": 320,
+    "filePath": "/elements/elem_dancing_puppy_visual.js",
+    "type": "visual",
+    "prompt": "hand-authored beat-reactive dancing puppy disco visual",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
