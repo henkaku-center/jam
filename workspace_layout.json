@@ -15,24 +15,24 @@
     "id": "elem_d0htcnjq0",
     "x": 819,
     "y": 378,
-    "width": 168,
-    "height": 25,
+    "width": 238,
+    "height": 34,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781750063813
+    "reloadToken": 1781756383443
   },
   "elem_e1omj5h3v": {
     "id": "elem_e1omj5h3v",
     "x": 373,
     "y": 588,
-    "width": 882,
-    "height": 410,
+    "width": 1200,
+    "height": 426,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781750063936
+    "reloadToken": 1781756383564
   }
 }

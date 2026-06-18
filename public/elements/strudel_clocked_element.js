@@ -134,6 +134,8 @@ export default async function setup(ctx, prevState) {
       .cm-ySelection {
         background: transparent !important;
         background-color: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
         mix-blend-mode: normal;
         filter: none;
         outline: none;
@@ -141,6 +143,8 @@ export default async function setup(ctx, prevState) {
       .cm-yLineSelection {
         background: transparent !important;
         background-color: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
         mix-blend-mode: normal;
         filter: none;
         outline: none;
@@ -376,6 +380,8 @@ export default async function setup(ctx, prevState) {
     '.cm-ySelection': {
       background: 'transparent !important',
       backgroundColor: 'transparent !important',
+      margin: '0 !important',
+      padding: '0 !important',
       mixBlendMode: 'normal',
       filter: 'none',
       outline: 'none'
@@ -383,6 +389,8 @@ export default async function setup(ctx, prevState) {
     '.cm-yLineSelection': {
       background: 'transparent !important',
       backgroundColor: 'transparent !important',
+      margin: '0 !important',
+      padding: '0 !important',
       mixBlendMode: 'normal',
       filter: 'none',
       outline: 'none'
