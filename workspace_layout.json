@@ -1,8 +1,8 @@
 {
   "elem_glitch_cat_cutup": {
     "id": "elem_glitch_cat_cutup",
-    "x": 874,
-    "y": 650,
+    "x": 817,
+    "y": 606,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_glitch_cat_cutup_visual.js",
@@ -13,10 +13,10 @@
   },
   "elem_d0htcnjq0": {
     "id": "elem_d0htcnjq0",
-    "x": 819,
-    "y": 378,
-    "width": 134,
-    "height": 25,
+    "x": 850,
+    "y": 516,
+    "width": 299,
+    "height": 40,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
@@ -25,26 +25,50 @@
   },
   "elem_e1omj5h3v": {
     "id": "elem_e1omj5h3v",
-    "x": 373,
-    "y": 588,
-    "width": 519,
-    "height": 272,
+    "x": 1169,
+    "y": 492,
+    "width": 283,
+    "height": 55,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
     "authored": "hand",
     "reloadToken": 1781776809587
   },
-  "elem_drum_machine": {
-    "id": "elem_drum_machine",
-    "x": 755,
-    "y": 115,
-    "width": 520,
-    "height": 340,
-    "filePath": "/elements/elem_drum_machine.js",
-    "type": "audio",
-    "prompt": "hand-authored step drum machine",
+  "elem_2cfiqjsyz": {
+    "id": "elem_2cfiqjsyz",
+    "x": 1335,
+    "y": 603,
+    "width": 628,
+    "height": 265,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
-    "reloadToken": 1781776613840
+    "reloadToken": 0
+  },
+  "elem_k77jnspbh": {
+    "id": "elem_k77jnspbh",
+    "x": 1494,
+    "y": 507,
+    "width": 131,
+    "height": 40,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_pocket_drums": {
+    "id": "elem_pocket_drums",
+    "x": 760,
+    "y": 950,
+    "width": 390,
+    "height": 280,
+    "filePath": "/elements/elem_pocket_drums.js",
+    "type": "synth",
+    "prompt": "hand-authored clocked pocket drum machine",
+    "authored": "hand",
+    "reloadToken": 0
   }
 }
