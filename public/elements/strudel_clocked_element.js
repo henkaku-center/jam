@@ -128,6 +128,62 @@ export default async function setup(ctx, prevState) {
       .cm-editor.cm-focused .cm-activeLine {
         background: rgba(22, 78, 99, 0.5) !important;
       }
+      .cm-ySelection {
+        background-color: inherit;
+        mix-blend-mode: difference;
+        filter: invert(1);
+        outline: 1px solid currentColor;
+        outline-offset: -1px;
+      }
+      .cm-yLineSelection {
+        mix-blend-mode: difference;
+        filter: invert(1);
+        outline: 1px solid currentColor;
+        outline-offset: -1px;
+      }
+      .cm-ySelectionCaret {
+        display: inline-block !important;
+        box-sizing: border-box;
+        position: relative !important;
+        width: var(--strudel-cursor-cell-width) !important;
+        min-width: var(--strudel-cursor-cell-width) !important;
+        height: var(--strudel-cursor-line-height, 1.35em) !important;
+        margin: 0 calc(-1 * var(--strudel-cursor-cell-width)) 0 0 !important;
+        padding: 0 !important;
+        border: 1px solid !important;
+        border-radius: 0 !important;
+        vertical-align: text-bottom;
+        overflow: hidden;
+        mix-blend-mode: difference;
+        filter: invert(1);
+        animation: jam-strudel-remote-cursor-blink 1s steps(1, end) infinite;
+        z-index: 25;
+      }
+      .cm-ySelectionCaretDot {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+        border-radius: 0 !important;
+        background-color: inherit !important;
+        box-sizing: border-box;
+        transform: none !important;
+      }
+      .cm-ySelectionCaret:hover > .cm-ySelectionCaretDot {
+        transform: none !important;
+      }
+      .cm-ySelectionInfo {
+        top: calc(-1 * var(--strudel-cursor-line-height, 1.35em)) !important;
+        font: 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+        border: 1px solid currentColor;
+        border-radius: 0 !important;
+      }
+      @keyframes jam-strudel-remote-cursor-blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0.35; }
+      }
       .cm-editor.cm-focused .cm-selectionBackground,
       .cm-editor.cm-editor.cm-focused .cm-selectionBackground,
       .cm-editor .cm-line::selection,
@@ -337,6 +393,58 @@ export default async function setup(ctx, prevState) {
     },
     '&.cm-focused .cm-activeLine': {
       background: 'rgba(22, 78, 99, 0.5) !important'
+    },
+    '.cm-ySelection': {
+      backgroundColor: 'inherit',
+      mixBlendMode: 'difference',
+      filter: 'invert(1)',
+      outline: '1px solid currentColor',
+      outlineOffset: '-1px'
+    },
+    '.cm-yLineSelection': {
+      mixBlendMode: 'difference',
+      filter: 'invert(1)',
+      outline: '1px solid currentColor',
+      outlineOffset: '-1px'
+    },
+    '.cm-ySelectionCaret': {
+      display: 'inline-block !important',
+      boxSizing: 'border-box',
+      position: 'relative !important',
+      width: 'var(--strudel-cursor-cell-width) !important',
+      minWidth: 'var(--strudel-cursor-cell-width) !important',
+      height: 'var(--strudel-cursor-line-height, 1.35em) !important',
+      margin: '0 calc(-1 * var(--strudel-cursor-cell-width)) 0 0 !important',
+      padding: '0 !important',
+      border: '1px solid !important',
+      borderRadius: '0 !important',
+      verticalAlign: 'text-bottom',
+      overflow: 'hidden',
+      mixBlendMode: 'difference',
+      filter: 'invert(1)',
+      animation: 'jam-strudel-remote-cursor-blink 1s steps(1, end) infinite',
+      zIndex: '25'
+    },
+    '.cm-ySelectionCaretDot': {
+      position: 'absolute !important',
+      inset: '0 !important',
+      width: '100% !important',
+      height: '100% !important',
+      top: '0 !important',
+      left: '0 !important',
+      borderRadius: '0 !important',
+      backgroundColor: 'inherit !important',
+      boxSizing: 'border-box',
+      transform: 'none !important'
+    },
+    '.cm-ySelectionCaret:hover > .cm-ySelectionCaretDot': {
+      transform: 'none !important'
+    },
+    '.cm-ySelectionInfo': {
+      top: 'calc(-1 * var(--strudel-cursor-line-height, 1.35em)) !important',
+      font: '10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important',
+      border: '1px solid currentColor',
+      borderRadius: '0 !important'
     },
     '&.cm-focused .cm-selectionBackground, &.cm-editor.cm-editor.cm-focused .cm-selectionBackground, & .cm-line::selection, & .cm-selectionLayer .cm-selectionBackground, &.cm-editor.cm-editor .cm-selectionLayer .cm-selectionBackground, & .cm-content ::selection': {
       background: 'transparent !important',
