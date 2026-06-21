@@ -29,6 +29,7 @@ export default async function setup(ctx, prevState) {
   let selectionOverlay = null;
   let remoteCursorOverlay = null;
   let remoteSelectionOverlay = null;
+  let activeLineHandle = null;
   let editorOverlayStyle = null;
   let yjs = null;
 
@@ -57,7 +58,7 @@ export default async function setup(ctx, prevState) {
         width: 1px;
         height: 1px;
         opacity: 0;
-        pointer-events: none;
+        pointer-events: auto;
       }
       .cm-editor {
         display: inline-block;
@@ -134,14 +135,8 @@ export default async function setup(ctx, prevState) {
         background: rgba(22, 78, 99, 0.5) !important;
       }
       .cm-editor.cm-focused .cm-activeLine::before {
-        content: "❯";
-        position: absolute;
-        left: -1.25ch;
-        top: 0;
-        width: 1ch;
-        color: #67e8f9;
-        pointer-events: none;
-        text-align: right;
+        content: "";
+        display: none;
       }
       .cm-ySelection {
         background: transparent !important;
@@ -251,6 +246,7 @@ export default async function setup(ctx, prevState) {
   } = editorKit;
   let applyingEditorChange = false;
   let editorView = null;
+  let lastActiveLineDragStart = 0;
   const yText = getCollaborativeCodeText();
   if (yText) state.draftCode = yText.toString();
 
@@ -390,14 +386,8 @@ export default async function setup(ctx, prevState) {
       background: 'rgba(22, 78, 99, 0.5) !important'
     },
     '&.cm-focused .cm-activeLine::before': {
-      content: '"❯"',
-      position: 'absolute',
-      left: '-1.25ch',
-      top: '0',
-      width: '1ch',
-      color: '#67e8f9',
-      pointerEvents: 'none',
-      textAlign: 'right'
+      content: '""',
+      display: 'none'
     },
     '.cm-ySelection': {
       background: 'transparent !important',
@@ -525,10 +515,12 @@ export default async function setup(ctx, prevState) {
             return false;
           },
           pointerdown(event) {
+            if (beginActiveLineMarkerDrag(event)) return true;
             event.stopPropagation();
             return false;
           },
           mousedown(event) {
+            if (beginActiveLineMarkerDrag(event)) return true;
             event.stopPropagation();
             return false;
           }
@@ -544,6 +536,7 @@ export default async function setup(ctx, prevState) {
     })
   });
   editorRoot.cmView = editorView;
+  installActiveLineMarkerDragHandle();
   installPatternHighlighting();
   installRemoteAwarenessOverlaySync();
   scheduleEditorResize();
@@ -666,7 +659,9 @@ export default async function setup(ctx, prevState) {
       cancelAnimationFrame(resizeFrame);
       cancelAnimationFrame(editorOverlayFrame);
       removeEditorOverlays();
-      try { await runtime.removeElement(elementId); } catch {}
+      if (typeof ctx.isCurrentInstance !== 'function' || ctx.isCurrentInstance()) {
+        try { await runtime.removeElement(elementId); } catch {}
+      }
     }
   };
 
@@ -725,6 +720,55 @@ export default async function setup(ctx, prevState) {
     unsubscribers.push(() => ctx.awareness.off('change', handleAwarenessChange));
   }
 
+  function installActiveLineMarkerDragHandle() {
+    const handlePointerStart = (event) => {
+      beginActiveLineMarkerDrag(event);
+    };
+    editorRoot.addEventListener('pointerdown', handlePointerStart, true);
+    editorRoot.addEventListener('mousedown', handlePointerStart, true);
+    unsubscribers.push(() => {
+      editorRoot.removeEventListener('pointerdown', handlePointerStart, true);
+      editorRoot.removeEventListener('mousedown', handlePointerStart, true);
+    });
+  }
+
+  function beginActiveLineMarkerDrag(event, options = {}) {
+    if (!event || event.button !== 0 || (!options.skipHitTest && !isActiveLineMarkerEvent(event))) return false;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const now = performance.now();
+    if (now - lastActiveLineDragStart < 80) return true;
+    lastActiveLineDragStart = now;
+
+    const point = {
+      clientX: event.clientX,
+      clientY: event.clientY
+    };
+    if (typeof ctx.beginElementDrag === 'function') {
+      ctx.beginElementDrag(point);
+    } else {
+      editorRoot.dispatchEvent(new CustomEvent('jam-begin-element-drag', {
+        bubbles: true,
+        composed: true,
+        detail: point
+      }));
+    }
+    return true;
+  }
+
+  function isActiveLineMarkerEvent(event) {
+    if (!editorView?.hasFocus) return false;
+    const activeLine = editorRoot.querySelector('.cm-activeLine');
+    if (!activeLine) return false;
+    const rect = activeLine.getBoundingClientRect();
+    const markerWidth = Math.max(readCharWidth() * 1.5, 12);
+    return event.clientY >= rect.top &&
+      event.clientY <= rect.bottom &&
+      event.clientX >= rect.left - markerWidth &&
+      event.clientX <= rect.left;
+  }
+
   function setEditorValue(value, selectionStart, selectionEnd = selectionStart) {
     if (!editorView) {
       codeBridge.value = value;
@@ -780,6 +824,7 @@ export default async function setup(ctx, prevState) {
       hideSelectionOverlay();
       hideRemoteCursorOverlay();
       hideRemoteSelectionOverlay();
+      hideActiveLineHandle();
       return;
     }
 
@@ -789,8 +834,11 @@ export default async function setup(ctx, prevState) {
     if (!editorView.hasFocus) {
       hideCursorOverlay();
       hideSelectionOverlay();
+      hideActiveLineHandle();
       return;
     }
+
+    syncActiveLineHandle();
 
     const hasSelection = editorView.state.selection.ranges.some(range => !range.empty);
     if (hasSelection) {
@@ -823,6 +871,48 @@ export default async function setup(ctx, prevState) {
     const elapsedBeats = (syncNow - startTime) * (bpm / 60000);
     const barIndex = Math.floor(Math.max(0, elapsedBeats) / 4);
     return barIndex % 2 === 0;
+  }
+
+  function syncActiveLineHandle() {
+    const activeLine = editorRoot.querySelector('.cm-activeLine');
+    if (!activeLine) {
+      hideActiveLineHandle();
+      return;
+    }
+    const rect = activeLine.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      hideActiveLineHandle();
+      return;
+    }
+    const handle = ensureActiveLineHandle();
+    const width = Math.max(readCharWidth() * 1.5, 12);
+    handle.style.display = 'block';
+    handle.style.left = `${rect.left - width}px`;
+    handle.style.top = `${rect.top}px`;
+    handle.style.width = `${width}px`;
+    handle.style.height = `${rect.height}px`;
+    handle.style.lineHeight = `${rect.height}px`;
+  }
+
+  function ensureActiveLineHandle() {
+    ensureEditorOverlayStyle();
+    if (!activeLineHandle) {
+      activeLineHandle = document.createElement('div');
+      activeLineHandle.className = 'jam-strudel-active-line-handle';
+      activeLineHandle.dataset.strudelActiveLineHandle = elementId;
+      activeLineHandle.textContent = '❯';
+      const handlePointerStart = (event) => beginActiveLineMarkerDrag(event, { skipHitTest: true });
+      activeLineHandle.addEventListener('mouseenter', () => {
+        activeLineHandle.textContent = '✥';
+      });
+      activeLineHandle.addEventListener('mouseleave', () => {
+        activeLineHandle.textContent = '❯';
+      });
+      activeLineHandle.addEventListener('pointerdown', handlePointerStart);
+      activeLineHandle.addEventListener('mousedown', handlePointerStart);
+      document.body.appendChild(activeLineHandle);
+    }
+    return activeLineHandle;
   }
 
   function getMsUntilNextBar() {
@@ -1095,6 +1185,18 @@ export default async function setup(ctx, prevState) {
         .jam-strudel-remote-selection-rect {
           background: rgba(94, 234, 212, 0.45);
         }
+        .jam-strudel-active-line-handle {
+          position: fixed;
+          display: none;
+          color: #67e8f9;
+          background: transparent;
+          font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          text-align: right;
+          cursor: move;
+          user-select: none;
+          pointer-events: auto;
+          z-index: 2147483647;
+        }
         @keyframes jam-strudel-cursor-bar-blink {
           0%, 49.999% { opacity: 1; }
           50%, 100% { opacity: 0; }
@@ -1153,16 +1255,22 @@ export default async function setup(ctx, prevState) {
     if (remoteSelectionOverlay) remoteSelectionOverlay.style.display = 'none';
   }
 
+  function hideActiveLineHandle() {
+    if (activeLineHandle) activeLineHandle.style.display = 'none';
+  }
+
   function removeEditorOverlays() {
     cursorOverlay?.remove();
     selectionOverlay?.remove();
     remoteCursorOverlay?.remove();
     remoteSelectionOverlay?.remove();
+    activeLineHandle?.remove();
     editorOverlayStyle?.remove();
     cursorOverlay = null;
     selectionOverlay = null;
     remoteCursorOverlay = null;
     remoteSelectionOverlay = null;
+    activeLineHandle = null;
     editorOverlayStyle = null;
   }
 
