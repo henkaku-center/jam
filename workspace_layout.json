@@ -94,17 +94,5 @@
     "prompt": "",
     "authored": "hand",
     "reloadToken": 0
-  },
-  "strudel_reload_1782015363644": {
-    "id": "strudel_reload_1782015363644",
-    "x": 460,
-    "y": 260,
-    "width": 247,
-    "height": 25,
-    "filePath": "/elements/strudel_clocked_element.js",
-    "type": "strudel",
-    "prompt": "",
-    "authored": "hand",
-    "reloadToken": 1782015363845
   }
 }
