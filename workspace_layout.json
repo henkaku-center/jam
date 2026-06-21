@@ -13,10 +13,10 @@
   },
   "elem_d0htcnjq0": {
     "id": "elem_d0htcnjq0",
-    "x": 759,
-    "y": 332,
+    "x": 834,
+    "y": 216,
     "width": 519,
-    "height": 326,
+    "height": 418,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
@@ -59,22 +59,10 @@
     "authored": "hand",
     "reloadToken": 0
   },
-  "elem_cool_drummer_display": {
-    "id": "elem_cool_drummer_display",
-    "x": 365,
-    "y": 635,
-    "width": 440,
-    "height": 300,
-    "filePath": "/elements/elem_cool_drummer_display.js",
-    "type": "visual",
-    "prompt": "hand-authored animated display of a cool drummer playing to the Jam clock",
-    "authored": "hand",
-    "reloadToken": 1781779713778
-  },
   "elem_dancing_puppy_visual": {
     "id": "elem_dancing_puppy_visual",
-    "x": 320,
-    "y": 288,
+    "x": 282,
+    "y": 360,
     "width": 460,
     "height": 320,
     "filePath": "/elements/elem_dancing_puppy_visual.js",
@@ -85,13 +73,25 @@
   },
   "elem_beautiful_piano": {
     "id": "elem_beautiful_piano",
-    "x": 390,
-    "y": 720,
+    "x": 382,
+    "y": 751,
     "width": 390,
     "height": 280,
     "filePath": "/elements/elem_beautiful_piano.js",
     "type": "synth",
     "prompt": "hand-authored beautiful felt piano chord and arpeggio synth",
+    "authored": "hand",
+    "reloadToken": 0
+  },
+  "elem_g6squc15h": {
+    "id": "elem_g6squc15h",
+    "x": 1469,
+    "y": 378,
+    "width": 120,
+    "height": 25,
+    "filePath": "/elements/strudel_clocked_element.js",
+    "type": "strudel",
+    "prompt": "",
     "authored": "hand",
     "reloadToken": 0
   }
