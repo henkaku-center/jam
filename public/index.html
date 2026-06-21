@@ -8,8 +8,10 @@
   <script type="importmap">
     {
       "imports": {
-        "yjs": "https://esm.sh/yjs@13.6.14",
-        "y-websocket": "https://esm.sh/y-websocket@2.0.4?external=yjs"
+        "@strudel/core": "/vendor/strudel-web/index.mjs",
+        "@strudel/webaudio": "/vendor/strudel-web/index.mjs",
+        "yjs": "/vendor/yjs.js",
+        "y-websocket": "/vendor/y-websocket.js"
       }
     }
   </script>
@@ -41,9 +43,6 @@
       <div id="canvas-grid" class="grid-layer"></div>
       <div id="canvas-elements" class="elements-layer"></div>
     </div>
-
-    <!-- Legacy camera indicator retained for compatibility; unified clients keep it hidden. -->
-    <div id="host-camera-frame" class="camera-frame hidden"></div>
 
     <!-- Live low-opacity agent terminal -->
     <div id="agent-terminal" class="agent-terminal" aria-label="Agent terminal">

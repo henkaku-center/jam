@@ -1,4 +1,4 @@
-const STATE_VERSION = 'glitch-cat-cutup-v1';
+const STATE_VERSION = 'glitch-cat-cutup-v2';
 
 const CAT_SCENES = [
   'https://placecats.com/neo/720/480',
@@ -9,15 +9,49 @@ const CAT_SCENES = [
   'https://placecats.com/poppy/720/480'
 ];
 
+const FANTASY_MELODY = [
+  { step: 0, midi: 62, length: 3.4, velocity: 0.78 },
+  { step: 4, midi: 69, length: 2.6, velocity: 0.7 },
+  { step: 7, midi: 67, length: 1.7, velocity: 0.56 },
+  { step: 9, midi: 65, length: 2.7, velocity: 0.64 },
+  { step: 12, midi: 60, length: 3.4, velocity: 0.66 },
+  { step: 16, midi: 62, length: 2.3, velocity: 0.72 },
+  { step: 19, midi: 65, length: 1.6, velocity: 0.56 },
+  { step: 21, midi: 67, length: 2.2, velocity: 0.62 },
+  { step: 24, midi: 72, length: 3.3, velocity: 0.78 },
+  { step: 28, midi: 69, length: 3.2, velocity: 0.68 },
+  { step: 32, midi: 67, length: 2.8, velocity: 0.66 },
+  { step: 35, midi: 65, length: 1.7, velocity: 0.54 },
+  { step: 37, midi: 62, length: 3.2, velocity: 0.7 },
+  { step: 41, midi: 57, length: 2.2, velocity: 0.56 },
+  { step: 44, midi: 60, length: 2.6, velocity: 0.62 },
+  { step: 48, midi: 62, length: 3.1, velocity: 0.75 },
+  { step: 52, midi: 69, length: 2.2, velocity: 0.62 },
+  { step: 55, midi: 72, length: 1.8, velocity: 0.72 },
+  { step: 57, midi: 74, length: 2.5, velocity: 0.78 },
+  { step: 60, midi: 72, length: 3.6, velocity: 0.7 }
+];
+
+const FANTASY_HARMONY = [
+  { step: 0, notes: [38, 45, 50] },
+  { step: 16, notes: [41, 48, 53] },
+  { step: 32, notes: [36, 43, 50] },
+  { step: 48, notes: [38, 45, 53] }
+];
+
 export default function setup(ctx, prevState) {
+  const audio = ctx.audioCtx;
   const finite = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
   const state = {
     stateVersion: STATE_VERSION,
     speed: finite(prevState?.speed, 0.72),
     glitch: finite(prevState?.glitch, 0.88),
-    smear: finite(prevState?.smear, 0.58)
+    smear: finite(prevState?.smear, 0.58),
+    music: prevState?.music !== false,
+    melody: finite(prevState?.melody, 0.68)
   };
 
   let frameTimer = 0;
@@ -25,6 +59,45 @@ export default function setup(ctx, prevState) {
   let sceneIndex = 0;
   let altIndex = 2;
   let frame = 0;
+  let currentStep = -1;
+  let currentNote = '--';
+  let melodyFlash = 0;
+
+  const liveNodes = new Set();
+  const cleanupTimers = new Set();
+  const output = audio.createGain();
+  const melodyBus = audio.createGain();
+  const padBus = audio.createGain();
+  const delay = audio.createDelay(1.5);
+  const feedback = audio.createGain();
+  const delayFilter = audio.createBiquadFilter();
+  const wet = audio.createGain();
+  const compressor = audio.createDynamicsCompressor();
+
+  output.gain.value = state.music ? state.melody : 0.0001;
+  melodyBus.gain.value = 0.74;
+  padBus.gain.value = 0.28;
+  delay.delayTime.value = 0.48;
+  feedback.gain.value = 0.26;
+  delayFilter.type = 'lowpass';
+  delayFilter.frequency.value = 2800;
+  wet.gain.value = 0.32;
+  compressor.threshold.value = -24;
+  compressor.knee.value = 18;
+  compressor.ratio.value = 2.3;
+  compressor.attack.value = 0.008;
+  compressor.release.value = 0.24;
+
+  melodyBus.connect(output);
+  melodyBus.connect(delay);
+  padBus.connect(output);
+  delay.connect(delayFilter);
+  delayFilter.connect(feedback);
+  feedback.connect(delay);
+  delayFilter.connect(wet);
+  wet.connect(output);
+  output.connect(compressor);
+  compressor.connect(ctx.audioOut);
 
   ctx.domRoot.innerHTML = `
     <style>
@@ -124,6 +197,28 @@ export default function setup(ctx, prevState) {
         text-shadow: 1px 0 #ef4444, -1px 0 #22d3ee;
       }
 
+      .chant {
+        position: absolute;
+        left: 8px;
+        bottom: 7px;
+        z-index: 12;
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 6px;
+        align-items: center;
+        color: rgba(244, 239, 214, 0.84);
+        text-shadow: 0 0 10px rgba(250, 204, 21, 0.55), 1px 0 #ef4444, -1px 0 #22d3ee;
+      }
+
+      .chant::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(250, 204, 21, calc(0.28 + var(--melody-flash, 0) * 0.62));
+        box-shadow: 0 0 calc(4px + var(--melody-flash, 0) * 16px) rgba(250, 204, 21, 0.86);
+      }
+
       .cat-glitch.burst .scene {
         filter: contrast(2.1) saturate(0.25) brightness(1.25);
       }
@@ -140,6 +235,7 @@ export default function setup(ctx, prevState) {
       <div id="slices"></div>
       <div class="static" id="static"></div>
       <div class="scan"></div>
+      <div class="chant" id="chant">FANTASY//--</div>
       <div class="counter" id="counter"></div>
     </div>
   `;
@@ -152,6 +248,7 @@ export default function setup(ctx, prevState) {
   const slices = ctx.domRoot.querySelector('#slices');
   const staticLayer = ctx.domRoot.querySelector('#static');
   const counter = ctx.domRoot.querySelector('#counter');
+  const chant = ctx.domRoot.querySelector('#chant');
 
   const pickScene = (offset = 0) => CAT_SCENES[(sceneIndex + offset + CAT_SCENES.length) % CAT_SCENES.length];
   const setBackground = (element, url) => {
@@ -159,6 +256,104 @@ export default function setup(ctx, prevState) {
   };
 
   const randomScene = () => CAT_SCENES[Math.floor(Math.random() * CAT_SCENES.length)];
+  const noteName = (midi) => {
+    const names = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+    return `${names[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
+  };
+
+  const cleanupNode = (node, stopAt) => {
+    liveNodes.add(node);
+    const removeAt = Math.max(0, (stopAt - audio.currentTime + 0.1) * 1000);
+    const timer = setTimeout(() => {
+      cleanupTimers.delete(timer);
+      liveNodes.delete(node);
+      try { if (typeof node.disconnect === 'function') node.disconnect(); } catch (_) {}
+    }, removeAt);
+    cleanupTimers.add(timer);
+  };
+
+  const triggerNote = (midi, velocity, time, tickDuration, length = 1, bus = melodyBus) => {
+    const start = Math.max(time || audio.currentTime, audio.currentTime + 0.004);
+    const duration = Math.max(0.16, tickDuration * length);
+    const end = start + duration;
+    const freq = midiToFreq(midi);
+    const voice = audio.createGain();
+    const filter = audio.createBiquadFilter();
+    const pan = audio.createStereoPanner();
+    const main = audio.createOscillator();
+    const air = audio.createOscillator();
+    const sub = audio.createOscillator();
+    const vibrato = audio.createOscillator();
+    const vibratoDepth = audio.createGain();
+
+    main.type = 'triangle';
+    air.type = 'sine';
+    sub.type = 'sine';
+    vibrato.type = 'sine';
+    main.frequency.setValueAtTime(freq, start);
+    air.frequency.setValueAtTime(freq * 2.01, start);
+    sub.frequency.setValueAtTime(freq * 0.5, start);
+    vibrato.frequency.setValueAtTime(4.8, start);
+    vibratoDepth.gain.setValueAtTime(freq * 0.006, start);
+    vibrato.connect(vibratoDepth);
+    vibratoDepth.connect(main.frequency);
+    vibratoDepth.connect(air.frequency);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(720, start);
+    filter.frequency.linearRampToValueAtTime(2100 + velocity * 1200, start + Math.min(0.28, duration * 0.35));
+    filter.frequency.setTargetAtTime(980, start + duration * 0.52, 0.24);
+    filter.Q.value = 0.65;
+
+    pan.pan.setValueAtTime(Math.sin(midi * 1.7) * 0.18, start);
+    voice.gain.setValueAtTime(0.0001, start);
+    voice.gain.linearRampToValueAtTime(0.12 * velocity, start + Math.min(0.22, duration * 0.3));
+    voice.gain.setTargetAtTime(0.052 * velocity, start + duration * 0.54, 0.2);
+    voice.gain.linearRampToValueAtTime(0.0001, end + 0.34);
+
+    main.connect(filter);
+    air.connect(filter);
+    sub.connect(filter);
+    filter.connect(voice);
+    voice.connect(pan);
+    pan.connect(bus);
+
+    [main, air, sub, vibrato].forEach((osc) => {
+      liveNodes.add(osc);
+      osc.start(start);
+      osc.stop(end + 0.45);
+      osc.addEventListener('ended', () => liveNodes.delete(osc), { once: true });
+    });
+    [voice, filter, pan, vibratoDepth].forEach((node) => cleanupNode(node, end + 0.48));
+  };
+
+  const triggerHarmony = (notes, time, tickDuration) => {
+    notes.forEach((midi, index) => {
+      triggerNote(midi, 0.32 - index * 0.025, (time || audio.currentTime) + index * 0.018, tickDuration, 7.5, padBus);
+    });
+  };
+
+  const makeDrone = (midi, gainValue, detune = 0) => {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    const filter = audio.createBiquadFilter();
+    osc.type = 'sine';
+    osc.frequency.value = midiToFreq(midi);
+    osc.detune.value = detune;
+    gain.gain.value = gainValue;
+    filter.type = 'lowpass';
+    filter.frequency.value = 640;
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(padBus);
+    osc.start();
+    liveNodes.add(osc);
+    liveNodes.add(gain);
+    liveNodes.add(filter);
+  };
+
+  makeDrone(38, 0.06, -4);
+  makeDrone(45, 0.042, 5);
 
   const renderSlices = () => {
     const count = 7 + Math.round(state.glitch * 10);
@@ -214,11 +409,34 @@ export default function setup(ctx, prevState) {
 
   const animate = () => {
     const noise = Math.random();
+    melodyFlash *= 0.88;
     staticLayer.style.setProperty('--noise', noise.toFixed(3));
     staticLayer.style.setProperty('--static-x', `${Math.round((Math.random() - 0.5) * 14)}px`);
     staticLayer.style.setProperty('--static-y', `${Math.round((Math.random() - 0.5) * 10)}px`);
     root.style.setProperty('--scan-y', `${((performance.now() * 0.04) % 120 - 10).toFixed(1)}%`);
+    root.style.setProperty('--melody-flash', melodyFlash.toFixed(3));
+    chant.textContent = `FANTASY//${currentNote}`;
     raf = requestAnimationFrame(animate);
+  };
+
+  const handleTick = ({ step, time, duration }) => {
+    currentStep = step % 64;
+    const when = time || audio.currentTime;
+    const tickDuration = duration || 0.125;
+    output.gain.setTargetAtTime(state.music ? state.melody : 0.0001, Math.max(audio.currentTime, when), 0.08);
+
+    const melodyEvent = FANTASY_MELODY.find((event) => event.step === currentStep);
+    if (melodyEvent) {
+      currentNote = noteName(melodyEvent.midi);
+      melodyFlash = 1;
+      triggerNote(melodyEvent.midi, melodyEvent.velocity, when, tickDuration, melodyEvent.length);
+      if (melodyEvent.velocity > 0.7) {
+        triggerNote(melodyEvent.midi + 12, melodyEvent.velocity * 0.34, when + tickDuration * 0.08, tickDuration, Math.max(1.2, melodyEvent.length * 0.58));
+      }
+    }
+
+    const harmonyEvent = FANTASY_HARMONY.find((event) => event.step === currentStep);
+    if (harmonyEvent) triggerHarmony(harmonyEvent.notes, when, tickDuration);
   };
 
   CAT_SCENES.forEach((url) => {
@@ -229,6 +447,7 @@ export default function setup(ctx, prevState) {
 
   cut();
   animate();
+  const unsubscribeClock = ctx.clock.onTick(handleTick);
 
   return {
     update() {},
@@ -238,7 +457,25 @@ export default function setup(ctx, prevState) {
     destroy() {
       clearTimeout(frameTimer);
       cancelAnimationFrame(raf);
+      unsubscribeClock();
       slices.innerHTML = '';
+      cleanupTimers.forEach((timer) => clearTimeout(timer));
+      cleanupTimers.clear();
+      for (const node of liveNodes) {
+        try { if (typeof node.stop === 'function') node.stop(); } catch (_) {}
+        try { if (typeof node.disconnect === 'function') node.disconnect(); } catch (_) {}
+      }
+      liveNodes.clear();
+      try {
+        output.disconnect();
+        melodyBus.disconnect();
+        padBus.disconnect();
+        delay.disconnect();
+        feedback.disconnect();
+        delayFilter.disconnect();
+        wet.disconnect();
+        compressor.disconnect();
+      } catch (_) {}
     }
   };
 }

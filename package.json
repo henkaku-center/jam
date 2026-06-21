@@ -39,6 +39,7 @@
     "express": "^4.19.2",
     "node-pty": "^1.1.0",
     "ws": "^8.16.0",
+    "y-codemirror.next": "^0.3.5",
     "y-websocket": "^2.0.4",
     "yjs": "^13.6.14"
   },

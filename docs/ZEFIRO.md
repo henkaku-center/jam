@@ -57,7 +57,7 @@ The bus delivers any cached value immediately on subscribe, then live updates af
 
 ## Architecture notes / future work
 
-- **No `/controller` path yet.** The low-latency `/controller` WebSocket exists server-side but the client doesn't connect to it (see `CLAUDE.md` — it's marked legacy). For breath-shaping audio modulation the throttled global-bus path is fine; if we ever need sub-frame latency for *every* element on *every* peer, wire `/controller` into `public/client.js` and have the Zefiro element fan out raw CC bytes through it.
+- **Use the global bus.** For breath-shaping audio modulation the throttled global-bus path is fine; if we ever need sub-frame latency for every peer, add a purpose-built transport with namespaced device messages.
 - **One source at a time.** Web MIDI is per-tab and per-OS; if two laptops both run `elem_zefiro_midi` against two different physical devices, the global bus will get interleaved publishes. Either run the element on a single laptop, or namespace per device (e.g. `global:zefiro:<deviceId>:cc11`).
 - **Not just for the Zefiro.** Any class-compliant USB MIDI device will work. The picker in the meter UI lists every input the browser sees, so a regular controller can feed CCs through the same bus contract.
 

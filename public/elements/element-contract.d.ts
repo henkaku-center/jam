@@ -13,7 +13,6 @@ export interface ElementContext {
     pubGlobal(key: string, value: unknown): void;
     subGlobal(key: string, callback: (value: unknown) => void): () => void;
   };
-  sendControllerData(data: unknown): void;
 }
 
 export interface ElementRuntime {

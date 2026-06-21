@@ -190,13 +190,10 @@ body, html {
 /* Live low-opacity agent terminal */
 .agent-terminal {
   position: fixed;
-  left: 22px;
-  right: 22px;
-  top: 72px;
-  bottom: 86px;
+  inset: 0;
   z-index: 40;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.12;
   display: flex;
   flex-direction: column;
   border: 0;
@@ -213,6 +210,11 @@ body, html {
   z-index: 2;
   pointer-events: auto;
   cursor: text;
+}
+
+.agent-terminal:focus-within #agent-terminal-focus-zone,
+.agent-terminal.focus-zone-obscured #agent-terminal-focus-zone {
+  pointer-events: none;
 }
 
 .agent-terminal:focus-within,
@@ -270,25 +272,6 @@ body, html {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   outline: none;
-}
-
-/* Host viewport frame */
-.camera-frame {
-  position: absolute;
-  border: 1px dashed rgba(230, 57, 70, 0.35);
-  pointer-events: none;
-  z-index: 5;
-  transition: all 0.1s linear;
-}
-
-.camera-frame::before {
-  content: 'HOST';
-  position: absolute;
-  top: -16px;
-  left: 0;
-  font-size: 9px;
-  color: var(--accent-red);
-  letter-spacing: 0.1em;
 }
 
 /* Focus Mode */

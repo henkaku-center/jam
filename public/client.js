@@ -28,7 +28,6 @@ const appContainer = document.getElementById('app');
 const viewport = document.getElementById('canvas-viewport');
 const gridLayer = document.getElementById('canvas-grid');
 const elementsLayer = document.getElementById('canvas-elements');
-const hostCameraFrame = document.getElementById('host-camera-frame');
 const addElementMenu = document.getElementById('add-element-menu');
 const focusOverlay = document.getElementById('focus-overlay');
 const agentTerminal = document.getElementById('agent-terminal');
@@ -37,6 +36,8 @@ const agentTerminalFocusZone = document.getElementById('agent-terminal-focus-zon
 let agentTerminalTerm = null;
 
 const DEFAULT_STRUDEL_CODE = '';
+const LOCAL_COLLABORATOR_COLOR = '#67e8f9';
+const REMOTE_COLLABORATOR_COLOR = '#5eead4';
 const ELEMENT_ADD_OPTIONS = {
   strudel: {
     filePath: '/elements/strudel_clocked_element.js',
@@ -79,6 +80,34 @@ function shouldEnableAudioFromUrl() {
   return audio === 'on' || audio === '1' || audio === 'true' || muted === 'false' || params.get('host') === 'true';
 }
 
+function getCollaboratorIdentity() {
+  const storageKey = 'jam-collaborator-v1';
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (saved?.name && saved?.color) {
+      const identity = {
+        ...saved,
+        color: REMOTE_COLLABORATOR_COLOR,
+        colorLight: `${REMOTE_COLLABORATOR_COLOR}cc`,
+        localColor: LOCAL_COLLABORATOR_COLOR
+      };
+      localStorage.setItem(storageKey, JSON.stringify(identity));
+      return identity;
+    }
+  } catch {}
+
+  const identity = {
+    name: `jam-${Math.random().toString(36).slice(2, 6)}`,
+    color: REMOTE_COLLABORATOR_COLOR,
+    colorLight: `${REMOTE_COLLABORATOR_COLOR}cc`,
+    localColor: LOCAL_COLLABORATOR_COLOR
+  };
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(identity));
+  } catch {}
+  return identity;
+}
+
 document.getElementById('join-host-btn').addEventListener('click', () => {
   isAudioOutputEnabled = shouldEnableAudioFromUrl();
   initializeSystem();
@@ -88,8 +117,6 @@ function initializeSystem() {
   autoplayOverlay.classList.add('hidden');
   appContainer.classList.remove('hidden');
   window.jamAudioOutputEnabled = isAudioOutputEnabled;
-  
-  hostCameraFrame.classList.add('hidden');
 
   initAudio();
   initYjs();
@@ -123,12 +150,16 @@ function initYjs() {
   const serverUrl = `${protocol}//${window.location.host}/yjs`;
   
   provider = new WebsocketProvider(serverUrl, 'jam-workspace', ydoc);
+  const collaborator = getCollaboratorIdentity();
+  provider.awareness?.setLocalStateField('user', collaborator);
   
   elementsMap = ydoc.getMap('elements');
   clockMap = ydoc.getMap('clock');
   globalBusMap = ydoc.getMap('global_bus');
 
   window.ydoc = ydoc;
+  window.jamAwareness = provider.awareness;
+  window.jamCollaborator = collaborator;
   window.elementsMap = elementsMap;
   window.activeElements = activeElements;
 
@@ -168,14 +199,13 @@ function initYjs() {
 async function performVisualNTPHandshake() {
   const t1 = Date.now();
   try {
-    const res = await fetch('/api/compile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'PING', elementId: 'PING', filePath: '/elements/PING' })
-    });
-    const t3 = Date.now();
-    const rtt = t3 - t1;
-    serverClockOffset = (t3 - rtt / 2) - t1; 
+    const res = await fetch('/api/time', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`time endpoint returned ${res.status}`);
+    const { serverTime } = await res.json();
+    const t4 = Date.now();
+    const midpoint = t1 + ((t4 - t1) / 2);
+    const rtt = t4 - t1;
+    serverClockOffset = Number(serverTime) - midpoint;
     console.log(`[Clock Sync] Handshake complete. RTT: ${rtt}ms. Estimated Server Offset: ${serverClockOffset}ms`);
   } catch (err) {
     console.warn('[Clock Sync] Handshake failed, fallback to local clock:', err);
@@ -355,6 +385,7 @@ function initAgentTerminalSocket() {
 
     if (!cursorRect || cursorRect.width === 0 || cursorRect.height === 0) {
       agentTerminalFocusZone.style.display = 'none';
+      agentTerminal.classList.remove('focus-zone-obscured');
       return;
     }
 
@@ -364,12 +395,30 @@ function initAgentTerminalSocket() {
     const cursorCenterY = cursorRect.top - terminalRect.top + cursorRect.height / 2;
     const left = Math.max(0, Math.min(terminalRect.width - targetWidth, cursorCenterX - targetWidth / 2));
     const top = Math.max(0, Math.min(terminalRect.height - targetHeight, cursorCenterY - targetHeight / 2));
+    const nextRect = {
+      left: terminalRect.left + left,
+      top: terminalRect.top + top,
+      right: terminalRect.left + left + targetWidth,
+      bottom: terminalRect.top + top + targetHeight
+    };
+    const overlapsCanvasElement = [...document.querySelectorAll('.canvas-element-wrapper:not(.virtualized)')]
+      .some(wrapper => {
+        if (wrapper.style.visibility === 'hidden') return false;
+        const rect = wrapper.getBoundingClientRect();
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          rect.left < nextRect.right &&
+          rect.right > nextRect.left &&
+          rect.top < nextRect.bottom &&
+          rect.bottom > nextRect.top;
+      });
 
     agentTerminalFocusZone.style.display = 'block';
     agentTerminalFocusZone.style.left = `${left}px`;
     agentTerminalFocusZone.style.top = `${top}px`;
     agentTerminalFocusZone.style.width = `${targetWidth}px`;
     agentTerminalFocusZone.style.height = `${targetHeight}px`;
+    agentTerminal.classList.toggle('focus-zone-obscured', overlapsCanvasElement);
   };
 
   const scheduleFocusZoneUpdate = () => {
@@ -444,16 +493,6 @@ function isTextEntryOrTerminalFocused() {
   return Boolean(active?.matches?.('input, textarea, select, [contenteditable="true"], .xterm-helper-textarea'));
 }
 
-// Legacy helper for older generated elements. New shared-client elements should use
-// ctx.bus.pubGlobal for user actions so every client sees the same state.
-function sendControllerMessage(msg) {
-  const targetId = msg.elementId;
-  const element = activeElements.get(targetId);
-  if (element && element.runtime && typeof element.runtime.handleControllerInput === 'function') {
-    element.runtime.handleControllerInput(msg.data);
-  }
-}
-
 function createElementHarnessContext(elementId, audioOutNode) {
   const trackedListeners = [];
   const trackedIntervals = [];
@@ -508,8 +547,13 @@ function createElementHarnessContext(elementId, audioOutNode) {
   });
 
   const clockProxy = {
-    bpm: clockMap.get('bpm') || 120,
-    startTime: clockMap.get('startTime') || Date.now(),
+    get bpm() {
+      return clockMap.get('bpm') || 120;
+    },
+    get startTime() {
+      return clockMap.get('startTime') || Date.now();
+    },
+    now: getSyncTime,
     onTick(callback) {
       const cbObj = { id: elementId, onTick: callback };
       clockCallbacks.add(cbObj);
@@ -535,11 +579,24 @@ function createElementHarnessContext(elementId, audioOutNode) {
     rawAudioCtx: audioCtx,
     audioOut: audioOutNode,
     domRoot: domRootProxy,
+    ydoc,
+    awareness: provider?.awareness || null,
     clock: clockProxy,
     bus: busProxy,
+    beginElementDrag: (point) => {
+      if (!point || !Number.isFinite(point.clientX) || !Number.isFinite(point.clientY)) return;
+      domWrapper.dispatchEvent(new CustomEvent('jam-begin-element-drag', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          clientX: point.clientX,
+          clientY: point.clientY
+        }
+      }));
+    },
     requestLayout: (patch) => requestElementLayout(elementId, patch),
     deleteSelf: () => deleteElementById(elementId),
-    sendControllerData: (data) => sendControllerMessage({ elementId, data })
+    isCurrentInstance: () => activeElements.get(elementId)?.harnessDom === domWrapper
   };
 
   const forceTearDown = () => {
@@ -627,10 +684,9 @@ async function instantiateElement(id, layout, options = {}) {
     domWrapper.id = `wrapper-${id}`;
     domWrapper.className = 'canvas-element-wrapper';
     if (layout.type) domWrapper.classList.add(`element-type-${layout.type}`);
-    domWrapper.style.left = `${layout.x}px`;
-    domWrapper.style.top = `${layout.y}px`;
+    applyElementLayoutToWrapper(domWrapper, layout);
     domWrapper.appendChild(harness.domWrapper);
-    setupElementDragging(domWrapper, id);
+    const disposeElementDragging = setupElementDragging(domWrapper, id);
 
     if (existingWrapper) {
       const bpm = clockMap.get('bpm') || 120;
@@ -665,6 +721,7 @@ async function instantiateElement(id, layout, options = {}) {
         if (existingWrapper.runtime && typeof existingWrapper.runtime.destroy === 'function') {
           try { existingWrapper.runtime.destroy(); } catch (e) { console.error(e); }
         }
+        existingWrapper.disposeElementDragging?.();
         existingWrapper.forceTearDown();
         existingWrapper.domWrapper.remove();
         console.log(`[Hot-Reload] Disposed old element ${id}`);
@@ -686,10 +743,12 @@ async function instantiateElement(id, layout, options = {}) {
       audioVolumeNode: elementVolume,
       audioFilterNode: elementFilter,
       audioPannerNode: elementPanner,
+      disposeElementDragging,
       layout
     });
   } finally {
     compilingElements.delete(id);
+    if (activeElements.has(id) && elementsMap?.has(id)) queueMicrotask(syncElementsFromMap);
   }
 }
 
@@ -855,6 +914,18 @@ function isElementInsideBox(layout, box) {
   );
 }
 
+function applyElementLayoutToWrapper(domWrapper, layout) {
+  const x = Number.isFinite(Number(layout?.x)) ? Number(layout.x) : 0;
+  const y = Number.isFinite(Number(layout?.y)) ? Number(layout.y) : 0;
+  const width = Number.isFinite(Number(layout?.width)) ? Math.max(1, Number(layout.width)) : 260;
+  const height = Number.isFinite(Number(layout?.height)) ? Math.max(1, Number(layout.height)) : 200;
+
+  domWrapper.style.left = `${x}px`;
+  domWrapper.style.top = `${y}px`;
+  domWrapper.style.width = `${width}px`;
+  domWrapper.style.height = `${height}px`;
+}
+
 function requestElementLayout(id, patch) {
   if (!elementsMap?.has(id) || !patch || typeof patch !== 'object') return;
 
@@ -874,6 +945,11 @@ function requestElementLayout(id, patch) {
   ydoc.transact(() => {
     elementsMap.set(id, next);
   });
+  if (hasAutoCenteredInitialWorkspace && !hasUserMovedCamera) {
+    requestAnimationFrame(() => {
+      if (!hasUserMovedCamera) centerCameraOnWorkspace();
+    });
+  }
 }
 
 function runLevelOfDetailCheck() {
@@ -987,8 +1063,6 @@ function setupViewportNavigation() {
 function applyViewportTransform() {
   gridLayer.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
   elementsLayer.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
-  
-  hostCameraFrame.classList.add('hidden');
   window.__jamCamera = {
     x: camera.x,
     y: camera.y,
@@ -1070,22 +1144,16 @@ function setupElementDragging(domWrapper, id) {
   let startX = 0;
   let startY = 0;
 
-  domWrapper.addEventListener('mousedown', (e) => {
-    const target = e.composedPath()[0];
-    if (isInteractiveElementDragTarget(target)) {
-      return;
-    }
-    e.stopPropagation();
+  const beginMove = (e) => {
     isMoving = true;
-    
     selectElement(id, domWrapper);
 
     const layout = elementsMap.get(id);
     startX = e.clientX / camera.zoom - layout.x;
     startY = e.clientY / camera.zoom - layout.y;
-  });
+  };
 
-  window.addEventListener('mousemove', (e) => {
+  const moveToClientPoint = (e) => {
     if (!isMoving) return;
     const nx = Math.round(e.clientX / camera.zoom - startX);
     const ny = Math.round(e.clientY / camera.zoom - startY);
@@ -1096,14 +1164,28 @@ function setupElementDragging(domWrapper, id) {
         elementsMap.set(id, { ...layout, x: nx, y: ny });
       });
     }
-  });
+  };
 
-  window.addEventListener('mouseup', () => {
+  const endMove = () => {
     isMoving = false;
-  });
+  };
 
-  // Right-click prepares a terminal command targeting this element.
-  domWrapper.addEventListener('contextmenu', (e) => {
+  const handleMouseDown = (e) => {
+    const target = e.composedPath()[0];
+    if (isInteractiveElementDragTarget(target)) {
+      return;
+    }
+    e.stopPropagation();
+    beginMove(e);
+  };
+
+  const handleBeginElementDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    beginMove(e.detail);
+  };
+
+  const handleContextMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -1111,7 +1193,30 @@ function setupElementDragging(domWrapper, id) {
       agentTerminalTerm.focus();
       agentTerminalTerm.paste(`modify element ${id}: `);
     }
-  });
+  };
+
+  domWrapper.addEventListener('mousedown', handleMouseDown);
+  domWrapper.addEventListener('jam-begin-element-drag', handleBeginElementDrag);
+  window.addEventListener('mousemove', moveToClientPoint);
+  window.addEventListener('pointermove', moveToClientPoint);
+  window.addEventListener('mouseup', endMove);
+  window.addEventListener('pointerup', endMove);
+  window.addEventListener('pointercancel', endMove);
+  window.addEventListener('blur', endMove);
+  domWrapper.addEventListener('contextmenu', handleContextMenu);
+
+  return () => {
+    endMove();
+    domWrapper.removeEventListener('mousedown', handleMouseDown);
+    domWrapper.removeEventListener('jam-begin-element-drag', handleBeginElementDrag);
+    window.removeEventListener('mousemove', moveToClientPoint);
+    window.removeEventListener('pointermove', moveToClientPoint);
+    window.removeEventListener('mouseup', endMove);
+    window.removeEventListener('pointerup', endMove);
+    window.removeEventListener('pointercancel', endMove);
+    window.removeEventListener('blur', endMove);
+    domWrapper.removeEventListener('contextmenu', handleContextMenu);
+  };
 }
 
 function isInteractiveElementDragTarget(target) {
@@ -1151,8 +1256,7 @@ function syncElementsFromMap() {
         element.domWrapper.className = 'canvas-element-wrapper';
         if (layout.type) element.domWrapper.classList.add(`element-type-${layout.type}`);
         if (selectedElementId === id) element.domWrapper.classList.add('active-focus');
-        element.domWrapper.style.left = `${layout.x}px`;
-        element.domWrapper.style.top = `${layout.y}px`;
+        applyElementLayoutToWrapper(element.domWrapper, layout);
       }
     }
   });
@@ -1162,6 +1266,7 @@ function syncElementsFromMap() {
       if (element.runtime && typeof element.runtime.destroy === 'function') {
         try { element.runtime.destroy(); } catch (e) { console.error(e); }
       }
+      element.disposeElementDragging?.();
       element.forceTearDown();
       element.domWrapper.remove();
       activeElements.delete(id);
