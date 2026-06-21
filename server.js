@@ -13,6 +13,7 @@ import { getYDoc, setupWSConnection } from './node_modules/y-websocket/bin/utils
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 const CODEGEN_PROVIDER = (process.env.CODEGEN_PROVIDER || 'codex').toLowerCase();
 const CODEGEN_TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS || 180000);
 const CODEX_MODEL = process.env.CODEX_MODEL || '';
@@ -236,9 +237,6 @@ if (fs.existsSync(manifestPath)) {
   }
 }
 
-const controllerClients = new Set();
-let hostClient = null;
-
 // Browser-visible agent PTYs. Each connected browser gets an independent
 // terminal session so collaborators can prompt Codex/Claude in parallel.
 const terminalSessions = new Set();
@@ -459,10 +457,6 @@ app.post('/api/compile', async (req, res) => {
     return res.status(400).json({ error: 'Missing required parameters: prompt, elementId, or filePath' });
   }
 
-  if (prompt === 'PING') {
-    return res.json({ success: true, message: 'PONG' });
-  }
-
   let resolvedPath = '';
   try {
     resolvedPath = resolveElementFilePath(filePath);
@@ -571,6 +565,10 @@ app.post('/api/compile', async (req, res) => {
     rawCode: generatedCode,
     transpiledCode: transpiled
   });
+});
+
+app.get('/api/time', (req, res) => {
+  res.json({ serverTime: Date.now() });
 });
 
 app.get('/api/workspace/elements', (req, res) => {
@@ -1028,7 +1026,7 @@ function buildElementsDirectorySummary() {
   let files = [];
   try {
     files = fs.readdirSync(elementsDir)
-      .filter(name => name.endsWith('.js') || name === 'PING')
+      .filter(name => name.endsWith('.js'))
       .sort()
       .slice(0, 80)
       .map(name => {
@@ -1860,41 +1858,10 @@ export default function setup(ctx, prevState) {
 const server = http.createServer(app);
 
 const wssYjs = new WebSocketServer({ noServer: true });
-const wssController = new WebSocketServer({ noServer: true });
 const wssTerminal = new WebSocketServer({ noServer: true });
 
 wssYjs.on('connection', (ws, req) => {
   setupWSConnection(ws, req, { docName: 'jam-workspace', gc: true });
-});
-
-wssController.on('connection', (ws, req) => {
-  const isHost = req.url.includes('host=true');
-  
-  if (isHost) {
-    hostClient = ws;
-    console.log('[Controller] Host connected');
-  } else {
-    controllerClients.add(ws);
-    console.log('[Controller] Controller client connected. Count:', controllerClients.size);
-  }
-
-  ws.on('message', (message) => {
-    if (!isHost) {
-      if (hostClient && hostClient.readyState === 1) {
-        hostClient.send(message);
-      }
-    }
-  });
-
-  ws.on('close', () => {
-    if (isHost) {
-      hostClient = null;
-      console.log('[Controller] Host disconnected');
-    } else {
-      controllerClients.delete(ws);
-      console.log('[Controller] Controller client disconnected. Count:', controllerClients.size);
-    }
-  });
 });
 
 wssTerminal.on('connection', async (ws) => {
@@ -1933,10 +1900,6 @@ server.on('upgrade', (req, socket, head) => {
     wssYjs.handleUpgrade(req, socket, head, (ws) => {
       wssYjs.emit('connection', ws, req);
     });
-  } else if (url.startsWith('/controller')) {
-    wssController.handleUpgrade(req, socket, head, (ws) => {
-      wssController.emit('connection', ws, req);
-    });
   } else if (url.startsWith('/agent-terminal')) {
     wssTerminal.handleUpgrade(req, socket, head, (ws) => {
       wssTerminal.emit('connection', ws, req);
@@ -1946,8 +1909,8 @@ server.on('upgrade', (req, socket, head) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, HOST, () => {
   console.log(`===============================================`);
-  console.log(`🎵 jam Server started on http://localhost:${PORT}`);
+  console.log(`🎵 jam Server started on http://${HOST}:${PORT}`);
   console.log(`===============================================`);
 });

@@ -12,7 +12,6 @@ const elementsDir = path.join(repoRoot, 'public/elements');
 const hostHydrateBudgetMs = Number(process.env.JAM_HOST_HYDRATE_BUDGET_MS || 15_000);
 const controllerHydrateBudgetMs = Number(process.env.JAM_CONTROLLER_HYDRATE_BUDGET_MS || 15_000);
 const controllerSyncBudgetMs = Number(process.env.JAM_CONTROLLER_SYNC_BUDGET_MS || 2_000);
-const pingBudgetMs = Number(process.env.JAM_PING_BUDGET_MS || 100);
 const appBaseURL = process.env.JAM_BASE_URL || `http://127.0.0.1:${process.env.PORT || '3100'}`;
 
 let fileSnapshot;
@@ -295,22 +294,6 @@ test.afterAll(async () => {
   await restoreMutableWorkspaceFiles(fileSnapshot);
 });
 
-test('PING compile fast-path stays lightweight', async ({ request }) => {
-  const startedAt = Date.now();
-  const response = await request.post('/api/compile', {
-    data: {
-      prompt: 'PING',
-      elementId: 'PING',
-      filePath: '/elements/PING'
-    }
-  });
-  const elapsedMs = Date.now() - startedAt;
-
-  await expect(response).toBeOK();
-  expect(await response.json()).toEqual({ success: true, message: 'PONG' });
-  expect(elapsedMs).toBeLessThan(pingBudgetMs);
-});
-
 test('Agent workspace API reloads hand-authored elements without codegen overwrite', async ({ request }) => {
   const id = `elem_hand_${Date.now()}`;
   const publicPath = `/elements/${id}_visual.js`;
@@ -391,6 +374,24 @@ test('Host workspace hydrates within the startup performance budget', async ({ p
     body: JSON.stringify(result, null, 2)
   });
 
+  const terminalBounds = await page.evaluate(() => {
+    const rect = document.querySelector('#agent-terminal')?.getBoundingClientRect();
+    return {
+      left: rect?.left ?? -1,
+      top: rect?.top ?? -1,
+      width: rect?.width ?? 0,
+      height: rect?.height ?? 0,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
+    };
+  });
+  expect(terminalBounds).toMatchObject({
+    left: 0,
+    top: 0,
+    width: terminalBounds.viewportWidth,
+    height: terminalBounds.viewportHeight
+  });
+
   expect(result.hydrateMs).toBeLessThan(hostHydrateBudgetMs);
   expect(result.metrics.slowestCompileCallMs).toBeLessThan(5_000);
   expect(result.metrics.maxLongTaskMs).toBeLessThan(1_000);
@@ -427,7 +428,18 @@ test('Normal mode pan and zoom keep a global audio mix', async ({ page }) => {
 test('Initial workspace view starts centered on current element bounds', async ({ page }) => {
   await joinWorkspace(page, 'controller');
 
-  const result = await readCenteredCameraState(page);
+  let result;
+  await expect
+    .poll(async () => {
+      result = await readCenteredCameraState(page);
+      return Math.abs(result.actualX - result.expectedX) <= 1 &&
+        Math.abs(result.actualY - result.expectedY) <= 1 &&
+        result.actualZoom === result.expectedZoom;
+    }, {
+      message: 'initial camera should settle centered on element bounds',
+      timeout: 3_000
+    })
+    .toBe(true);
   expectCameraCentered(result);
 });
 
@@ -474,6 +486,77 @@ test('Center Cam frames the bounding box of current workspace elements', async (
     expect(result.actualY).not.toBe(0);
   } finally {
     await Promise.all(ids.map(id => request.delete(`/api/workspace/elements/${id}`)));
+  }
+});
+
+test('Element wrapper keeps layout width while dragging near viewport edge', async ({ page, request }) => {
+  await joinWorkspace(page, 'controller');
+  const id = `elem_drag_width_${Date.now()}`;
+  const position = await page.evaluate(() => {
+    const rect = document.querySelector('#canvas-viewport').getBoundingClientRect();
+    const camera = window.__jamCamera || { x: 0, y: 0, zoom: 1 };
+    return {
+      x: Math.round((260 - rect.left - camera.x) / camera.zoom),
+      y: Math.round((220 - rect.top - camera.y) / camera.zoom)
+    };
+  });
+
+  try {
+    const response = await request.post('/api/workspace/elements', {
+      data: {
+        id,
+        filePath: '/elements/elem_drum_machine.js',
+        type: 'audio',
+        prompt: 'drag width regression drum machine',
+        authored: 'hand',
+        x: position.x,
+        y: position.y,
+        width: 520,
+        height: 340
+      }
+    });
+    await expect(response).toBeOK();
+
+    await expect
+      .poll(() => page.evaluate((elementId) => window.activeElements.has(elementId), id), {
+        message: 'drag width fixture should hydrate',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    const before = await page.evaluate((elementId) => {
+      const element = window.activeElements.get(elementId);
+      const rect = element.domWrapper.getBoundingClientRect();
+      return {
+        rectWidth: rect.width,
+        styleWidth: getComputedStyle(element.domWrapper).width,
+        layoutWidth: window.elementsMap.get(elementId)?.width || 0
+      };
+    }, id);
+    expect(before.layoutWidth).toBe(520);
+    expect(Number.parseFloat(before.styleWidth)).toBeCloseTo(520, 0);
+
+    const box = await page.locator(`#wrapper-${id}`).boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box.x + 18, box.y + 18);
+    await page.mouse.down();
+    await page.mouse.move(1160, box.y + 28, { steps: 12 });
+    await page.mouse.up();
+
+    const after = await page.evaluate((elementId) => {
+      const element = window.activeElements.get(elementId);
+      const rect = element.domWrapper.getBoundingClientRect();
+      return {
+        rectWidth: rect.width,
+        styleWidth: getComputedStyle(element.domWrapper).width,
+        layoutWidth: window.elementsMap.get(elementId)?.width || 0
+      };
+    }, id);
+    expect(after.layoutWidth).toBe(520);
+    expect(Number.parseFloat(after.styleWidth)).toBeCloseTo(520, 0);
+    expect(after.rectWidth).toBeCloseTo(before.rectWidth, 0);
+  } finally {
+    await request.delete(`/api/workspace/elements/${id}`);
   }
 });
 
@@ -749,26 +832,53 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         const editor = root?.querySelector('.cm-editor');
         const activeLine = root?.querySelector('.cm-activeLine');
         const cursor = root?.querySelector('.cm-cursor');
+        const overlay = document.querySelector(`[data-strudel-cursor-overlay="${id}"]`);
+        const activeLineHandle = document.querySelector(`[data-strudel-active-line-handle="${id}"]`);
         const line = root?.querySelector('.cm-line');
         const token = root?.querySelector('.cm-line span');
+        const tokenColors = [...(root?.querySelectorAll('.cm-line span') || [])]
+          .map(node => getComputedStyle(node).color)
+          .filter(Boolean);
         const cursorStyle = cursor ? getComputedStyle(cursor) : null;
+        const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+        const activeLineStyle = activeLine ? getComputedStyle(activeLine) : null;
+        const activeLineHandleStyle = activeLineHandle ? getComputedStyle(activeLineHandle) : null;
         const cursorRect = cursor?.getBoundingClientRect();
+        const overlayRect = overlay?.getBoundingClientRect();
+        const activeLineRect = activeLine?.getBoundingClientRect();
+        const activeLineHandleRect = activeLineHandle?.getBoundingClientRect();
         const textNode = root ? findTextNode(root.querySelector('.cm-line')) : null;
         let charWidth = 0;
+        let textLeftOffset = 0;
         if (textNode) {
           const range = document.createRange();
           range.setStart(textNode, 0);
           range.setEnd(textNode, Math.min(1, textNode.textContent.length));
-          charWidth = range.getBoundingClientRect().width;
+          const textRect = range.getBoundingClientRect();
+          charWidth = textRect.width;
+          textLeftOffset = activeLineRect ? textRect.left - activeLineRect.left : 0;
           range.detach?.();
         }
         return {
           isFocused: editor?.classList.contains('cm-focused') || false,
           editorOutline: editor ? getComputedStyle(editor).outlineStyle : '',
           activeLineBackground: activeLine ? getComputedStyle(activeLine).backgroundColor : '',
+          activeLinePosition: activeLineStyle?.position || '',
+          activeLineMarkerText: activeLineHandle?.textContent || '',
+          activeLineMarkerPosition: activeLineHandleStyle?.position || '',
+          activeLineMarkerDisplay: activeLineHandleStyle?.display || '',
+          activeLineMarkerColor: activeLineHandleStyle?.color || '',
+          activeLineMarkerCursor: activeLineHandleStyle?.cursor || '',
+          activeLineMarkerLeftOffset: activeLineRect && activeLineHandleRect ? activeLineHandleRect.left - activeLineRect.left : 0,
+          textLeftOffset,
           editorColor: editor ? getComputedStyle(editor).color : '',
           lineColor: line ? getComputedStyle(line).color : '',
           tokenColor: token ? getComputedStyle(token).color : '',
+          hasSyntaxHighlighting: new Set(tokenColors).size > 1,
+          usesTerminalSyntaxPalette: tokenColors.includes('rgb(103, 232, 249)') &&
+            tokenColors.includes('rgb(167, 243, 208)'),
+          usesDefaultStrudelPalette: tokenColors.includes('rgb(199, 146, 234)') ||
+            tokenColors.includes('rgb(195, 232, 141)'),
           lineTextShadow: line ? getComputedStyle(line).textShadow : '',
           cursorWidth: cursorRect?.width || 0,
           cursorHeight: cursorRect?.height || 0,
@@ -778,7 +888,13 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
           cursorBackground: cursorStyle?.backgroundColor || '',
           cursorBlendMode: cursorStyle?.mixBlendMode || '',
           cursorBackdropFilter: cursorStyle?.backdropFilter || cursorStyle?.webkitBackdropFilter || '',
-          cursorAnimationName: cursorStyle?.animationName || ''
+          cursorAnimationName: cursorStyle?.animationName || '',
+          overlayDisplay: overlayStyle?.display || '',
+          overlayBackground: overlayStyle?.backgroundColor || '',
+          overlayBlendMode: overlayStyle?.mixBlendMode || '',
+          overlayAnimationName: overlayStyle?.animationName || '',
+          overlayWidth: overlayRect?.width || 0,
+          overlayHeight: overlayRect?.height || 0
         };
 
         function findTextNode(node) {
@@ -798,17 +914,121 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
         isFocused: true,
         editorOutline: 'none',
         activeLineBackground: 'rgba(22, 78, 99, 0.5)',
+        activeLinePosition: 'relative',
+        activeLineMarkerText: '❯',
+        activeLineMarkerPosition: 'fixed',
+        activeLineMarkerDisplay: 'block',
+        activeLineMarkerColor: 'rgb(103, 232, 249)',
+        activeLineMarkerCursor: 'move',
         editorColor: 'rgb(209, 250, 229)',
         lineColor: 'rgb(209, 250, 229)',
-        tokenColor: 'rgb(209, 250, 229)',
+        hasSyntaxHighlighting: true,
+        usesTerminalSyntaxPalette: true,
+        usesDefaultStrudelPalette: false,
         lineTextShadow: 'none',
         cursorDisplay: 'block',
         cursorBorderLeftWidth: '0px',
-        cursorBackground: 'rgba(255, 255, 255, 0.01)',
+        cursorBackground: 'rgba(0, 0, 0, 0)',
         cursorBlendMode: 'normal',
-        cursorBackdropFilter: 'invert(1)',
-        cursorAnimationName: 'strudel-block-cursor-blink'
+        cursorBackdropFilter: 'none',
+        cursorAnimationName: 'none',
+        overlayBackground: 'rgb(255, 255, 255)',
+        overlayBlendMode: 'difference',
+        overlayAnimationName: 'jam-strudel-cursor-bar-blink'
       });
+
+    const activeLineMarkerMetrics = await page.evaluate((id) => {
+      const root = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot;
+      const activeLine = root?.querySelector('.cm-activeLine');
+      const marker = document.querySelector(`[data-strudel-active-line-handle="${id}"]`);
+      const textNode = findTextNode(activeLine);
+      const lineRect = activeLine?.getBoundingClientRect();
+      const markerRect = marker?.getBoundingClientRect();
+      let textLeftOffset = 0;
+      if (textNode && lineRect) {
+        const range = document.createRange();
+        range.setStart(textNode, 0);
+        range.setEnd(textNode, Math.min(1, textNode.textContent.length));
+        textLeftOffset = range.getBoundingClientRect().left - lineRect.left;
+        range.detach?.();
+      }
+      return {
+        markerLeftOffset: lineRect && markerRect ? markerRect.left - lineRect.left : 0,
+        textLeftOffset
+      };
+
+      function findTextNode(node) {
+        if (!node) return null;
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.length) return node;
+        for (const child of node.childNodes) {
+          const found = findTextNode(child);
+          if (found) return found;
+        }
+        return null;
+      }
+    }, created.id);
+    expect(activeLineMarkerMetrics.markerLeftOffset).toBeLessThan(0);
+    expect(Math.abs(activeLineMarkerMetrics.textLeftOffset)).toBeLessThan(1);
+
+    const markerDragStart = await page.evaluate((id) => {
+      const element = window.activeElements.get(id);
+      const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+      const marker = document.querySelector(`[data-strudel-active-line-handle="${id}"]`);
+      const rect = marker?.getBoundingClientRect();
+      const layout = window.elementsMap.get(id);
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        layoutX: layout?.x || 0,
+        layoutY: layout?.y || 0,
+        code: root?.querySelector('#editor')?.cmView?.state.doc.toString() || ''
+      };
+    }, created.id);
+
+    await page.mouse.move(markerDragStart.x, markerDragStart.y);
+    await expect
+      .poll(() => page.evaluate((id) => {
+        return document.querySelector(`[data-strudel-active-line-handle="${id}"]`)?.textContent || '';
+      }, created.id), {
+        message: 'active-line marker should switch to move glyph on hover',
+        timeout: 1_000
+      })
+      .toBe('✥');
+
+    await page.mouse.down();
+    await page.mouse.move(markerDragStart.x + 88, markerDragStart.y + 42, { steps: 8 });
+    await page.mouse.up();
+
+    const markerDragEnd = await page.evaluate((id) => {
+      const root = window.activeElements
+        .get(id)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot;
+      const layout = window.elementsMap.get(id);
+      return {
+        layoutX: layout?.x || 0,
+        layoutY: layout?.y || 0,
+        code: root?.querySelector('#editor')?.cmView?.state.doc.toString() || ''
+      };
+    }, created.id);
+    expect(markerDragEnd.layoutX).toBeGreaterThan(markerDragStart.layoutX + 40);
+    expect(markerDragEnd.layoutY).toBeGreaterThan(markerDragStart.layoutY + 15);
+    expect(markerDragEnd.code).toBe(markerDragStart.code);
+
+    await page.mouse.move(markerDragStart.x + 220, markerDragStart.y + 140, { steps: 6 });
+    await page.waitForTimeout(100);
+    const markerDragAfterRelease = await page.evaluate((id) => {
+      const layout = window.elementsMap.get(id);
+      return {
+        layoutX: layout?.x || 0,
+        layoutY: layout?.y || 0
+      };
+    }, created.id);
+    expect(markerDragAfterRelease.layoutX).toBe(markerDragEnd.layoutX);
+    expect(markerDragAfterRelease.layoutY).toBe(markerDragEnd.layoutY);
 
     const focusedCursorSize = await page.evaluate((id) => {
       const root = window.activeElements
@@ -818,6 +1038,9 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       const cursor = root?.querySelector('.cm-cursor');
       const textNode = findTextNode(root?.querySelector('.cm-line'));
       const cursorRect = cursor?.getBoundingClientRect();
+      const overlayRect = document
+        .querySelector(`[data-strudel-cursor-overlay="${id}"]`)
+        ?.getBoundingClientRect();
       const range = document.createRange();
       range.setStart(textNode, 0);
       range.setEnd(textNode, Math.min(1, textNode.textContent.length));
@@ -825,7 +1048,7 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
       range.detach?.();
       return {
         width: cursorRect?.width || 0,
-        height: cursorRect?.height || 0,
+        height: Math.max(cursorRect?.height || 0, overlayRect?.height || 0),
         charWidth: charRect.width
       };
 
@@ -841,6 +1064,63 @@ test('Strudel launcher creates a clocked jam element instead of a floating REPL'
     }, created.id);
     expect(focusedCursorSize.width).toBeCloseTo(focusedCursorSize.charWidth, 0);
     expect(focusedCursorSize.height).toBeGreaterThan(8);
+
+    await expect
+      .poll(() => page.evaluate((id) => {
+        const element = window.activeElements.get(id);
+        const root = element?.domWrapper.querySelector('.element-shadow-container')?.shadowRoot;
+        const view = root?.querySelector('#editor')?.cmView;
+        if (!view) throw new Error('missing Strudel editor');
+        view.dispatch({ selection: { anchor: 0, head: 4 } });
+        view.focus();
+
+        const editor = root.querySelector('.cm-editor');
+        const nativeSelection = root.querySelector('.cm-selectionBackground');
+        const selectionOverlay = document.querySelector(`[data-strudel-selection-overlay="${id}"]`);
+        const selectionRect = selectionOverlay?.querySelector('.jam-strudel-document-selection-rect');
+        const cursorOverlay = document.querySelector(`[data-strudel-cursor-overlay="${id}"]`);
+        const nativeSelectionStyle = nativeSelection ? getComputedStyle(nativeSelection) : null;
+        const selectionOverlayStyle = selectionOverlay ? getComputedStyle(selectionOverlay) : null;
+        const selectionRectStyle = selectionRect ? getComputedStyle(selectionRect) : null;
+        const selectionRectBox = selectionRect?.getBoundingClientRect();
+        const cursorOverlayStyle = cursorOverlay ? getComputedStyle(cursorOverlay) : null;
+        return {
+          isFocused: editor.classList.contains('cm-focused'),
+          nativeSelectionBackground: nativeSelectionStyle?.backgroundColor || '',
+          cursorOverlayDisplay: cursorOverlayStyle?.display || '',
+          selectionOverlayDisplay: selectionOverlayStyle?.display || '',
+          selectionRectCount: selectionOverlay?.children.length || 0,
+          selectionRectBackground: selectionRectStyle?.backgroundColor || '',
+          selectionRectBlendMode: selectionRectStyle?.mixBlendMode || '',
+          selectionRectWidth: selectionRectBox?.width || 0,
+          selectionRectHeight: selectionRectBox?.height || 0
+        };
+      }, created.id), {
+        message: 'Strudel text selection should render as a document-level inversion overlay',
+        timeout: 3_000
+      })
+      .toMatchObject({
+        isFocused: true,
+        nativeSelectionBackground: 'rgba(0, 0, 0, 0)',
+        cursorOverlayDisplay: 'none',
+        selectionOverlayDisplay: 'block',
+        selectionRectCount: 1,
+        selectionRectBackground: 'rgb(255, 255, 255)',
+        selectionRectBlendMode: 'difference'
+      });
+
+    const selectionOverlaySize = await page.evaluate((id) => {
+      const selectionRect = document
+        .querySelector(`[data-strudel-selection-overlay="${id}"]`)
+        ?.querySelector('.jam-strudel-document-selection-rect')
+        ?.getBoundingClientRect();
+      return {
+        width: selectionRect?.width || 0,
+        height: selectionRect?.height || 0
+      };
+    }, created.id);
+    expect(selectionOverlaySize.width).toBeGreaterThan(focusedCursorSize.charWidth * 2);
+    expect(selectionOverlaySize.height).toBeGreaterThan(8);
 
     await expect
       .poll(() => page.evaluate((id) => {
@@ -1156,6 +1436,491 @@ test('Visible Strudel editor keybindings evaluate real keyboard input', async ({
   }
 });
 
+test('Strudel editors share live code and remote selections across clients', async ({ browser, request }) => {
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const observerContext = await browser.newContext();
+  const hostPage = await hostContext.newPage();
+  const guestPage = await guestContext.newPage();
+  const observerPage = await observerContext.newPage();
+  const hostFailures = collectBrowserFailures(hostPage);
+  const guestFailures = collectBrowserFailures(guestPage);
+  const observerFailures = collectBrowserFailures(observerPage);
+  let createdId = '';
+
+  try {
+    await joinWorkspace(hostPage, 'host');
+    await joinWorkspace(guestPage, 'controller');
+    await joinWorkspace(observerPage, 'observer');
+    const beforeIds = await hostPage.evaluate(() => [...window.elementsMap.keys()]);
+
+    await addElementFromMenu(hostPage, 'strudel', { x: 460, y: 260 });
+
+    await expect
+      .poll(() => hostPage.evaluate((knownIds) => {
+        for (const [elementId, layout] of window.elementsMap.entries()) {
+          if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+        }
+        return '';
+      }, beforeIds), {
+        message: 'Strudel element should be added by the host',
+        timeout: 8_000
+      })
+      .not.toBe('');
+
+    createdId = await hostPage.evaluate((knownIds) => {
+      for (const [elementId, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+      }
+      return '';
+    }, beforeIds);
+
+    await expect
+      .poll(() => guestPage.evaluate((elementId) => window.activeElements.has(elementId), createdId), {
+        message: 'guest should hydrate the same Strudel element',
+        timeout: 8_000
+      })
+      .toBe(true);
+    await expect
+      .poll(() => observerPage.evaluate((elementId) => window.activeElements.has(elementId), createdId), {
+        message: 'observer should hydrate the same Strudel element',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    const source = 'note("c3 e3 g3").s("piano")';
+    await hostPage.evaluate(({ elementId, source }) => {
+      const view = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#editor')
+        ?.cmView;
+      if (!view) throw new Error('missing host editor');
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: source },
+        selection: { anchor: 0, head: 4 }
+      });
+      view.focus();
+    }, { elementId: createdId, source });
+
+    await expect
+      .poll(() => guestPage.evaluate((elementId) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        return view?.state.doc.toString() || '';
+      }, createdId), {
+        message: 'guest editor should receive live Y.Text changes',
+        timeout: 8_000
+      })
+      .toBe(source);
+
+    await expect
+      .poll(() => guestPage.evaluate((elementId) => {
+        const root = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot;
+        const remoteSelection = root?.querySelector('.cm-ySelection');
+        const remoteCaret = root?.querySelector('.cm-ySelectionCaret');
+        const remoteCursorOverlay = document.querySelector(`[data-strudel-remote-cursor-overlay="${elementId}"]`);
+        const remoteSelectionOverlay = document.querySelector(`[data-strudel-remote-selection-overlay="${elementId}"]`);
+        const remoteCursor = remoteCursorOverlay?.querySelector('.jam-strudel-remote-cursor-rect');
+        const remoteSelectionRect = remoteSelectionOverlay?.querySelector('.jam-strudel-remote-selection-rect');
+        const selectionStyle = remoteSelection ? getComputedStyle(remoteSelection) : null;
+        const caretStyle = remoteCaret ? getComputedStyle(remoteCaret) : null;
+        const remoteCursorOverlayStyle = remoteCursorOverlay ? getComputedStyle(remoteCursorOverlay) : null;
+        const remoteSelectionOverlayStyle = remoteSelectionOverlay ? getComputedStyle(remoteSelectionOverlay) : null;
+        const remoteCursorStyle = remoteCursor ? getComputedStyle(remoteCursor) : null;
+        const remoteSelectionRectStyle = remoteSelectionRect ? getComputedStyle(remoteSelectionRect) : null;
+        const remoteSelectionRectBox = remoteSelectionRect?.getBoundingClientRect();
+        return {
+          selectionText: remoteSelection?.textContent || '',
+          hasCaret: Boolean(remoteCaret),
+          hasRemoteCursorOverlay: Boolean(remoteCursorOverlay),
+          hasRemoteSelectionOverlay: Boolean(remoteSelectionOverlay),
+          selectionBlendMode: selectionStyle?.mixBlendMode || '',
+          selectionFilter: selectionStyle?.filter || '',
+          selectionBackground: selectionStyle?.backgroundColor || '',
+          selectionOutlineStyle: selectionStyle?.outlineStyle || '',
+          caretDisplay: caretStyle?.display || '',
+          caretBlendMode: caretStyle?.mixBlendMode || '',
+          caretFilter: caretStyle?.filter || '',
+          caretAnimationName: caretStyle?.animationName || '',
+          remoteCursorOverlayDisplay: remoteCursorOverlayStyle?.display || '',
+          remoteSelectionOverlayDisplay: remoteSelectionOverlayStyle?.display || '',
+          remoteCursorBackground: remoteCursorStyle?.backgroundColor || '',
+          remoteCursorBlendMode: remoteCursorStyle?.mixBlendMode || '',
+          remoteCursorFilter: remoteCursorStyle?.filter || '',
+          remoteCursorAnimationName: remoteCursorStyle?.animationName || '',
+          remoteCursorStyleWidth: remoteCursor?.style.width || '',
+          remoteCursorStyleHeight: remoteCursor?.style.height || '',
+          remoteSelectionRectCount: remoteSelectionOverlay?.children.length || 0,
+          remoteSelectionRectBackground: remoteSelectionRectStyle?.backgroundColor || '',
+          remoteSelectionRectBlendMode: remoteSelectionRectStyle?.mixBlendMode || '',
+          remoteSelectionRectFilter: remoteSelectionRectStyle?.filter || '',
+          remoteSelectionRectAnimationName: remoteSelectionRectStyle?.animationName || '',
+          remoteSelectionRectWidth: remoteSelectionRectBox?.width || 0,
+          userCount: window.jamAwareness?.getStates?.().size || 0
+        };
+      }, createdId), {
+        message: 'guest editor should render host remote selection/caret awareness through overlays',
+        timeout: 8_000
+      })
+      .toMatchObject({
+        selectionText: 'note',
+        hasCaret: true,
+        hasRemoteCursorOverlay: true,
+        hasRemoteSelectionOverlay: true,
+        selectionBlendMode: 'normal',
+        selectionFilter: 'none',
+        selectionBackground: 'rgba(0, 0, 0, 0)',
+        selectionOutlineStyle: 'none',
+        caretDisplay: 'none',
+        caretAnimationName: 'none',
+        remoteCursorOverlayDisplay: 'block',
+        remoteSelectionOverlayDisplay: 'block',
+        remoteCursorBackground: 'rgb(94, 234, 212)',
+        remoteCursorBlendMode: 'difference',
+        remoteCursorFilter: 'none',
+        remoteCursorAnimationName: 'jam-strudel-cursor-bar-blink',
+        remoteSelectionRectCount: 1,
+        remoteSelectionRectBackground: 'rgba(94, 234, 212, 0.45)',
+        remoteSelectionRectBlendMode: 'difference',
+        remoteSelectionRectFilter: 'none',
+        remoteSelectionRectAnimationName: 'none',
+        userCount: 3
+      });
+
+    await expect
+      .poll(() => observerPage.evaluate((elementId) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        return view?.state.doc.toString() || '';
+      }, createdId), {
+        message: 'observer editor should receive live Y.Text changes',
+        timeout: 8_000
+      })
+      .toBe(source);
+
+    await guestPage.evaluate(({ elementId, source }) => {
+      const view = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#editor')
+        ?.cmView;
+      if (!view) throw new Error('missing guest editor');
+      view.dispatch({ selection: { anchor: source.length, head: source.length } });
+      view.focus();
+    }, { elementId: createdId, source });
+
+    await expect
+      .poll(() => observerPage.evaluate((elementId) => {
+        const remoteCursorOverlay = document.querySelector(`[data-strudel-remote-cursor-overlay="${elementId}"]`);
+        const cursorNodes = [...(remoteCursorOverlay?.querySelectorAll('.jam-strudel-remote-cursor-rect') || [])];
+        const visibleCursorNodes = cursorNodes.filter(node => getComputedStyle(node).display !== 'none');
+        const displayStates = [...new Set(cursorNodes.map(node => getComputedStyle(node).display))];
+        const backgrounds = [...new Set(cursorNodes.map(node => getComputedStyle(node).backgroundColor))];
+        const animationNames = [...new Set(cursorNodes.map(node => getComputedStyle(node).animationName))];
+        const animationDurations = [...new Set(cursorNodes.map(node => getComputedStyle(node).animationDuration))];
+        const animationDelays = [...new Set(cursorNodes.map(node => getComputedStyle(node).animationDelay))];
+        return {
+          remoteCursorCount: cursorNodes.length,
+          visibleRemoteCursorCount: visibleCursorNodes.length,
+          displayStateCount: displayStates.length,
+          backgrounds,
+          animationNames,
+          animationDurationCount: animationDurations.length,
+          animationDelayCount: animationDelays.length,
+          userCount: window.jamAwareness?.getStates?.().size || 0
+        };
+      }, createdId), {
+        message: 'observer should see all remote collaborators cursors blinking together',
+        timeout: 8_000
+      })
+      .toMatchObject({
+        remoteCursorCount: 2,
+        visibleRemoteCursorCount: 2,
+        displayStateCount: 1,
+        backgrounds: ['rgb(94, 234, 212)'],
+        animationNames: ['jam-strudel-cursor-bar-blink'],
+        animationDurationCount: 1,
+        animationDelayCount: 1,
+        userCount: 3
+      });
+
+    const multilineSource = 'note("c3").s("piano")\nnote("e3").s("piano")\nnote("g3").s("piano")';
+    await hostPage.evaluate(({ elementId, source }) => {
+      const view = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#editor')
+        ?.cmView;
+      if (!view) throw new Error('missing host editor');
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: source },
+        selection: { anchor: 0, head: source.length }
+      });
+      view.focus();
+    }, { elementId: createdId, source: multilineSource });
+
+    await expect
+      .poll(() => guestPage.evaluate((elementId) => {
+        const root = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot;
+        const lineSelection = root?.querySelector('.cm-yLineSelection');
+        const lineSelectionStyle = lineSelection ? getComputedStyle(lineSelection) : null;
+        const remoteSelectionOverlay = document.querySelector(`[data-strudel-remote-selection-overlay="${elementId}"]`);
+        return {
+          hasLineSelection: Boolean(lineSelection),
+          lineSelectionMarginLeft: lineSelectionStyle?.marginLeft || '',
+          lineSelectionMarginRight: lineSelectionStyle?.marginRight || '',
+          lineSelectionPaddingLeft: lineSelectionStyle?.paddingLeft || '',
+          lineSelectionPaddingRight: lineSelectionStyle?.paddingRight || '',
+          remoteSelectionRectCount: remoteSelectionOverlay?.children.length || 0
+        };
+      }, createdId), {
+        message: 'remote whole-line selections should not indent selected lines',
+        timeout: 8_000
+      })
+      .toMatchObject({
+        hasLineSelection: true,
+        lineSelectionMarginLeft: '0px',
+        lineSelectionMarginRight: '0px',
+        lineSelectionPaddingLeft: '0px',
+        lineSelectionPaddingRight: '0px'
+      });
+
+    expect(hostFailures).toEqual([]);
+    expect(guestFailures).toEqual([]);
+    expect(observerFailures).toEqual([]);
+  } finally {
+    if (createdId) {
+      await request.delete(`/api/workspace/elements/${createdId}`);
+      await Promise.allSettled([
+        hostPage.evaluate((elementId) => {
+          window.ydoc?.transact(() => {
+            window.elementsMap?.delete(elementId);
+            window.ydoc.getMap('global_bus')?.delete(`${elementId}:state`);
+          });
+        }, createdId),
+        guestPage.evaluate((elementId) => {
+          window.ydoc?.transact(() => {
+            window.elementsMap?.delete(elementId);
+            window.ydoc.getMap('global_bus')?.delete(`${elementId}:state`);
+          });
+        }, createdId),
+        observerPage.evaluate((elementId) => {
+          window.ydoc?.transact(() => {
+            window.elementsMap?.delete(elementId);
+            window.ydoc.getMap('global_bus')?.delete(`${elementId}:state`);
+          });
+        }, createdId)
+      ]);
+      await expect
+        .poll(async () => {
+          const response = await request.get('/api/workspace/elements');
+          const body = await response.json();
+          return !body.elements?.some(element => element.id === createdId);
+        }, {
+          message: 'collaborative test element should be removed from the shared workspace',
+          timeout: 8_000
+        })
+        .toBe(true);
+      await Promise.allSettled([
+        expect
+          .poll(() => hostPage.evaluate((elementId) => !window.activeElements?.has(elementId), createdId), {
+            message: 'host should observe collaborative test element cleanup',
+            timeout: 4_000
+          })
+          .toBe(true),
+        expect
+          .poll(() => guestPage.evaluate((elementId) => !window.activeElements?.has(elementId), createdId), {
+            message: 'guest should observe collaborative test element cleanup',
+            timeout: 4_000
+          })
+          .toBe(true),
+        expect
+          .poll(() => observerPage.evaluate((elementId) => !window.activeElements?.has(elementId), createdId), {
+            message: 'observer should observe collaborative test element cleanup',
+            timeout: 4_000
+          })
+          .toBe(true)
+      ]);
+    }
+    await hostContext.close();
+    await guestContext.close();
+    await observerContext.close();
+  }
+});
+
+test('Strudel collaborative editor seeds from existing element state', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const id = `strudel_legacy_${Date.now()}`;
+  const legacyCode = 'note("d3 f3 a3").s("piano").gain(0.2)';
+
+  await page.evaluate(({ id, legacyCode }) => {
+    window.ydoc.transact(() => {
+      window.ydoc.getMap('global_bus').set(`${id}:state`, {
+        code: legacyCode,
+        draftCode: legacyCode,
+        running: true,
+        moodVersion: 'blank-v1'
+      });
+      window.elementsMap.set(id, {
+        id,
+        x: 480,
+        y: 280,
+        width: 260,
+        height: 32,
+        filePath: '/elements/strudel_clocked_element.js',
+        type: 'strudel',
+        prompt: '',
+        authored: 'hand'
+      });
+    });
+  }, { id, legacyCode });
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        return view?.state.doc.toString() || '';
+      }, id), {
+        message: 'legacy element state should seed the collaborative Strudel editor',
+        timeout: 8_000
+      })
+      .toBe(legacyCode);
+
+    await expect
+      .poll(() => page.evaluate((elementId) => window.ydoc.getText(`strudel:${elementId}:code`).toString(), id), {
+        message: 'legacy code should be copied into Y.Text for future collaborators',
+        timeout: 3_000
+      })
+      .toBe(legacyCode);
+
+    expect(browserFailures).toEqual([]);
+  } finally {
+    await request.delete(`/api/workspace/elements/${id}`);
+  }
+});
+
+test('Strudel editor highlights code ranges for active pattern haps', async ({ page, request }) => {
+  const browserFailures = collectBrowserFailures(page);
+  await joinWorkspace(page, 'host');
+  const beforeIds = await page.evaluate(() => [...window.elementsMap.keys()]);
+
+  await addElementFromMenu(page, 'strudel', { x: 460, y: 260 });
+
+  await expect
+    .poll(() => page.evaluate((knownIds) => {
+      for (const [elementId, layout] of window.elementsMap.entries()) {
+        if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+      }
+      return '';
+    }, beforeIds), {
+      message: 'Strudel element should be added',
+      timeout: 8_000
+    })
+    .not.toBe('');
+
+  const id = await page.evaluate((knownIds) => {
+    for (const [elementId, layout] of window.elementsMap.entries()) {
+      if (!knownIds.includes(elementId) && layout.type === 'strudel') return elementId;
+    }
+    return '';
+  }, beforeIds);
+
+  try {
+    await expect
+      .poll(() => page.evaluate((elementId) => {
+        const view = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView;
+        return Boolean(view);
+      }, id), {
+        message: 'Strudel editor should mount before source highlighting setup',
+        timeout: 8_000
+      })
+      .toBe(true);
+
+    await page.evaluate((elementId) => {
+      const view = window.activeElements
+        .get(elementId)
+        ?.domWrapper.querySelector('.element-shadow-container')
+        ?.shadowRoot
+        ?.querySelector('#editor')
+        ?.cmView;
+      if (!view) throw new Error('missing Strudel editor');
+      const source = 's("bd sd").gain(0.2)';
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: source },
+        selection: { anchor: source.length, head: source.length }
+      });
+      view.focus();
+    }, id);
+    await page.keyboard.press('Alt+Enter');
+
+    await expect
+      .poll(() => page.evaluate((elementId) => window.__jamStrudelRuntimeDebug?.miniLocations?.[elementId]?.length || 0, id), {
+        message: 'Strudel transpiler should report source mini locations',
+        timeout: 8_000
+      })
+      .toBeGreaterThan(0);
+
+    await page.evaluate((elementId) => {
+      const runtime = window.__jamStrudelRuntimeDebug;
+      const pattern = runtime.state.patterns.get(elementId);
+      const haps = pattern
+        .queryArc(0, 1)
+        .filter(hap => hap.context?.jamElementId === elementId && hap.context?.locations?.length);
+      if (!haps.length) throw new Error('missing highlighted haps');
+      window.dispatchEvent(new CustomEvent('jam-strudel-highlight-frame', {
+        detail: { elementId, phase: 0.25, haps: [haps[0]] }
+      }));
+    }, id);
+
+    await expect
+      .poll(() => page.evaluate((elementId) => {
+        const root = window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot;
+        return [...(root?.querySelectorAll('.cm-content span') || [])]
+          .some(node => node.getAttribute('style')?.includes('outline: solid 2px'));
+      }, id), {
+        message: 'active haps should draw Strudel source range outlines',
+        timeout: 3_000
+      })
+      .toBe(true);
+
+    expect(browserFailures).toEqual([]);
+  } finally {
+    if (id) await request.delete(`/api/workspace/elements/${id}`);
+  }
+});
+
 for (const shortcut of ['Control+Delete', 'Control+Backspace']) {
   test(`${shortcut} inside a Strudel editor deletes that element`, async ({ page, request }) => {
     await joinWorkspace(page, 'controller');
@@ -1183,6 +1948,18 @@ for (const shortcut of ['Control+Delete', 'Control+Backspace']) {
     }, beforeIds);
 
     try {
+      await expect
+        .poll(() => page.evaluate((elementId) => Boolean(window.activeElements
+          .get(elementId)
+          ?.domWrapper.querySelector('.element-shadow-container')
+          ?.shadowRoot
+          ?.querySelector('#editor')
+          ?.cmView), createdId), {
+          message: 'Strudel editor should hydrate before shortcut focus',
+          timeout: 8_000
+        })
+        .toBe(true);
+
       await page.evaluate((elementId) => {
         const view = window.activeElements
           .get(elementId)
@@ -1445,21 +2222,40 @@ test('Strudel runtime registers the Dirt drum sample bank for lazy loading', asy
 
     await expect
       .poll(() => page.evaluate(async (elementId) => ({
+        soundCatalogReady: Boolean(window.__jamStrudelRuntimeDebug?.soundCatalogReady),
         source: window.__jamStrudelRuntimeDebug?.sources?.[elementId] || '',
         lastError: window.__jamStrudelRuntimeDebug?.lastError || '',
-        types: await window.__jamStrudelRuntimeDebug?.getRegisteredSoundTypes?.(['bd', 'sd', 'cp', 'hh'])
+        types: await window.__jamStrudelRuntimeDebug?.getRegisteredSoundTypes?.([
+          'bd',
+          'sd',
+          'cp',
+          'hh',
+          'gm_piano',
+          'piano',
+          'rolandtr909_bd',
+          'rolandtr909_sd',
+          'rolandtr909_hh',
+          'tr909_bd'
+        ])
       }), createdId), {
-        message: 'Dirt drum sample aliases should be loaded for Strudel',
+        message: 'official Strudel sound catalog and compatibility aliases should be registered',
         timeout: 15_000
       })
       .toMatchObject({
+        soundCatalogReady: true,
         source: 's("bd sd cp hh").gain(0.15)',
         lastError: '',
         types: {
           bd: 'sample',
           sd: 'sample',
           cp: 'sample',
-          hh: 'sample'
+          hh: 'sample',
+          gm_piano: 'soundfont',
+          piano: 'soundfont',
+          rolandtr909_bd: 'sample',
+          rolandtr909_sd: 'sample',
+          rolandtr909_hh: 'sample',
+          tr909_bd: 'sample'
         }
       });
 

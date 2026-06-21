@@ -4,9 +4,7 @@ export {
   drawSelection,
   dropCursor,
   highlightActiveLine,
-  highlightActiveLineGutter,
-  keymap,
-  lineNumbers
+  keymap
 } from '@codemirror/view';
 export {
   defaultKeymap,
@@ -19,8 +17,6 @@ export { javascript } from '@codemirror/lang-javascript';
 export {
   bracketMatching,
   defaultHighlightStyle,
-  foldGutter,
-  foldKeymap,
   indentOnInput,
   syntaxHighlighting
 } from '@codemirror/language';
@@ -37,4 +33,10 @@ export {
   searchKeymap
 } from '@codemirror/search';
 export { default as strudelTheme } from '@strudel/codemirror/themes/strudel-theme.mjs';
+export {
+  highlightExtension,
+  highlightMiniLocations,
+  updateMiniLocations
+} from '@strudel/codemirror/highlight.mjs';
+export { yCollab, yUndoManagerKeymap } from 'y-codemirror.next';
 export { jamStrudelAutocomplete } from './strudel-editor-completions.mjs';
