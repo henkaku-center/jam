@@ -15,6 +15,7 @@ export default async function setup(ctx, prevState) {
   };
 
   const elementId = ctx.elementId || `strudel_${Math.random().toString(36).slice(2)}`;
+  const theme = getStrudelWindowTheme(elementId);
   const unsubscribers = [];
   let suppressPublish = false;
   let evalTimer = 0;
@@ -47,7 +48,7 @@ export default async function setup(ctx, prevState) {
         min-width: 16ch;
         min-height: 1.35em;
         overflow: visible;
-        color: #d1fae5;
+        color: ${theme.text};
         background: transparent;
         font: 11px/1.25 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         user-select: text;
@@ -66,7 +67,7 @@ export default async function setup(ctx, prevState) {
         min-width: 16ch;
         height: auto;
         overflow: visible;
-        color: #d1fae5 !important;
+        color: ${theme.text} !important;
         background: transparent;
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         isolation: isolate;
@@ -85,12 +86,12 @@ export default async function setup(ctx, prevState) {
         width: max-content;
         min-width: 16ch;
         padding: 0;
-        color: #d1fae5;
+        color: ${theme.text};
         caret-color: transparent;
         text-shadow: none;
       }
       .cm-line {
-        color: #d1fae5;
+        color: ${theme.text};
         position: relative;
         overflow: visible;
         text-shadow: none;
@@ -109,7 +110,7 @@ export default async function setup(ctx, prevState) {
       .cm-cursor {
         display: block !important;
         box-sizing: border-box;
-        border: 1px solid #67e8f9 !important;
+        border: 1px solid ${theme.cursor} !important;
         width: var(--strudel-cursor-cell-width) !important;
         min-width: var(--strudel-cursor-cell-width);
         overflow: hidden;
@@ -132,7 +133,7 @@ export default async function setup(ctx, prevState) {
         background: transparent !important;
       }
       .cm-editor.cm-focused .cm-activeLine {
-        background: rgba(22, 78, 99, 0.5) !important;
+        background: ${theme.activeLine} !important;
       }
       .cm-editor.cm-focused .cm-activeLine::before {
         content: "";
@@ -183,17 +184,17 @@ export default async function setup(ctx, prevState) {
         background-color: transparent !important;
       }
       .cm-tooltip {
-        border: 1px solid #164e63;
+        border: 1px solid ${theme.tooltipBorder};
         background: rgba(0, 5, 8, 0.98);
-        color: #d1fae5;
+        color: ${theme.text};
         overflow: visible;
       }
       .cm-tooltip-autocomplete ul {
         font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
       .cm-tooltip-autocomplete ul li[aria-selected] {
-        background: #164e63;
-        color: #d1fae5;
+        background: ${theme.tooltipSelected};
+        color: ${theme.text};
       }
     </style>
     <textarea id="code" class="code-bridge" spellcheck="false" tabindex="-1" aria-hidden="true"></textarea>
@@ -348,42 +349,42 @@ export default async function setup(ctx, prevState) {
 
   const editorTheme = EditorView.theme({
     '&': {
-      color: '#d1fae5 !important',
+      color: `${theme.text} !important`,
       background: 'transparent !important'
     },
     '&.cm-editor': {
-      color: '#d1fae5 !important',
+      color: `${theme.text} !important`,
       background: 'transparent !important',
       isolation: 'isolate',
-      '--foreground': '#67e8f9'
+      '--foreground': theme.cursor
     },
     '.cm-scroller': {
       background: 'transparent !important'
     },
     '.cm-line, .cm-content': {
-      color: '#d1fae5',
+      color: theme.text,
       textShadow: 'none !important'
     },
     '.cm-line span, .cm-content span': {
       textShadow: 'none !important'
     },
     '.cm-line .ͼ11, .cm-line .ͼ16, .cm-content .ͼ11, .cm-content .ͼ16': {
-      color: '#67e8f9 !important'
+      color: `${theme.function} !important`
     },
     '.cm-line .ͼy, .cm-line .ͼw, .cm-content .ͼy, .cm-content .ͼw': {
-      color: '#a7f3d0 !important'
+      color: `${theme.keyword} !important`
     },
     '.cm-line .ͼs, .cm-line .ͼ19, .cm-content .ͼs, .cm-content .ͼ19': {
-      color: '#5eead4 !important'
+      color: `${theme.string} !important`
     },
     '.cm-line .ͼ13, .cm-content .ͼ13': {
-      color: '#6ee7e0 !important'
+      color: `${theme.number} !important`
     },
     '.cm-activeLine': {
       background: 'transparent !important'
     },
     '&.cm-focused .cm-activeLine': {
-      background: 'rgba(22, 78, 99, 0.5) !important'
+      background: `${theme.activeLine} !important`
     },
     '&.cm-focused .cm-activeLine::before': {
       content: '""',
@@ -443,7 +444,7 @@ export default async function setup(ctx, prevState) {
     '.cm-cursor': {
       display: 'block !important',
       boxSizing: 'border-box',
-      border: '1px solid #67e8f9 !important',
+      border: `1px solid ${theme.cursor} !important`,
       width: 'var(--strudel-cursor-cell-width) !important',
       minWidth: 'var(--strudel-cursor-cell-width)',
       overflow: 'hidden',
@@ -1180,15 +1181,15 @@ export default async function setup(ctx, prevState) {
         }
         .jam-strudel-remote-cursor-rect,
         .jam-strudel-remote-selection-rect {
-          background: #5eead4;
+          background: ${theme.remoteCursor};
         }
         .jam-strudel-remote-selection-rect {
-          background: rgba(94, 234, 212, 0.45);
+          background: ${theme.remoteSelection};
         }
         .jam-strudel-active-line-handle {
           position: fixed;
           display: none;
-          color: #67e8f9;
+          color: ${theme.cursor};
           background: transparent;
           font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
           text-align: right;
@@ -1355,6 +1356,101 @@ export default async function setup(ctx, prevState) {
 
 function isSilenceShortcut(event) {
   return event.key === '.' && (event.ctrlKey || event.metaKey || event.altKey);
+}
+
+function getStrudelWindowTheme(elementId) {
+  const palettes = [
+    {
+      text: '#e0f2fe',
+      cursor: '#38bdf8',
+      function: '#7dd3fc',
+      keyword: '#c4b5fd',
+      string: '#86efac',
+      number: '#f0abfc',
+      active: '#0ea5e9'
+    },
+    {
+      text: '#fff7ed',
+      cursor: '#fb923c',
+      function: '#fdba74',
+      keyword: '#fde047',
+      string: '#f9a8d4',
+      number: '#a7f3d0',
+      active: '#f97316'
+    },
+    {
+      text: '#f5f3ff',
+      cursor: '#a78bfa',
+      function: '#c4b5fd',
+      keyword: '#f0abfc',
+      string: '#67e8f9',
+      number: '#fde68a',
+      active: '#8b5cf6'
+    },
+    {
+      text: '#ecfeff',
+      cursor: '#22d3ee',
+      function: '#5eead4',
+      keyword: '#fca5a5',
+      string: '#bef264',
+      number: '#93c5fd',
+      active: '#06b6d4'
+    },
+    {
+      text: '#fefce8',
+      cursor: '#eab308',
+      function: '#facc15',
+      keyword: '#fb7185',
+      string: '#5eead4',
+      number: '#c084fc',
+      active: '#ca8a04'
+    },
+    {
+      text: '#fdf2f8',
+      cursor: '#f472b6',
+      function: '#f9a8d4',
+      keyword: '#93c5fd',
+      string: '#fde047',
+      number: '#86efac',
+      active: '#db2777'
+    },
+    {
+      text: '#eef2ff',
+      cursor: '#818cf8',
+      function: '#a5b4fc',
+      keyword: '#2dd4bf',
+      string: '#fda4af',
+      number: '#fcd34d',
+      active: '#4f46e5'
+    }
+  ];
+  const palette = palettes[hashString(String(elementId || 'strudel')) % palettes.length];
+  return {
+    ...palette,
+    activeLine: rgbaFromHex(palette.active, 0.24),
+    tooltipBorder: rgbaFromHex(palette.cursor, 0.8),
+    tooltipSelected: rgbaFromHex(palette.active, 0.62),
+    remoteCursor: palette.string,
+    remoteSelection: rgbaFromHex(palette.string, 0.38)
+  };
+}
+
+function hashString(source) {
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function rgbaFromHex(hex, alpha) {
+  const value = String(hex || '').replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return `rgba(255, 255, 255, ${alpha})`;
+  const red = Number.parseInt(value.slice(0, 2), 16);
+  const green = Number.parseInt(value.slice(2, 4), 16);
+  const blue = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function isDeleteWindowShortcut(event) {
