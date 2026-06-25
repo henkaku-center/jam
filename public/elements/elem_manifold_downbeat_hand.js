@@ -116,6 +116,13 @@ export default async function setup(ctx, prevState) {
 
   const canvas = ctx.domRoot.querySelector('#handCanvas');
   const loading = ctx.domRoot.querySelector('#loading');
+  const frameStyle = document.createElement('style');
+  frameStyle.textContent = `
+    #wrapper-${ctx.elementId}.active-focus::after {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(frameStyle);
   let renderer = null;
   let geometry = null;
   let material = null;
@@ -148,7 +155,9 @@ export default async function setup(ctx, prevState) {
       return {
         update() {},
         getState() { return { ...state }; },
-        destroy() {}
+        destroy() {
+          frameStyle.remove();
+        }
       };
     }
 
@@ -318,6 +327,7 @@ export default async function setup(ctx, prevState) {
         destroyed = true;
         cancelAnimationFrame(raf);
         unsubscribeClock();
+        frameStyle.remove();
         disposables.forEach((item) => item.dispose?.());
         renderer?.dispose();
       }
@@ -332,6 +342,7 @@ export default async function setup(ctx, prevState) {
       destroy() {
         destroyed = true;
         cancelAnimationFrame(raf);
+        frameStyle.remove();
       }
     };
   }
