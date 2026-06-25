@@ -87,8 +87,8 @@
     "id": "elem_ywb6z519y",
     "x": 554,
     "y": 521,
-    "width": 195,
-    "height": 118,
+    "width": 120,
+    "height": 72,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
@@ -172,7 +172,7 @@
     "x": 221,
     "y": 858,
     "width": 120,
-    "height": 27,
+    "height": 25,
     "filePath": "/elements/strudel_clocked_element.js",
     "type": "strudel",
     "prompt": "",
@@ -189,6 +189,6 @@
     "type": "audio",
     "prompt": "metallic alien generative drum texture",
     "authored": "hand",
-    "reloadToken": 0
+    "reloadToken": 1782379958570
   }
 }
