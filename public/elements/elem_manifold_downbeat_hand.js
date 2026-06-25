@@ -2,13 +2,14 @@ const STATE_VERSION = 'manifold-downbeat-hand-v1';
 const THREE_URL = '/vendor/three.module.js';
 const META_URL = '/assets/manifold/meta.json';
 const FACES_URL = '/assets/manifold/faces.bin';
-const DEFAULT_HAND = { trajectoryId: 0, profession: 'courier', task: 'box grab', hue: 186 };
+const DEFAULT_HAND = { trajectoryId: 0, profession: 'courier', task: 'box grab', hue: 186, view: [0, 0, 0], trailPhase: 0 };
 const HAND_CONFIGS = {
   elem_manifold_downbeat_hand: DEFAULT_HAND,
-  elem_manifold_hand_barista: { trajectoryId: 3, profession: 'barista', task: 'capsulemachine grab', hue: 326 },
-  elem_manifold_hand_cook: { trajectoryId: 9, profession: 'cook', task: 'ketchup grab', hue: 42 },
-  elem_manifold_hand_tailor: { trajectoryId: 28, profession: 'tailor', task: 'scissors grab', hue: 146 }
+  elem_manifold_hand_barista: { trajectoryId: 3, profession: 'barista', task: 'capsulemachine grab', hue: 326, view: [0.1, -0.42, 0.18], trailPhase: 0.18 },
+  elem_manifold_hand_cook: { trajectoryId: 9, profession: 'cook', task: 'ketchup grab', hue: 42, view: [-0.05, 0.36, -0.16], trailPhase: 0.36 },
+  elem_manifold_hand_tailor: { trajectoryId: 28, profession: 'tailor', task: 'scissors grab', hue: 146, view: [0.18, 0.74, 0.08], trailPhase: 0.54 }
 };
+const TRAIL_COUNT = 5;
 
 function finite(value, fallback) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -155,6 +156,8 @@ export default async function setup(ctx, prevState) {
   let material = null;
   let handMesh = null;
   let glowMesh = null;
+  const trailMeshes = [];
+  const trailGeometries = [];
   let raf = 0;
   let destroyed = false;
   let currentStep = 0;
@@ -276,9 +279,31 @@ export default async function setup(ctx, prevState) {
     glowMesh.scale.setScalar(1.045);
     scene.add(glowMesh);
 
+    for (let i = 0; i < TRAIL_COUNT; i += 1) {
+      const trailGeometry = new THREE.BufferGeometry();
+      trailGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(stride), 3));
+      trailGeometry.setIndex(new THREE.BufferAttribute(faces, 1));
+      const trailMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(`hsl(${handConfig.hue}, 100%, ${58 + i * 3}%)`),
+        transparent: true,
+        opacity: 0.045 + (TRAIL_COUNT - i) * 0.012,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const trailMesh = new THREE.Mesh(trailGeometry, trailMaterial);
+      trailMesh.rotation.copy(handMesh.rotation);
+      trailMesh.scale.setScalar(0.92 + i * 0.018);
+      trailMesh.position.z = -0.1 - i * 0.055;
+      scene.add(trailMesh);
+      trailGeometries.push(trailGeometry);
+      trailMeshes.push(trailMesh);
+      disposables.push(trailGeometry, trailMaterial);
+    }
+
     disposables.push(geometry, material, glowMesh.material);
 
-    function writeFrame(frameFloat) {
+    function writeFrameToArray(target, frameFloat, beatLift = 0) {
       const frame = clamp(frameFloat, 0, frames - 1);
       const f0 = Math.floor(frame);
       const f1 = Math.min(f0 + 1, frames - 1);
@@ -286,20 +311,33 @@ export default async function setup(ctx, prevState) {
       const inv = 1 - amount;
       const base0 = f0 * stride;
       const base1 = f1 * stride;
-      const beatLift = downbeatPulse * 0.045;
 
       for (let i = 0; i < stride; i += 3) {
         const x = allPositions[base0 + i] * inv + allPositions[base1 + i] * amount;
         const y = allPositions[base0 + i + 1] * inv + allPositions[base1 + i + 1] * amount;
         const z = allPositions[base0 + i + 2] * inv + allPositions[base1 + i + 2] * amount;
-        positions[i] = (x - fit.center[0]) * fit.scale;
-        positions[i + 1] = (z - fit.center[2]) * fit.scale - 0.08 + beatLift;
-        positions[i + 2] = -(y - fit.center[1]) * fit.scale;
+        target[i] = (x - fit.center[0]) * fit.scale;
+        target[i + 1] = (z - fit.center[2]) * fit.scale - 0.08 + beatLift;
+        target[i + 2] = -(y - fit.center[1]) * fit.scale;
       }
+    }
 
+    function writeFrame(frameFloat) {
+      writeFrameToArray(positions, frameFloat, downbeatPulse * 0.045);
       geometry.attributes.position.needsUpdate = true;
       geometry.computeVertexNormals();
       geometry.computeBoundingSphere();
+    }
+
+    function updateTrailFrames(frameFloat, phase, musicLevel) {
+      for (let i = 0; i < trailGeometries.length; i += 1) {
+        const offset = (i + 1) * (2.7 + state.gesture * 1.1);
+        const phaseCurl = Math.sin(phase * Math.PI * 2 + handConfig.trailPhase * 6.283 + i * 0.8) * (1.3 + musicLevel * 1.2);
+        const trailFrame = clamp(frameFloat - offset + phaseCurl, 0, frames - 1);
+        const geom = trailGeometries[i];
+        writeFrameToArray(geom.attributes.position.array, trailFrame, 0);
+        geom.attributes.position.needsUpdate = true;
+      }
     }
 
     function resize() {
@@ -350,14 +388,15 @@ export default async function setup(ctx, prevState) {
       const frame = clamp(eased * (frames - 1) * reactiveGesture + musicLevel * 2.4 * swing, 0, frames - 1);
       if (Math.abs(frame - lastRenderedFrame) > 0.015 || downbeatPulse > 0.03) {
         writeFrame(frame);
+        updateTrailFrames(frame, phase, musicLevel);
         lastRenderedFrame = frame;
       }
 
       const downbeatScale = 1 + downbeatPulse * 0.12 + musicLevel * 0.22;
       handMesh.scale.setScalar(downbeatScale);
-      handMesh.rotation.y = 0.35 + Math.sin(now * 0.00042) * (0.2 + state.spin * 0.28 + musicLevel * 0.3) + swing * (0.2 + musicLevel * 0.22);
-      handMesh.rotation.z = 0.06 + Math.sin(now * 0.00031) * (0.08 + musicLevel * 0.1) - downbeatPulse * 0.08 + musicLevel * 0.08;
-      handMesh.rotation.x = -0.34 + Math.sin(phase * Math.PI * 2) * (0.08 + musicLevel * 0.08);
+      handMesh.rotation.y = 0.35 + handConfig.view[1] + Math.sin(now * 0.00042) * (0.2 + state.spin * 0.28 + musicLevel * 0.3) + swing * (0.2 + musicLevel * 0.22);
+      handMesh.rotation.z = 0.06 + handConfig.view[2] + Math.sin(now * 0.00031) * (0.08 + musicLevel * 0.1) - downbeatPulse * 0.08 + musicLevel * 0.08;
+      handMesh.rotation.x = -0.34 + handConfig.view[0] + Math.sin(phase * Math.PI * 2) * (0.08 + musicLevel * 0.08);
       handMesh.position.y = Math.sin(phase * Math.PI) * (0.08 + musicLevel * 0.08) + downbeatPulse * 0.12;
       handMesh.position.x = Math.sin(now * 0.00023) * (0.08 + musicLevel * 0.08);
       handMesh.position.z = musicLevel * 0.18;
@@ -367,6 +406,15 @@ export default async function setup(ctx, prevState) {
       glowMesh.scale.setScalar(downbeatScale * (1.05 + downbeatPulse * 0.16 + musicLevel * 0.18));
       glowMesh.material.opacity = 0.08 + state.glow * 0.1 + downbeatPulse * 0.26 + musicLevel * 0.34;
       material.emissiveIntensity = 0.12 + state.glow * 0.18 + downbeatPulse * 0.55 + musicLevel * 0.9;
+      trailMeshes.forEach((mesh, index) => {
+        mesh.rotation.copy(handMesh.rotation);
+        mesh.position.copy(handMesh.position);
+        mesh.position.x += (index - 2) * 0.035 + Math.sin(phase * Math.PI * 2 + index) * 0.035;
+        mesh.position.y -= 0.02 + index * 0.018;
+        mesh.position.z -= 0.1 + index * 0.055;
+        mesh.scale.setScalar(downbeatScale * (0.86 + index * 0.035 + musicLevel * 0.08));
+        mesh.material.opacity = (0.035 + (TRAIL_COUNT - index) * 0.012) * (0.85 + musicLevel * 1.1);
+      });
 
       renderer.render(scene, camera);
     }
@@ -387,6 +435,7 @@ export default async function setup(ctx, prevState) {
 
     loading.classList.add('is-hidden');
     writeFrame(0);
+    updateTrailFrames(frames - 1, 1, 0);
     raf = requestAnimationFrame(render);
 
     return {
