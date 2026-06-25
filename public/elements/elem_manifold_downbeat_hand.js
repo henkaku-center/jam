@@ -138,6 +138,12 @@ export default async function setup(ctx, prevState) {
   let lastWidth = 0;
   let lastHeight = 0;
   let lastDpr = 0;
+  let analyser = null;
+  let analyserData = null;
+  let masterNode = null;
+  let masterConnected = false;
+  let liveLevel = 0;
+  let levelPeak = 0;
   const disposables = [];
 
   try {
@@ -186,6 +192,22 @@ export default async function setup(ctx, prevState) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(1);
+
+    const audio = ctx.rawAudioCtx || ctx.audioCtx;
+    if (audio && window.jamMasterGain && typeof window.jamMasterGain.connect === 'function') {
+      analyser = audio.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.62;
+      analyserData = new Uint8Array(analyser.fftSize);
+      masterNode = window.jamMasterGain;
+      try {
+        masterNode.connect(analyser);
+        masterConnected = true;
+      } catch (_) {
+        analyser = null;
+        analyserData = null;
+      }
+    }
 
     scene.add(new THREE.AmbientLight(0x6edcff, 0.62));
     const key = new THREE.DirectionalLight(0xfff0df, 1.35);
@@ -268,34 +290,56 @@ export default async function setup(ctx, prevState) {
       camera.updateProjectionMatrix();
     }
 
+    function readLiveLevel() {
+      if (!analyser || !analyserData) return 0;
+      analyser.getByteTimeDomainData(analyserData);
+      let sum = 0;
+      let peak = 0;
+      for (let i = 0; i < analyserData.length; i += 1) {
+        const centered = (analyserData[i] - 128) / 128;
+        sum += centered * centered;
+        peak = Math.max(peak, Math.abs(centered));
+      }
+      const rms = Math.sqrt(sum / analyserData.length);
+      const gated = clamp((rms - 0.012) * 5.8, 0, 1);
+      const peakLevel = clamp((peak - 0.035) * 2.8, 0, 1);
+      levelPeak = Math.max(peakLevel, levelPeak * 0.88);
+      const target = Math.max(gated, levelPeak * 0.55);
+      liveLevel += (target - liveLevel) * (target > liveLevel ? 0.34 : 0.1);
+      return liveLevel;
+    }
+
     function render(now) {
       if (destroyed) return;
       raf = requestAnimationFrame(render);
       resize();
 
       downbeatPulse *= 0.9;
+      const musicLevel = readLiveLevel();
       const phase = clamp((now - gestureStartMs) / Math.max(320, gestureDurationMs), 0, 1);
       const eased = 0.5 - Math.cos(phase * Math.PI) * 0.5;
       const swing = Math.sin(phase * Math.PI);
-      const frame = eased * (frames - 1) * state.gesture;
+      const reactiveGesture = clamp(state.gesture + musicLevel * 0.16, 0, 1.14);
+      const frame = clamp(eased * (frames - 1) * reactiveGesture + musicLevel * 2.4 * swing, 0, frames - 1);
       if (Math.abs(frame - lastRenderedFrame) > 0.015 || downbeatPulse > 0.03) {
         writeFrame(frame);
         lastRenderedFrame = frame;
       }
 
-      const downbeatScale = 1 + downbeatPulse * 0.12;
+      const downbeatScale = 1 + downbeatPulse * 0.12 + musicLevel * 0.22;
       handMesh.scale.setScalar(downbeatScale);
-      handMesh.rotation.y = 0.35 + Math.sin(now * 0.00042) * (0.2 + state.spin * 0.28) + swing * 0.2;
-      handMesh.rotation.z = 0.06 + Math.sin(now * 0.00031) * 0.08 - downbeatPulse * 0.08;
-      handMesh.rotation.x = -0.34 + Math.sin(phase * Math.PI * 2) * 0.08;
-      handMesh.position.y = Math.sin(phase * Math.PI) * 0.08 + downbeatPulse * 0.12;
-      handMesh.position.x = Math.sin(now * 0.00023) * 0.08;
+      handMesh.rotation.y = 0.35 + Math.sin(now * 0.00042) * (0.2 + state.spin * 0.28 + musicLevel * 0.3) + swing * (0.2 + musicLevel * 0.22);
+      handMesh.rotation.z = 0.06 + Math.sin(now * 0.00031) * (0.08 + musicLevel * 0.1) - downbeatPulse * 0.08 + musicLevel * 0.08;
+      handMesh.rotation.x = -0.34 + Math.sin(phase * Math.PI * 2) * (0.08 + musicLevel * 0.08);
+      handMesh.position.y = Math.sin(phase * Math.PI) * (0.08 + musicLevel * 0.08) + downbeatPulse * 0.12;
+      handMesh.position.x = Math.sin(now * 0.00023) * (0.08 + musicLevel * 0.08);
+      handMesh.position.z = musicLevel * 0.18;
 
       glowMesh.rotation.copy(handMesh.rotation);
       glowMesh.position.copy(handMesh.position);
-      glowMesh.scale.setScalar(downbeatScale * (1.05 + downbeatPulse * 0.16));
-      glowMesh.material.opacity = 0.08 + state.glow * 0.1 + downbeatPulse * 0.26;
-      material.emissiveIntensity = 0.12 + state.glow * 0.18 + downbeatPulse * 0.55;
+      glowMesh.scale.setScalar(downbeatScale * (1.05 + downbeatPulse * 0.16 + musicLevel * 0.18));
+      glowMesh.material.opacity = 0.08 + state.glow * 0.1 + downbeatPulse * 0.26 + musicLevel * 0.34;
+      material.emissiveIntensity = 0.12 + state.glow * 0.18 + downbeatPulse * 0.55 + musicLevel * 0.9;
 
       renderer.render(scene, camera);
     }
@@ -328,6 +372,10 @@ export default async function setup(ctx, prevState) {
         cancelAnimationFrame(raf);
         unsubscribeClock();
         frameStyle.remove();
+        if (masterConnected && masterNode && analyser) {
+          try { masterNode.disconnect(analyser); } catch (_) {}
+        }
+        try { analyser?.disconnect(); } catch (_) {}
         disposables.forEach((item) => item.dispose?.());
         renderer?.dispose();
       }
