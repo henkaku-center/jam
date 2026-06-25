@@ -2,8 +2,13 @@ const STATE_VERSION = 'manifold-downbeat-hand-v1';
 const THREE_URL = '/vendor/three.module.js';
 const META_URL = '/assets/manifold/meta.json';
 const FACES_URL = '/assets/manifold/faces.bin';
-const TRAJ_URL = '/assets/manifold/traj/0.bin';
-const TRAJECTORY_ID = 0;
+const DEFAULT_HAND = { trajectoryId: 0, profession: 'courier', task: 'box grab', hue: 186 };
+const HAND_CONFIGS = {
+  elem_manifold_downbeat_hand: DEFAULT_HAND,
+  elem_manifold_hand_barista: { trajectoryId: 3, profession: 'barista', task: 'capsulemachine grab', hue: 326 },
+  elem_manifold_hand_cook: { trajectoryId: 9, profession: 'cook', task: 'ketchup grab', hue: 42 },
+  elem_manifold_hand_tailor: { trajectoryId: 28, profession: 'tailor', task: 'scissors grab', hue: 146 }
+};
 
 function finite(value, fallback) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -19,7 +24,7 @@ async function fetchArrayBuffer(url) {
   return response.arrayBuffer();
 }
 
-function decodeTrajectory(buffer, meta) {
+function decodeTrajectory(buffer, meta, trajectoryId) {
   const frames = meta.n_frames;
   const verts = meta.n_verts;
   const expected = frames * verts * 3;
@@ -28,7 +33,7 @@ function decodeTrajectory(buffer, meta) {
     throw new Error(`trajectory has ${quantized.length} values, expected ${expected}`);
   }
 
-  const [min, max] = meta.bboxes[TRAJECTORY_ID];
+  const [min, max] = meta.bboxes[trajectoryId];
   const sx = (max[0] - min[0]) / 65535;
   const sy = (max[1] - min[1]) / 65535;
   const sz = (max[2] - min[2]) / 65535;
@@ -65,6 +70,7 @@ function fitFrameToUnit(data, verts) {
 }
 
 export default async function setup(ctx, prevState) {
+  const handConfig = HAND_CONFIGS[ctx.elementId] || DEFAULT_HAND;
   const previousMatches = prevState?.stateVersion === STATE_VERSION;
   const state = {
     stateVersion: STATE_VERSION,
@@ -95,6 +101,26 @@ export default async function setup(ctx, prevState) {
         width: 100%;
         height: 100%;
       }
+      .hand-label {
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        padding: 0;
+        color: hsl(${handConfig.hue}, 100%, 72%);
+        text-shadow:
+          0 0 7px hsla(${handConfig.hue}, 100%, 62%, 0.78),
+          0 1px 3px rgba(0, 0, 0, 0.92);
+        font: 700 11px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0;
+        text-transform: uppercase;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .hand-label span {
+        color: rgba(218, 245, 255, 0.76);
+        font-weight: 500;
+      }
       .loading {
         position: absolute;
         inset: 0;
@@ -110,6 +136,7 @@ export default async function setup(ctx, prevState) {
     </style>
     <div class="hand-stage">
       <canvas id="handCanvas" aria-label="Manifold animated hand synced to the downbeat"></canvas>
+      <div class="hand-label">${handConfig.profession} <span>${handConfig.task}</span></div>
       <div id="loading" class="loading">loading hand</div>
     </div>
   `;
@@ -154,7 +181,7 @@ export default async function setup(ctx, prevState) {
         return response.json();
       }),
       fetchArrayBuffer(FACES_URL),
-      fetchArrayBuffer(TRAJ_URL)
+      fetchArrayBuffer(`/assets/manifold/traj/${handConfig.trajectoryId}.bin`)
     ]);
 
     if (destroyed) {
@@ -170,7 +197,7 @@ export default async function setup(ctx, prevState) {
     const frames = meta.n_frames;
     const verts = meta.n_verts;
     const stride = verts * 3;
-    const allPositions = decodeTrajectory(trajBuffer, meta);
+    const allPositions = decodeTrajectory(trajBuffer, meta, handConfig.trajectoryId);
     const fit = fitFrameToUnit(allPositions.subarray(0, stride), verts);
     const positions = new Float32Array(stride);
     const faces = new Uint32Array(facesBuffer);
@@ -223,7 +250,7 @@ export default async function setup(ctx, prevState) {
 
     material = new THREE.MeshPhysicalMaterial({
       color: 0xf7fbff,
-      emissive: 0x1eeeff,
+      emissive: new THREE.Color(`hsl(${handConfig.hue}, 100%, 54%)`),
       emissiveIntensity: 0.18,
       roughness: 0.42,
       metalness: 0.08,
@@ -238,7 +265,7 @@ export default async function setup(ctx, prevState) {
     scene.add(handMesh);
 
     glowMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-      color: 0x00f6ff,
+      color: new THREE.Color(`hsl(${handConfig.hue}, 100%, 54%)`),
       transparent: true,
       opacity: 0.11,
       blending: THREE.AdditiveBlending,
