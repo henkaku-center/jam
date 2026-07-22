@@ -9,3 +9,5 @@ test-results
 
 # WSL/Windows filesystem metadata
 *Zone.Identifier
+# Chi local state and sensitive artifacts (runtime state lives under ~/.chi)
+.chi/
